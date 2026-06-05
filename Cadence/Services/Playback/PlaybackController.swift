@@ -9,6 +9,7 @@ final class PlaybackController {
     private let audioEngine = AudioEngineService()
     private let libraryStore: LibraryStore
     private let recentStore: RecentStore
+    private let mediaRemote = MediaRemoteService()
 
     private(set) var queue: [Track] = []
     private(set) var currentIndex: Int = -1
@@ -38,10 +39,13 @@ final class PlaybackController {
         self.recentStore = recentStore
         self.volume = 72
 
+        mediaRemote.configure(controller: self)
+
         audioEngine.onProgress = { [weak self] current, total in
             Task { @MainActor in
                 self?.progress = current
                 self?.duration = total
+                self?.mediaRemote.publishNowPlayingInfo()
             }
         }
 
@@ -95,6 +99,7 @@ final class PlaybackController {
             audioEngine.play()
             isPlaying = true
         }
+        mediaRemote.publishNowPlayingInfo()
     }
 
     func next() {
@@ -200,6 +205,7 @@ final class PlaybackController {
             audioEngine.play()
             isPlaying = true
             recentStore.record(track: track)
+            mediaRemote.publishNowPlayingInfo()
         } catch {
             logger.error("Failed to load track: \(error.localizedDescription)")
             next()
@@ -219,6 +225,7 @@ final class PlaybackController {
         audioEngine.stop()
         isPlaying = false
         progress = 0
+        mediaRemote.publishNowPlayingInfo()
     }
 
     private func rebuildShuffleOrder() {

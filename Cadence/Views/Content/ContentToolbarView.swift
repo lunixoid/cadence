@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentToolbarView: View {
@@ -64,32 +65,7 @@ struct ContentToolbarView: View {
                 .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
-                    .foregroundStyle(CadenceTheme.iconColor(for: colorScheme))
-
-                TextField("Поиск", text: Bindable(uiState).searchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 13))
-                    .focused($isSearchFocused)
-            }
-            .padding(.horizontal, 10)
-            .frame(width: isSearchFocused ? 200 : 160, height: 30)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(CadenceTheme.searchBackground(for: colorScheme, focused: isSearchFocused))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(
-                        isSearchFocused
-                            ? (colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.15))
-                            : CadenceTheme.borderColor(for: colorScheme),
-                        lineWidth: 0.5
-                    )
-            )
-            .animation(.easeOut(duration: 0.15), value: isSearchFocused)
+            searchField
         }
         .padding(.horizontal, 20)
         .frame(height: CadenceTheme.toolbarHeight)
@@ -97,6 +73,80 @@ struct ContentToolbarView: View {
             Rectangle()
                 .fill(colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.06))
                 .frame(height: 0.5)
+        }
+        .defaultFocus($isSearchFocused, false)
+        .onAppear {
+            isSearchFocused = false
+            resignSearchFieldFocus()
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13))
+                .foregroundStyle(CadenceTheme.iconColor(for: colorScheme))
+
+            TextField("Поиск", text: Bindable(uiState).searchQuery)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .focused($isSearchFocused)
+        }
+        .padding(.horizontal, 10)
+        .frame(width: isSearchFocused ? 200 : 160, height: 30)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(CadenceTheme.searchBackground(for: colorScheme, focused: isSearchFocused))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(
+                    isSearchFocused
+                        ? (colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.15))
+                        : CadenceTheme.borderColor(for: colorScheme),
+                    lineWidth: 0.5
+                )
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .onTapGesture {
+            isSearchFocused = true
+        }
+        .animation(.easeOut(duration: 0.15), value: isSearchFocused)
+        .background(SearchFieldFocusGuard(isActive: isSearchFocused))
+    }
+
+    private func resignSearchFieldFocus() {
+        DispatchQueue.main.async {
+            guard let window = NSApp.keyWindow else { return }
+            guard let responder = window.firstResponder else { return }
+            if responder is NSTextView || responder is NSTextField {
+                window.makeFirstResponder(nil)
+            }
+        }
+    }
+}
+
+private struct SearchFieldFocusGuard: NSViewRepresentable {
+    let isActive: Bool
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        updateFocus(for: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        updateFocus(for: nsView)
+    }
+
+    private func updateFocus(for view: NSView) {
+        guard !isActive else { return }
+        DispatchQueue.main.async {
+            guard let window = view.window ?? NSApp.keyWindow else { return }
+            guard let responder = window.firstResponder else { return }
+            if responder is NSTextView || responder is NSTextField {
+                window.makeFirstResponder(nil)
+            }
         }
     }
 }

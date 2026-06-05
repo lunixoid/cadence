@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainWindowView: View {
     @Environment(AppUIState.self) private var uiState
+    @Environment(PlaybackController.self) private var playbackController
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -14,6 +15,12 @@ struct MainWindowView: View {
         }
         .background(CadenceTheme.windowBackground(for: colorScheme))
         .background(WindowConfigurator())
+        .background {
+            PlaybackKeyboardMonitor(controller: playbackController)
+        }
+        .onAppear {
+            PlaybackKeyboardMonitorService.shared.install(controller: playbackController)
+        }
     }
 
     @ViewBuilder

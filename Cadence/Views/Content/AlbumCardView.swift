@@ -32,6 +32,7 @@ struct AlbumCardView: View {
                                 }
                         }
                         .buttonStyle(.plain)
+                        .focusable(false)
                         .padding(8)
                         .transition(.opacity.combined(with: .scale(scale: 0.92)))
                     }
@@ -67,6 +68,7 @@ struct AlbumCardView: View {
             )
         }
         .buttonStyle(.plain)
+        .focusable(false)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: 0.15), value: isHovered)
     }

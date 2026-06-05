@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadence — macOS Audio Player</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; overflow: hidden;
+      transition: background 0.4s ease;
+    }
+    body.light { background: #c8cdd3; }
+    body.dark  { background: #1a1a1c; }
+
+    /* macOS wallpaper-like subtle gradient behind the window */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      transition: opacity 0.4s ease;
+    }
+    body.light::before {
+      background: radial-gradient(ellipse at 30% 40%, #b5c7df 0%, #c8cdd3 60%, #d2cfc8 100%);
+    }
+    body.dark::before {
+      background: radial-gradient(ellipse at 30% 40%, #1e2636 0%, #1a1a1c 60%, #1c1a18 100%);
+    }
+
+    #root { position: relative; z-index: 1; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes eqBounce {
+      0% { height: 20%; }
+      100% { height: 90%; }
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 7px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }
+
+    /* Placeholder input styling */
+    input::placeholder {
+      color: inherit;
+      opacity: 0.5;
+    }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="cadence-icons.jsx"></script>
+  <script type="text/babel" src="cadence-sidebar.jsx"></script>
+  <script type="text/babel" src="cadence-content.jsx"></script>
+  <script type="text/babel" src="cadence-album-page.jsx"></script>
+  <script type="text/babel" src="cadence-player.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+</head>
+<body class="light">
+
+<div id="root"></div>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "accentColor": "#007AFF",
+  "sidebarWidth": 220,
+  "windowScale": 100,
+  "coverStyle": "vinyl"
+}/*EDITMODE-END*/;
+
+function useViewportSize() {
+  const [size, setSize] = React.useState({ w: window.innerWidth, h: window.innerHeight });
+  React.useEffect(() => {
+    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return size;
+}
+
+function CadenceApp() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const dark = t.theme === 'dark';
+
+  const [activeItem, setActiveItem] = React.useState('albums');
+  const [isPlaying, setIsPlaying] = React.useState(true);
+  const [shuffleOn, setShuffleOn] = React.useState(false);
+  const [repeatOn, setRepeatOn] = React.useState(true);
+
+  // Navigation state
+  const [currentView, setCurrentView] = React.useState('grid'); // 'grid' | 'album'
+  const [selectedAlbum, setSelectedAlbum] = React.useState(null);
+
+  // Current playing track — start with album 3 (Static Dreams), track index 2 (3rd track)
+  const defaultAlbum = ALBUM_DATA[2]; // Static Dreams
+  const [playingAlbum, setPlayingAlbum] = React.useState(defaultAlbum);
+  const [playingTrackIdx, setPlayingTrackIdx] = React.useState(2); // track #3
+
+  // Sync body class with theme
+  React.useEffect(() => {
+    document.body.className = dark ? 'dark' : 'light';
+  }, [dark]);
+
+  const windowWidth = 1100;
+  const windowHeight = 700;
+
+  // Auto-scale to fit viewport with padding
+  const viewport = useViewportSize();
+  const autoScale = Math.min(1, (viewport.w - 48) / windowWidth, (viewport.h - 48) / windowHeight);
+  const scale = autoScale * (t.windowScale / 100);
+
+  // Window colors
+  const windowBg = dark ? '#282828' : '#ffffff';
+  const contentBg = dark ? '#1e1e20' : '#f5f5f7';
+
+  // Album navigation
+  const handleAlbumClick = (album) => {
+    setSelectedAlbum(album);
+    setCurrentView('album');
+  };
+
+  const handleBack = () => {
+    setCurrentView('grid');
+    setSelectedAlbum(null);
+  };
+
+  // Track playback
+  const handlePlayTrack = (trackIdx) => {
+    if (selectedAlbum) {
+      setPlayingAlbum(selectedAlbum);
+      setPlayingTrackIdx(trackIdx);
+      setIsPlaying(true);
+    }
+  };
+
+  // Get current track info for Now Playing bar
+  const currentTracks = playingAlbum ? getAlbumTracks(playingAlbum) : [];
+  const currentTrack = currentTracks[playingTrackIdx] || {};
+  const npTitle = currentTrack.title || 'Static Dreams';
+  const npArtist = playingAlbum ? playingAlbum.artist : 'Neon Drift';
+  const npColors = playingAlbum ? playingAlbum.colors : ['#5c2d91', '#8e44ad', '#c39bd3'];
+  const npDuration = currentTrack.duration || 234;
+
+  return (
+    <div>
+      {/* Window container with scale — outer div shrinks layout box to match visual */}
+      <div style={{
+        width: windowWidth * scale,
+        height: windowHeight * scale,
+      }}>
+      <div style={{
+        transform: `scale(${scale})`,
+        transformOrigin: '0 0',
+      }}>
+        {/* macOS Window */}
+        <div style={{
+          width: windowWidth, height: windowHeight,
+          borderRadius: 12, overflow: 'hidden',
+          background: windowBg,
+          boxShadow: dark
+            ? '0 0 0 0.5px rgba(255,255,255,0.1), 0 24px 80px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.4)'
+            : '0 0 0 0.5px rgba(0,0,0,0.15), 0 24px 80px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.08)',
+          display: 'flex', flexDirection: 'column',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+          position: 'relative',
+        }}>
+          {/* Main area: sidebar + content */}
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            <CadenceSidebar
+              dark={dark}
+              activeItem={activeItem}
+              onItemClick={setActiveItem}
+            />
+            <div style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              background: contentBg,
+              overflow: 'hidden',
+            }}>
+              {currentView === 'album' && selectedAlbum ? (
+                <AlbumPage
+                  album={selectedAlbum}
+                  dark={dark}
+                  playingTrackIdx={playingAlbum && playingAlbum.id === selectedAlbum.id ? playingTrackIdx : -1}
+                  isPlaying={isPlaying}
+                  onPlayTrack={handlePlayTrack}
+                  onBack={handleBack}
+                />
+              ) : (
+                <CadenceContent dark={dark} onAlbumClick={handleAlbumClick} />
+              )}
+            </div>
+          </div>
+
+          {/* Now Playing Bar */}
+          <NowPlayingBar
+            dark={dark}
+            isPlaying={isPlaying}
+            onPlayPause={() => setIsPlaying(!isPlaying)}
+            shuffleOn={shuffleOn}
+            repeatOn={repeatOn}
+            onShuffleToggle={() => setShuffleOn(!shuffleOn)}
+            onRepeatToggle={() => setRepeatOn(!repeatOn)}
+            trackTitle={npTitle}
+            trackArtist={npArtist}
+            trackColors={npColors}
+            trackDuration={npDuration}
+          />
+        </div>
+      </div>
+      </div>
+
+      {/* Tweaks Panel */}
+      <TweaksPanel>
+        <TweakSection label="Тема" />
+        <TweakRadio
+          label="Оформление"
+          value={t.theme}
+          options={['light', 'dark']}
+          onChange={(v) => setTweak('theme', v)}
+        />
+        <TweakSection label="Окно" />
+        <TweakSlider
+          label="Масштаб"
+          value={t.windowScale}
+          min={60} max={120} step={5} unit="%"
+          onChange={(v) => setTweak('windowScale', v)}
+        />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<CadenceApp />);
+</script>
+
+</body>
+</html>

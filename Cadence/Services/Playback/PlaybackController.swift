@@ -10,11 +10,9 @@ final class PlaybackController {
     private let libraryStore: LibraryStore
     private let recentStore: RecentStore
     private let mediaRemote = MediaRemoteService()
+    private let stateStore = PlaybackStateStore()
 
-    private(set) var queue: [Track] = []
-    private(set) var currentIndex: Int = -1
-    private(set) var shuffleOrder: [Int] = []
-    private(set) var shufflePosition: Int = 0
+    private var playbackQueue = PlaybackQueue()
 
     var isPlaying = false
     var shuffleOn = false
@@ -22,12 +20,14 @@ final class PlaybackController {
     var progress: TimeInterval = 0
     var duration: TimeInterval = 0
     var volume: Double = 72 {
-        didSet { audioEngine.volume = volume }
+        didSet {
+            audioEngine.volume = volume
+            persistState()
+        }
     }
 
     var currentTrack: Track? {
-        guard currentIndex >= 0, currentIndex < queue.count else { return nil }
-        return queue[currentIndex]
+        playbackQueue.current
     }
 
     var playingTrackID: UUID? {
@@ -56,38 +56,55 @@ final class PlaybackController {
         }
     }
 
-    func play(tracks: [Track], startAt index: Int = 0) {
+    func restoreSavedState() {
+        guard let snapshot = stateStore.load(),
+              let queue = stateStore.restoreQueue(from: snapshot, library: libraryStore) else {
+            if stateStore.load() != nil {
+                stateStore.clear()
+            }
+            return
+        }
+
+        playbackQueue = queue
+        shuffleOn = snapshot.shuffleOn
+        repeatMode = snapshot.repeatMode
+        volume = snapshot.volume
+        progress = snapshot.progress
+
+        loadCurrentTrack(seekTo: snapshot.progress, shouldPlay: snapshot.isPlaying)
+    }
+
+    func play(tracks: [Track], startAt index: Int = 0, source: AutoplaySource = .adHoc, originalTracks: [Track]? = nil) {
         guard !tracks.isEmpty else { return }
-        let clampedIndex = min(max(index, 0), tracks.count - 1)
-        queue = tracks
-        currentIndex = clampedIndex
-        rebuildShuffleOrder()
+        playbackQueue.beginSession(
+            tracks: tracks,
+            startAt: index,
+            source: source,
+            originalTracks: originalTracks
+        )
         loadAndPlayCurrentTrack()
+        persistState()
     }
 
     func playAlbum(_ album: Album, shuffled: Bool) {
         let tracks = libraryStore.tracks(for: album)
         guard !tracks.isEmpty else { return }
         shuffleOn = shuffled
-        if shuffled {
-            play(tracks: tracks.shuffled(), startAt: 0)
-        } else {
-            play(tracks: tracks, startAt: 0)
-        }
+        let orderedTracks = shuffled ? tracks.shuffled() : tracks
+        play(tracks: orderedTracks, startAt: 0, source: .album(album.id), originalTracks: tracks)
     }
 
     func playTrack(_ track: Track) {
-        if let albumTracks = libraryStore.tracks(forAlbumID: track.albumID).nilIfEmpty {
-            if let index = albumTracks.firstIndex(of: track) {
-                play(tracks: albumTracks, startAt: index)
-                return
-            }
+        if let albumTracks = libraryStore.tracks(forAlbumID: track.albumID).nilIfEmpty,
+           let index = albumTracks.firstIndex(of: track) {
+            play(tracks: albumTracks, startAt: index, source: .album(track.albumID))
+            return
         }
-        play(tracks: [track], startAt: 0)
+        play(tracks: [track], startAt: 0, source: .none)
     }
 
     func togglePlayPause() {
-        if queue.isEmpty, let track = currentTrack {
+        if !playbackQueue.hasActiveSession, let track = currentTrack {
             playTrack(track)
             return
         }
@@ -100,118 +117,101 @@ final class PlaybackController {
             isPlaying = true
         }
         mediaRemote.publishNowPlayingInfo()
+        persistState()
     }
 
     func next() {
-        guard !queue.isEmpty else { return }
+        guard playbackQueue.hasActiveSession else { return }
 
-        if shuffleOn {
-            advanceShuffle(forward: true)
-        } else if currentIndex + 1 < queue.count {
-            currentIndex += 1
-            loadAndPlayCurrentTrack()
-        } else if repeatMode == .queue {
-            currentIndex = 0
-            loadAndPlayCurrentTrack()
-        } else {
+        guard let track = playbackQueue.consumeNext(repeatMode: repeatMode) else {
             stopPlayback()
+            persistState()
+            return
         }
+
+        playLoadedTrack(track)
+        persistState()
     }
 
     func previous() {
-        guard !queue.isEmpty else { return }
+        guard playbackQueue.hasActiveSession else { return }
 
         if progress > 3 {
             seek(to: 0)
             return
         }
 
-        if shuffleOn {
-            advanceShuffle(forward: false)
-        } else if currentIndex > 0 {
-            currentIndex -= 1
-            loadAndPlayCurrentTrack()
-        } else if repeatMode == .queue {
-            currentIndex = queue.count - 1
-            loadAndPlayCurrentTrack()
-        } else {
+        guard let track = playbackQueue.consumePrevious() else {
             seek(to: 0)
+            return
         }
+
+        playLoadedTrack(track)
+        persistState()
     }
 
     func seek(to time: TimeInterval) {
         progress = time
         audioEngine.seek(to: time)
+        persistState()
     }
 
     func toggleShuffle() {
         shuffleOn.toggle()
-        rebuildShuffleOrder()
+        if shuffleOn {
+            playbackQueue.shuffleRemainingAutoplay()
+        } else {
+            playbackQueue.restoreOriginalAutoplayOrder()
+        }
+        persistState()
     }
 
     func toggleRepeat() {
         repeatMode.cycle()
+        persistState()
     }
 
     func playNext(_ track: Track) {
-        guard !queue.isEmpty else {
-            play(tracks: [track], startAt: 0)
+        guard playbackQueue.hasActiveSession else {
+            playTrack(track)
             return
         }
 
-        let insertIndex = min(currentIndex + 1, queue.count)
-        queue.insert(track, at: insertIndex)
-        rebuildShuffleOrder()
+        playbackQueue.insertPlayNext(track)
+        persistState()
     }
 
     func addToQueue(_ track: Track) {
-        queue.append(track)
-        rebuildShuffleOrder()
-        if currentIndex < 0 {
-            currentIndex = 0
-            loadAndPlayCurrentTrack()
+        guard playbackQueue.hasActiveSession else {
+            playTrack(track)
+            return
         }
+
+        playbackQueue.appendToQueue(track)
+        persistState()
     }
 
     var upNextTracks: [Track] {
-        guard currentIndex >= 0, currentIndex + 1 < queue.count else { return [] }
-        return Array(queue[(currentIndex + 1)...])
+        playbackQueue.upNext
     }
 
-    func removeFromUpNext(at relativeIndex: Int) {
-        let absoluteIndex = currentIndex + 1 + relativeIndex
-        guard absoluteIndex > currentIndex, absoluteIndex < queue.count else { return }
-        queue.remove(at: absoluteIndex)
-        rebuildShuffleOrder()
+    func removeFromUpNext(at index: Int) {
+        playbackQueue.removeFromUpNext(at: index)
+        persistState()
     }
 
     func moveUpNextItem(from source: Int, to destination: Int) {
-        guard source != destination else { return }
-        let sourceIndex = currentIndex + 1 + source
-        let destinationIndex = currentIndex + 1 + destination
-        guard sourceIndex > currentIndex, sourceIndex < queue.count else { return }
-        guard destinationIndex > currentIndex, destinationIndex < queue.count else { return }
-
-        let item = queue.remove(at: sourceIndex)
-        queue.insert(item, at: destinationIndex)
-        rebuildShuffleOrder()
+        playbackQueue.moveUpNextItem(from: source, to: destination)
+        persistState()
     }
 
     func clearUpNext() {
-        guard currentIndex >= 0, currentIndex + 1 < queue.count else { return }
-        queue.removeSubrange((currentIndex + 1)...)
-        rebuildShuffleOrder()
+        playbackQueue.clearUpNext()
+        persistState()
     }
 
-    func autoplayPreviewTracks(from libraryStore: LibraryStore, limit: Int = 7) -> [Track] {
-        guard let track = currentTrack else { return [] }
-        let albumTracks = libraryStore.tracks(forAlbumID: track.albumID)
-        guard !albumTracks.isEmpty else { return [] }
-
-        guard let currentAlbumIndex = albumTracks.firstIndex(of: track) else { return [] }
-        let remaining = albumTracks.dropFirst(currentAlbumIndex + 1)
-        let upNextIDs = Set(upNextTracks.map(\.id))
-        return Array(remaining.filter { !upNextIDs.contains($0.id) }.prefix(limit))
+    func autoplayPreviewTracks(limit: Int = 7) -> [Track] {
+        playbackQueue.autoplayPreview(limit: limit)
     }
 
     func album(forCurrentTrack: Track? = nil) -> Album? {
@@ -228,8 +228,11 @@ final class PlaybackController {
         progress: TimeInterval,
         duration: TimeInterval
     ) {
-        queue = tracks
-        self.currentIndex = currentIndex
+        playbackQueue.beginSession(
+            tracks: tracks,
+            startAt: currentIndex,
+            source: .album(tracks.first?.albumID ?? UUID())
+        )
         self.isPlaying = isPlaying
         self.progress = progress
         self.duration = duration
@@ -238,7 +241,10 @@ final class PlaybackController {
 
     private func loadAndPlayCurrentTrack() {
         guard let track = currentTrack else { return }
+        playLoadedTrack(track)
+    }
 
+    private func playLoadedTrack(_ track: Track) {
         do {
             try audioEngine.load(url: track.fileURL)
             duration = audioEngine.duration()
@@ -250,6 +256,33 @@ final class PlaybackController {
         } catch {
             logger.error("Failed to load track: \(error.localizedDescription)")
             next()
+        }
+    }
+
+    private func loadCurrentTrack(seekTo time: TimeInterval, shouldPlay: Bool) {
+        guard let track = currentTrack else { return }
+
+        do {
+            try audioEngine.load(url: track.fileURL)
+            duration = audioEngine.duration()
+            progress = min(max(time, 0), duration)
+            audioEngine.seek(to: progress)
+
+            if shouldPlay {
+                audioEngine.play()
+                isPlaying = true
+            } else {
+                audioEngine.pause()
+                isPlaying = false
+            }
+
+            mediaRemote.publishNowPlayingInfo()
+        } catch {
+            logger.error("Failed to restore track: \(error.localizedDescription)")
+            stateStore.clear()
+            playbackQueue = PlaybackQueue()
+            isPlaying = false
+            progress = 0
         }
     }
 
@@ -269,44 +302,16 @@ final class PlaybackController {
         mediaRemote.publishNowPlayingInfo()
     }
 
-    private func rebuildShuffleOrder() {
-        shuffleOrder = Array(queue.indices)
-        if shuffleOn {
-            shuffleOrder.shuffle()
-        }
-        if let current = currentIndex >= 0 ? currentIndex : nil,
-           let position = shuffleOrder.firstIndex(of: current) {
-            shufflePosition = position
-        } else {
-            shufflePosition = 0
-        }
-    }
-
-    private func advanceShuffle(forward: Bool) {
-        guard !shuffleOrder.isEmpty else { return }
-
-        if forward {
-            if shufflePosition + 1 < shuffleOrder.count {
-                shufflePosition += 1
-            } else if repeatMode == .queue {
-                shuffleOrder.shuffle()
-                shufflePosition = 0
-            } else {
-                stopPlayback()
-                return
-            }
-        } else if shufflePosition > 0 {
-            shufflePosition -= 1
-        } else if repeatMode == .queue {
-            shuffleOrder.shuffle()
-            shufflePosition = shuffleOrder.count - 1
-        } else {
-            seek(to: 0)
-            return
-        }
-
-        currentIndex = shuffleOrder[shufflePosition]
-        loadAndPlayCurrentTrack()
+    private func persistState() {
+        let snapshot = stateStore.makeSnapshot(
+            from: playbackQueue,
+            progress: progress,
+            isPlaying: isPlaying,
+            shuffleOn: shuffleOn,
+            repeatMode: repeatMode,
+            volume: volume
+        )
+        stateStore.save(snapshot)
     }
 }
 

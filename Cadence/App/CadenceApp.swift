@@ -31,6 +31,7 @@ struct CadenceApp: App {
                 .environment(playbackController)
                 .task {
                     await libraryStore.restoreSavedFolders()
+                    playbackController.restoreSavedState()
                 }
         }
         .defaultSize(

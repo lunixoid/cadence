@@ -7,9 +7,7 @@ struct ContentAreaView: View {
     var body: some View {
         VStack(spacing: 0) {
             ContentToolbarView(
-                title: uiState.toolbarTitle(playlistStore: playlistStore),
-                canGoBack: uiState.canNavigateBack(),
-                onBack: { uiState.navigateBack() }
+                title: uiState.toolbarTitle(playlistStore: playlistStore)
             )
             AlbumGridView()
         }

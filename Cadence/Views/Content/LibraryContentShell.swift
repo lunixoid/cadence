@@ -10,9 +10,7 @@ struct LibraryContentShell<Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             ContentToolbarView(
-                title: title ?? uiState.toolbarTitle(playlistStore: playlistStore),
-                canGoBack: uiState.canNavigateBack(),
-                onBack: { uiState.navigateBack() }
+                title: title ?? uiState.toolbarTitle(playlistStore: playlistStore)
             )
             content()
         }

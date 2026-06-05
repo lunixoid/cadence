@@ -5,6 +5,7 @@ final class AppUIState {
     var activeSidebarItem: SidebarItem = .albums
     var contentRoute: ContentRoute = .albumsGrid
     var navigationStack: [ContentRoute] = []
+    var forwardStack: [ContentRoute] = []
     var searchQuery = ""
     var hoveredTrackIndex: Int?
 
@@ -33,45 +34,66 @@ final class AppUIState {
     func selectSidebarItem(_ item: SidebarItem) {
         activeSidebarItem = item
         navigationStack.removeAll()
+        forwardStack.removeAll()
         contentRoute = route(for: item)
     }
 
     func selectPlaylist(_ playlist: Playlist) {
         navigationStack.append(contentRoute)
+        forwardStack.removeAll()
         contentRoute = .playlistDetail(playlist.id)
     }
 
     func openAlbum(_ album: Album) {
         navigationStack.append(contentRoute)
+        forwardStack.removeAll()
         contentRoute = .albumDetail(album.id)
         activeSidebarItem = .albums
     }
 
     func openArtist(_ name: String) {
         navigationStack.append(contentRoute)
+        forwardStack.removeAll()
         contentRoute = .artistDetail(name)
         activeSidebarItem = .artists
     }
 
     func openGenre(_ name: String) {
         navigationStack.append(contentRoute)
+        forwardStack.removeAll()
         contentRoute = .genreDetail(name)
         activeSidebarItem = .genres
     }
 
     func navigateBack() {
         if let previous = navigationStack.popLast() {
+            forwardStack.append(contentRoute)
             contentRoute = previous
-            if let sidebar = previous.sidebarItem {
-                activeSidebarItem = sidebar
-            }
+            syncSidebarItem(for: previous)
         } else {
             contentRoute = route(for: activeSidebarItem)
         }
     }
 
+    func navigateForward() {
+        guard let next = forwardStack.popLast() else { return }
+        navigationStack.append(contentRoute)
+        contentRoute = next
+        syncSidebarItem(for: next)
+    }
+
     func canNavigateBack() -> Bool {
         !navigationStack.isEmpty
+    }
+
+    func canNavigateForward() -> Bool {
+        !forwardStack.isEmpty
+    }
+
+    private func syncSidebarItem(for route: ContentRoute) {
+        if let sidebar = route.sidebarItem {
+            activeSidebarItem = sidebar
+        }
     }
 
     func toolbarTitle(playlistStore: PlaylistStore) -> String {

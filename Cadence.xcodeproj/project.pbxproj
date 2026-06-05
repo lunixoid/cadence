@@ -53,7 +53,12 @@
 	A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000013 /* NowPlayingDetailView.swift */; };
 	A10000010000000000000014 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000014 /* PlaylistDetailView.swift */; };
 	A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */; };
-	A10000010000000000000016 /* MediaRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000016 /* MediaRemoteService.swift */; };
+		A10000010000000000000016 /* MediaRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000016 /* MediaRemoteService.swift */; };
+		A10000010000000000000019 /* OverlayWindowChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000019 /* OverlayWindowChrome.swift */; };
+		A1000001000000000000001A /* QueuePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001A /* QueuePanelView.swift */; };
+		A1000001000000000000001B /* EQWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001B /* EQWindowView.swift */; };
+		A1000001000000000000001C /* PreferencesWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001C /* PreferencesWindowView.swift */; };
+		A1000001000000000000001D /* ConnectWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001D /* ConnectWindowView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -106,6 +111,11 @@
 	B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackKeyboardMonitor.swift; sourceTree = "<group>"; };
 	B10000010000000000000016 /* MediaRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteService.swift; sourceTree = "<group>"; };
 	18646C3494E04914B698E7C8 /* Cadence.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cadence.entitlements; sourceTree = "<group>"; };
+	B10000010000000000000019 /* OverlayWindowChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowChrome.swift; sourceTree = "<group>"; };
+	B1000001000000000000001A /* QueuePanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueuePanelView.swift; sourceTree = "<group>"; };
+	B1000001000000000000001B /* EQWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQWindowView.swift; sourceTree = "<group>"; };
+	B1000001000000000000001C /* PreferencesWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesWindowView.swift; sourceTree = "<group>"; };
+	B1000001000000000000001D /* ConnectWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectWindowView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -236,15 +246,51 @@
 		isa = PBXGroup;
 		children = (
 			A119926AFFDB41C68C8D86AC /* Album */,
+			C10000010000000000000007 /* Connect */,
 			A79500CEE05C477F86E19D0A /* Components */,
 			177418CCADA34111A6EDC0AD /* Content */,
+			C10000010000000000000008 /* Equalizer */,
 			B0BF060F80594CCA95F409DD /* MainWindow */,
 			C10000010000000000000005 /* NowPlaying */,
 			8D13ADBD688D4414879C3685 /* Player */,
+			C10000010000000000000009 /* Preferences */,
 			C10000010000000000000006 /* Playlist */,
+			C1000001000000000000000A /* Queue */,
 			420D16CA5CBD4CAA95D1E6D8 /* Sidebar */,
 		);
 		path = Views;
+		sourceTree = "<group>";
+	};
+	C10000010000000000000007 /* Connect */ = {
+		isa = PBXGroup;
+		children = (
+			B1000001000000000000001D /* ConnectWindowView.swift */,
+		);
+		path = Connect;
+		sourceTree = "<group>";
+	};
+	C10000010000000000000008 /* Equalizer */ = {
+		isa = PBXGroup;
+		children = (
+			B1000001000000000000001B /* EQWindowView.swift */,
+		);
+		path = Equalizer;
+		sourceTree = "<group>";
+	};
+	C10000010000000000000009 /* Preferences */ = {
+		isa = PBXGroup;
+		children = (
+			B1000001000000000000001C /* PreferencesWindowView.swift */,
+		);
+		path = Preferences;
+		sourceTree = "<group>";
+	};
+	C1000001000000000000000A /* Queue */ = {
+		isa = PBXGroup;
+		children = (
+			B1000001000000000000001A /* QueuePanelView.swift */,
+		);
+		path = Queue;
 		sourceTree = "<group>";
 	};
 	C10000010000000000000005 /* NowPlaying */ = {
@@ -278,6 +324,7 @@
 			B1000001000000000000000D /* AlbumCoverView.swift */,
 			FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */,
 			2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */,
+			B10000010000000000000019 /* OverlayWindowChrome.swift */,
 			11D515D596B749AC96306FFB /* VisualEffectBackground.swift */,
 		);
 		path = Components;
@@ -449,6 +496,11 @@
 			A10000010000000000000012 /* FavoritesView.swift in Sources */,
 			A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */,
 			A10000010000000000000014 /* PlaylistDetailView.swift in Sources */,
+			A10000010000000000000019 /* OverlayWindowChrome.swift in Sources */,
+			A1000001000000000000001A /* QueuePanelView.swift in Sources */,
+			A1000001000000000000001B /* EQWindowView.swift in Sources */,
+			A1000001000000000000001C /* PreferencesWindowView.swift in Sources */,
+			A1000001000000000000001D /* ConnectWindowView.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};

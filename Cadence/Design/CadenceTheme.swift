@@ -6,7 +6,16 @@ enum CadenceTheme {
     static let sidebarWidth: CGFloat = 220
     static let trafficLightsAreaHeight: CGFloat = 52
     static let toolbarHeight: CGFloat = 52
-    static let nowPlayingBarHeight: CGFloat = 72
+    static let nowPlayingBarHeight: CGFloat = 96
+    static let queuePanelWidth: CGFloat = 300
+    static let queueHeaderHeight: CGFloat = 52
+    static let overlayWindowRadius: CGFloat = 12
+    static let eqWindowWidth: CGFloat = 480
+    static let eqWindowBottomOffset: CGFloat = 104
+    static let eqWindowRightOffset: CGFloat = 20
+    static let prefsWindowWidth: CGFloat = 560
+    static let prefsWindowHeight: CGFloat = 460
+    static let connectWindowWidth: CGFloat = 420
     static let defaultWindowWidth: CGFloat = 1100
     static let defaultWindowHeight: CGFloat = 700
 
@@ -32,12 +41,16 @@ enum CadenceTheme {
     static let progressBarRadius: CGFloat = 3
     static let progressThumbSize: CGFloat = 10
 
-    static let volumeSliderWidth: CGFloat = 80
+    static let volumeSliderWidth: CGFloat = 100
     static let volumeSliderHeight: CGFloat = 4
 
-    static let miniCoverSize: CGFloat = 48
-    static let miniCoverRadius: CGFloat = 6
-    static let playButtonSize: CGFloat = 34
+    static let miniCoverSize: CGFloat = 56
+    static let miniCoverRadius: CGFloat = 8
+    static let playButtonSize: CGFloat = 56
+    static let transportButtonSize: CGFloat = 44
+    static let playerIconButtonSize: CGFloat = 40
+    static let queueCoverSize: CGFloat = 32
+    static let queueNowPlayingCoverSize: CGFloat = 40
     static let playOverlaySize: CGFloat = 32
 
     // MARK: - Colors
@@ -122,6 +135,34 @@ enum CadenceTheme {
 
     static func secondaryButtonBackground(for scheme: ColorScheme) -> Color {
         scheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.06)
+    }
+
+    // MARK: - Preferences (always light)
+
+    static let prefsBackground = Color(red: 0.965, green: 0.965, blue: 0.973)
+    static let prefsToolbarBackground = Color(red: 0.941, green: 0.941, blue: 0.957).opacity(0.97)
+    static let prefsContentBackground = Color.white
+    static let prefsText = Color.black.opacity(0.86)
+    static let prefsSubtext = Color.black.opacity(0.42)
+    static let prefsMuted = Color.black.opacity(0.28)
+    static let prefsBorder = Color.black.opacity(0.1)
+    static let prefsAccent = Color(red: 0, green: 0.478, blue: 1.0)
+    static let prefsSelectionBackground = Color(red: 0, green: 0.478, blue: 1.0).opacity(0.09)
+
+    static func queuePanelBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0.141, green: 0.141, blue: 0.157).opacity(0.9)
+            : Color(red: 0.969, green: 0.969, blue: 0.976).opacity(0.9)
+    }
+
+    static func overlayWindowBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0.141, green: 0.141, blue: 0.157).opacity(0.97)
+            : Color(red: 0.98, green: 0.98, blue: 0.988).opacity(0.97)
+    }
+
+    static func overlayHeaderBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.black.opacity(0.18) : Color.black.opacity(0.025)
     }
 
     static let placeholderGradientColors: [Color] = [

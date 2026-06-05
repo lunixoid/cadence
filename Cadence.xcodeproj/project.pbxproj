@@ -59,6 +59,8 @@
 		A1000001000000000000001B /* EQWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001B /* EQWindowView.swift */; };
 		A1000001000000000000001C /* PreferencesWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001C /* PreferencesWindowView.swift */; };
 		A1000001000000000000001D /* ConnectWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001D /* ConnectWindowView.swift */; };
+		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
+		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -116,6 +118,8 @@
 	B1000001000000000000001B /* EQWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQWindowView.swift; sourceTree = "<group>"; };
 	B1000001000000000000001C /* PreferencesWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesWindowView.swift; sourceTree = "<group>"; };
 	B1000001000000000000001D /* ConnectWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectWindowView.swift; sourceTree = "<group>"; };
+	B1000001000000000000001E /* PlaybackQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackQueue.swift; sourceTree = "<group>"; };
+	B1000001000000000000001F /* PlaybackStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackStateStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -205,11 +209,13 @@
 		path = Library;
 		sourceTree = "<group>";
 	};
-	C10000010000000000000003 /* Playback */ = {
+		C10000010000000000000003 /* Playback */ = {
 		isa = PBXGroup;
 		children = (
 			B10000010000000000000008 /* AudioEngineService.swift */,
 			B10000010000000000000009 /* PlaybackController.swift */,
+			B1000001000000000000001E /* PlaybackQueue.swift */,
+			B1000001000000000000001F /* PlaybackStateStore.swift */,
 			B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */,
 			B10000010000000000000016 /* MediaRemoteService.swift */,
 		);
@@ -483,6 +489,8 @@
 			A10000010000000000000018 /* StableIdentity.swift in Sources */,
 			A10000010000000000000008 /* AudioEngineService.swift in Sources */,
 			A10000010000000000000009 /* PlaybackController.swift in Sources */,
+			A1000001000000000000001E /* PlaybackQueue.swift in Sources */,
+			A1000001000000000000001F /* PlaybackStateStore.swift in Sources */,
 			A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */,
 			A10000010000000000000016 /* MediaRemoteService.swift in Sources */,
 			A1000001000000000000000A /* FavoritesStore.swift in Sources */,

@@ -1,4 +1,17 @@
+import AppKit
 import SwiftUI
+
+struct WindowDragRegion: NSViewRepresentable {
+    func makeNSView(context: Context) -> WindowDragRegionView {
+        WindowDragRegionView()
+    }
+
+    func updateNSView(_ nsView: WindowDragRegionView, context: Context) {}
+}
+
+final class WindowDragRegionView: NSView {
+    override var mouseDownCanMoveWindow: Bool { true }
+}
 
 struct MainWindowView: View {
     @Environment(AppUIState.self) private var uiState
@@ -155,7 +168,7 @@ private struct WindowConfigurator: NSViewRepresentable {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.styleMask.insert(.fullSizeContentView)
-        window.isMovableByWindowBackground = true
+        window.isMovableByWindowBackground = false
         window.backgroundColor = .clear
     }
 }

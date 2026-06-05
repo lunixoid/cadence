@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 struct QueuePanelView: View {
     @Environment(AppUIState.self) private var uiState
     @Environment(PlaybackController.self) private var playbackController
-    @Environment(LibraryStore.self) private var libraryStore
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -18,7 +17,7 @@ struct QueuePanelView: View {
     }
 
     private var autoplayTracks: [Track] {
-        playbackController.autoplayPreviewTracks(from: libraryStore)
+        playbackController.autoplayPreviewTracks()
     }
 
     var body: some View {
@@ -129,6 +128,8 @@ struct QueuePanelView: View {
                 .font(.system(size: 15, weight: .bold))
                 .kerning(-0.015 * 15)
                 .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(WindowDragRegion())
 
             Spacer()
 

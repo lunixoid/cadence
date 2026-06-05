@@ -11,6 +11,7 @@ struct TrackRowView: View {
     let isActive: Bool
     let isPlaying: Bool
     let isHovered: Bool
+    var disambiguationLabel: String? = nil
     var onPlay: () -> Void = {}
 
     var body: some View {
@@ -38,12 +39,18 @@ struct TrackRowView: View {
             }
             .frame(width: 40)
 
-            Text(track.title.isEmpty ? "—" : track.title)
-                .font(.system(size: 13, weight: isActive ? .semibold : .regular))
-                .foregroundStyle(isActive ? CadenceTheme.accent(for: colorScheme) : CadenceTheme.primaryText(for: colorScheme))
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 12)
+            HStack(spacing: 0) {
+                if let label = disambiguationLabel {
+                    Text("\(label)/")
+                        .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
+                }
+                Text(track.title.isEmpty ? "—" : track.title)
+                    .foregroundStyle(isActive ? CadenceTheme.accent(for: colorScheme) : CadenceTheme.primaryText(for: colorScheme))
+            }
+            .font(.system(size: 13, weight: isActive ? .semibold : .regular))
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, 12)
 
             Text(CadenceTheme.formatTime(track.duration))
                 .font(.system(size: 12))

@@ -29,6 +29,9 @@ struct CadenceApp: App {
                 .environment(favoritesStore)
                 .environment(recentStore)
                 .environment(playbackController)
+                .task {
+                    await libraryStore.restoreSavedFolders()
+                }
         }
         .defaultSize(
             width: CadenceTheme.defaultWindowWidth,

@@ -79,6 +79,8 @@ struct SidebarView: View {
                     }
                     .padding(.bottom, 12)
                 }
+
+                settingsButton
             }
         }
         .frame(width: CadenceTheme.sidebarWidth)
@@ -109,6 +111,47 @@ struct SidebarView: View {
             .fill(CadenceTheme.borderColor(for: colorScheme))
             .frame(height: 0.5)
             .padding(.horizontal, 16)
+    }
+
+    @State private var isSettingsHovered = false
+
+    private var settingsButton: some View {
+        Button(action: { uiState.openPreferences() }) {
+            HStack(spacing: 8) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 14))
+                Text("Настройки")
+                    .font(.system(size: 12))
+            }
+            .foregroundStyle(
+                isSettingsHovered
+                    ? CadenceTheme.secondaryText(for: colorScheme)
+                    : CadenceTheme.mutedText(for: colorScheme)
+            )
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, CadenceTheme.sidebarItemMargin)
+            .frame(height: CadenceTheme.sidebarItemHeight)
+            .background(
+                isSettingsHovered
+                    ? CadenceTheme.sidebarHoverBackground(for: colorScheme)
+                    : .clear
+            )
+            .clipShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { isSettingsHovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: isSettingsHovered)
+        .padding(.horizontal, 0)
+        .padding(.top, 6)
+        .padding(.bottom, 10)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(CadenceTheme.borderColor(for: colorScheme))
+                .frame(height: 0.5)
+        }
     }
 
     private var createPlaylistButton: some View {

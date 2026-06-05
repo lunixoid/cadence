@@ -34,12 +34,8 @@ function getAlbumMeta(album) {
   const totalSec = tracks.reduce((s, t) => s + t.duration, 0);
   const totalMin = Math.floor(totalSec / 60);
   const years = [2019, 2020, 2021, 2022, 2023, 2024];
-  const genres = ['Electronic', 'Ambient', 'Indie', 'Post-rock', 'Synthwave', 'Dream Pop',
-                  'Электроника', 'Пост-рок', 'Инди', 'Эмбиент'];
-  const isRussian = /[а-яА-Я]/.test(album.title);
   return {
     year: years[album.id % years.length],
-    genre: isRussian ? genres[6 + (album.id % 4)] : genres[album.id % 6],
     trackCount: tracks.length,
     totalMin,
   };
@@ -246,8 +242,6 @@ function AlbumPage({ album, dark, playingTrackIdx, isPlaying, onPlayTrack, onBac
               alignItems: 'center', marginBottom: 16,
             }}>
               <span>{meta.year}</span>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span>{meta.genre}</span>
               <span style={{ opacity: 0.4 }}>·</span>
               <span>{meta.trackCount} треков</span>
               <span style={{ opacity: 0.4 }}>·</span>

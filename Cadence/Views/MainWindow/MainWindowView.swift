@@ -5,21 +5,94 @@ struct MainWindowView: View {
     @Environment(PlaybackController.self) private var playbackController
     @Environment(\.colorScheme) private var colorScheme
 
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                SidebarView()
-                contentColumn
-            }
-            NowPlayingBarView()
+    private var resolvedColorScheme: ColorScheme {
+        switch uiState.appThemePreference {
+        case .system:
+            return colorScheme
+        case .light:
+            return .light
+        case .dark:
+            return .dark
         }
-        .background(CadenceTheme.windowBackground(for: colorScheme))
+    }
+
+    var body: some View {
+        ZStack {
+            mainLayout
+
+            overlayLayer
+        }
+        .preferredColorScheme(uiState.appThemePreference == .system ? nil : resolvedColorScheme)
+        .background(CadenceTheme.windowBackground(for: resolvedColorScheme))
         .background(WindowConfigurator())
         .background {
             PlaybackKeyboardMonitor(controller: playbackController)
         }
         .onAppear {
             PlaybackKeyboardMonitorService.shared.install(controller: playbackController)
+        }
+    }
+
+    private var mainLayout: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                SidebarView()
+
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        contentColumn
+                        QueuePanelView(isOpen: uiState.isQueueOpen)
+                    }
+
+                    NowPlayingBarView()
+                }
+            }
+        }
+    }
+
+    private var overlayLayer: some View {
+        ZStack {
+            if uiState.isPrefsOpen || uiState.isConnectOpen {
+                Color.black.opacity(0.18)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        if uiState.isConnectOpen {
+                            uiState.closeConnect()
+                        } else {
+                            uiState.closePreferences()
+                        }
+                    }
+            }
+
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    EQWindowView(
+                        isOpen: uiState.isEQOpen,
+                        onClose: { uiState.isEQOpen = false }
+                    )
+                    .padding(.trailing, CadenceTheme.eqWindowRightOffset)
+                    .padding(.bottom, CadenceTheme.eqWindowBottomOffset)
+                }
+            }
+
+            if uiState.isPrefsOpen {
+                PreferencesWindowView(
+                    isOpen: uiState.isPrefsOpen,
+                    onClose: { uiState.closePreferences() },
+                    onAddServer: { uiState.openConnectFromPreferences() }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
+
+            if uiState.isConnectOpen {
+                ConnectWindowView(
+                    isOpen: uiState.isConnectOpen,
+                    onClose: { uiState.closeConnect() }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
         }
     }
 
@@ -58,7 +131,7 @@ struct MainWindowView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CadenceTheme.contentBackground(for: colorScheme))
+        .background(CadenceTheme.contentBackground(for: resolvedColorScheme))
     }
 }
 

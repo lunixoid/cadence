@@ -14,8 +14,10 @@ struct CadenceApp: App {
         let recent = RecentStore()
         _libraryStore = State(initialValue: library)
         _recentStore = State(initialValue: recent)
-        _playbackController = State(initialValue: PlaybackController(libraryStore: library, recentStore: recent))
+        let playback = PlaybackController(libraryStore: library, recentStore: recent)
+        _playbackController = State(initialValue: playback)
         _uiState = State(initialValue: AppUIState(libraryStore: library))
+        PlaybackKeyboardMonitorService.shared.install(controller: playback)
     }
 
     var body: some Scene {
@@ -39,6 +41,20 @@ struct CadenceApp: App {
                     openMusicFolder()
                 }
                 .keyboardShortcut("o", modifiers: .command)
+            }
+            CommandMenu("Playback") {
+                Button("Play / Pause") {
+                    playbackController.togglePlayPause()
+                }
+                .keyboardShortcut(.space, modifiers: [])
+
+                Button("Next Track") {
+                    playbackController.next()
+                }
+
+                Button("Previous Track") {
+                    playbackController.previous()
+                }
             }
         }
     }

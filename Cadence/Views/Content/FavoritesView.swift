@@ -26,6 +26,7 @@ struct FavoritesView: View {
                             isActive: playbackController.playingTrackID == track.id,
                             isPlaying: playbackController.isPlaying,
                             isHovered: hoveredRow == track.id,
+                            disambiguationLabel: libraryStore.disambiguationLabel(for: track),
                             onPlay: { playbackController.playTrack(track) }
                         )
                         .onHover { hoveredRow = $0 ? track.id : nil }
@@ -62,6 +63,7 @@ struct RecentView: View {
                             isActive: playbackController.playingTrackID == track.id,
                             isPlaying: playbackController.isPlaying,
                             isHovered: hoveredRow == track.id,
+                            disambiguationLabel: libraryStore.disambiguationLabel(for: track),
                             onPlay: { playbackController.playTrack(track) }
                         )
                         .onHover { hoveredRow = $0 ? track.id : nil }
@@ -97,6 +99,7 @@ struct DownloadedView: View {
                             isActive: playbackController.playingTrackID == track.id,
                             isPlaying: playbackController.isPlaying,
                             isHovered: hoveredRow == track.id,
+                            disambiguationLabel: libraryStore.disambiguationLabel(for: track),
                             onPlay: { playbackController.playTrack(track) }
                         )
                         .onHover { hoveredRow = $0 ? track.id : nil }

@@ -27,4 +27,13 @@ enum ContentRoute: Equatable, Hashable {
         case .playlistDetail: return nil
         }
     }
+
+    var supportsNavigationArrows: Bool {
+        switch self {
+        case .nowPlaying, .tracksList, .favorites, .recent, .downloaded:
+            return false
+        default:
+            return true
+        }
+    }
 }

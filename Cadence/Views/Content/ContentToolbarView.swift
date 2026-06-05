@@ -5,45 +5,57 @@ struct ContentToolbarView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var title: String = "Альбомы"
-    var canGoBack = false
-    var onBack: (() -> Void)?
 
     @FocusState private var isSearchFocused: Bool
     @State private var isBackHovered = false
+    @State private var isForwardHovered = false
+
+    private var showsNavigationArrows: Bool { uiState.contentRoute.supportsNavigationArrows }
+    private var canGoBack: Bool { uiState.canNavigateBack() }
+    private var canGoForward: Bool { uiState.canNavigateForward() }
 
     var body: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 4) {
-                Button(action: { onBack?() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
-                        .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
-                        .background(
-                            RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
-                                .fill(
-                                    canGoBack && isBackHovered
-                                        ? CadenceTheme.navBackground(for: colorScheme, active: true)
-                                        : CadenceTheme.navBackground(for: colorScheme)
-                                )
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(!canGoBack)
-                .opacity(canGoBack ? 1 : 0.4)
-                .onHover { isBackHovered = canGoBack && $0 }
+            if showsNavigationArrows {
+                HStack(spacing: 4) {
+                    Button(action: { uiState.navigateBack() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
+                            .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
+                            .background(
+                                RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
+                                    .fill(
+                                        canGoBack && isBackHovered
+                                            ? CadenceTheme.navBackground(for: colorScheme, active: true)
+                                            : CadenceTheme.navBackground(for: colorScheme)
+                                    )
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canGoBack)
+                    .opacity(canGoBack ? 1 : 0.4)
+                    .onHover { isBackHovered = canGoBack && $0 }
 
-                Button(action: {}) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
-                        .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
-                        .background(
-                            RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
-                                .fill(CadenceTheme.navBackground(for: colorScheme))
-                        )
+                    Button(action: { uiState.navigateForward() }) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
+                            .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
+                            .background(
+                                RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
+                                    .fill(
+                                        canGoForward && isForwardHovered
+                                            ? CadenceTheme.navBackground(for: colorScheme, active: true)
+                                            : CadenceTheme.navBackground(for: colorScheme)
+                                    )
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canGoForward)
+                    .opacity(canGoForward ? 1 : 0.4)
+                    .onHover { isForwardHovered = canGoForward && $0 }
                 }
-                .buttonStyle(.plain)
             }
 
             Text(title)

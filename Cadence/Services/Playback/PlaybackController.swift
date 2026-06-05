@@ -173,6 +173,47 @@ final class PlaybackController {
         }
     }
 
+    var upNextTracks: [Track] {
+        guard currentIndex >= 0, currentIndex + 1 < queue.count else { return [] }
+        return Array(queue[(currentIndex + 1)...])
+    }
+
+    func removeFromUpNext(at relativeIndex: Int) {
+        let absoluteIndex = currentIndex + 1 + relativeIndex
+        guard absoluteIndex > currentIndex, absoluteIndex < queue.count else { return }
+        queue.remove(at: absoluteIndex)
+        rebuildShuffleOrder()
+    }
+
+    func moveUpNextItem(from source: Int, to destination: Int) {
+        guard source != destination else { return }
+        let sourceIndex = currentIndex + 1 + source
+        let destinationIndex = currentIndex + 1 + destination
+        guard sourceIndex > currentIndex, sourceIndex < queue.count else { return }
+        guard destinationIndex > currentIndex, destinationIndex < queue.count else { return }
+
+        let item = queue.remove(at: sourceIndex)
+        queue.insert(item, at: destinationIndex)
+        rebuildShuffleOrder()
+    }
+
+    func clearUpNext() {
+        guard currentIndex >= 0, currentIndex + 1 < queue.count else { return }
+        queue.removeSubrange((currentIndex + 1)...)
+        rebuildShuffleOrder()
+    }
+
+    func autoplayPreviewTracks(from libraryStore: LibraryStore, limit: Int = 7) -> [Track] {
+        guard let track = currentTrack else { return [] }
+        let albumTracks = libraryStore.tracks(forAlbumID: track.albumID)
+        guard !albumTracks.isEmpty else { return [] }
+
+        guard let currentAlbumIndex = albumTracks.firstIndex(of: track) else { return [] }
+        let remaining = albumTracks.dropFirst(currentAlbumIndex + 1)
+        let upNextIDs = Set(upNextTracks.map(\.id))
+        return Array(remaining.filter { !upNextIDs.contains($0.id) }.prefix(limit))
+    }
+
     func album(forCurrentTrack: Track? = nil) -> Album? {
         let track = forCurrentTrack ?? currentTrack
         guard let track else { return nil }

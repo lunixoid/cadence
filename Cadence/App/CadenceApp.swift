@@ -59,6 +59,23 @@ struct CadenceApp: App {
                     playbackController.previous()
                 }
             }
+            CommandMenu("View") {
+                Button("Toggle Queue") {
+                    uiState.toggleQueue()
+                }
+                .keyboardShortcut("q", modifiers: [.command, .shift])
+
+                Button("Show Equalizer") {
+                    uiState.isEQOpen = true
+                }
+                .keyboardShortcut("e", modifiers: .command)
+            }
+            CommandGroup(replacing: .appSettings) {
+                Button("Preferences…") {
+                    uiState.openPreferences()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
         }
     }
 

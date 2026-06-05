@@ -4,6 +4,52 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadence — macOS Audio Player</title>
+
+  <template id="__bundler_thumbnail" data-bg-color="#1a1a1c">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+      <!-- Window -->
+      <rect x="60" y="40" width="680" height="420" rx="12" fill="#282828"/>
+      <!-- Sidebar -->
+      <rect x="60" y="40" width="160" height="420" rx="12" fill="#2e2e32"/>
+      <rect x="220" y="40" width="0.5" height="420" fill="rgba(255,255,255,0.08)"/>
+      <!-- Traffic lights -->
+      <circle cx="88" cy="72" r="6" fill="#FF5F57"/>
+      <circle cx="106" cy="72" r="6" fill="#FEBC2E"/>
+      <circle cx="124" cy="72" r="6" fill="#28C840"/>
+      <!-- Sidebar items -->
+      <rect x="80" y="100" width="120" height="8" rx="4" fill="rgba(255,255,255,0.15)"/>
+      <rect x="80" y="120" width="90" height="6" rx="3" fill="rgba(255,255,255,0.1)"/>
+      <rect x="80" y="138" width="100" height="6" rx="3" fill="rgba(255,255,255,0.1)"/>
+      <rect x="80" y="156" width="80" height="6" rx="3" fill="rgba(255,255,255,0.08)"/>
+      <!-- Album grid -->
+      <rect x="238" y="96" width="90" height="90" rx="7" fill="#5c2d91"/>
+      <rect x="340" y="96" width="90" height="90" rx="7" fill="#e6a157"/>
+      <rect x="442" y="96" width="90" height="90" rx="7" fill="#1b4f72"/>
+      <rect x="544" y="96" width="90" height="90" rx="7" fill="#fd7272"/>
+      <rect x="646" y="96" width="74" height="90" rx="7" fill="#27ae60"/>
+      <rect x="238" y="198" width="90" height="90" rx="7" fill="#2c3e50"/>
+      <rect x="340" y="198" width="90" height="90" rx="7" fill="#f39c12"/>
+      <rect x="442" y="198" width="90" height="90" rx="7" fill="#74b9ff"/>
+      <rect x="544" y="198" width="90" height="90" rx="7" fill="#e74c3c"/>
+      <rect x="646" y="198" width="74" height="90" rx="7" fill="#fdcb6e"/>
+      <!-- Now Playing bar -->
+      <rect x="220" y="396" width="520" height="64" fill="#1c1c1e"/>
+      <rect x="220" y="396" width="520" height="0.5" fill="rgba(255,255,255,0.08)"/>
+      <!-- Mini cover -->
+      <rect x="232" y="408" width="40" height="40" rx="5" fill="#5c2d91"/>
+      <!-- Play button -->
+      <circle cx="480" cy="428" r="20" fill="rgba(255,255,255,0.9)"/>
+      <polygon points="475,420 475,436 491,428" fill="#1c1c1e"/>
+      <!-- Progress bar -->
+      <rect x="400" y="450" width="160" height="3" rx="1.5" fill="rgba(255,255,255,0.12)"/>
+      <rect x="400" y="450" width="80" height="3" rx="1.5" fill="#0A84FF"/>
+      <!-- Waveform / EQ bars in sidebar bottom -->
+      <rect x="82" y="350" width="5" height="18" rx="2" fill="rgba(10,132,255,0.6)"/>
+      <rect x="91" y="342" width="5" height="26" rx="2" fill="rgba(10,132,255,0.8)"/>
+      <rect x="100" y="346" width="5" height="22" rx="2" fill="rgba(10,132,255,0.7)"/>
+      <rect x="109" y="338" width="5" height="30" rx="2" fill="#0A84FF"/>
+    </svg>
+  </template>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -36,6 +82,23 @@
       to { opacity: 1; transform: scale(1); }
     }
 
+    @keyframes connectSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes connectFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes connectScaleIn {
+      from { transform: scale(0.94); }
+      to   { transform: scale(1); }
+    }
+    @keyframes eqAppear {
+      from { transform: scale(0.95) translateY(8px); }
+      to   { transform: scale(1)    translateY(0px); }
+    }
+
     @keyframes eqBounce {
       0% { height: 20%; }
       100% { height: 90%; }
@@ -62,6 +125,10 @@
   <script type="text/babel" src="cadence-sidebar.jsx"></script>
   <script type="text/babel" src="cadence-content.jsx"></script>
   <script type="text/babel" src="cadence-album-page.jsx"></script>
+  <script type="text/babel" src="cadence-queue.jsx"></script>
+  <script type="text/babel" src="cadence-eq.jsx"></script>
+  <script type="text/babel" src="cadence-prefs.jsx"></script>
+  <script type="text/babel" src="cadence-connect.jsx"></script>
   <script type="text/babel" src="cadence-player.jsx"></script>
   <script type="text/babel" src="tweaks-panel.jsx"></script>
 </head>
@@ -71,7 +138,7 @@
 
 <script type="text/babel">
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "theme": "light",
+  "theme": "system",
   "accentColor": "#007AFF",
   "sidebarWidth": 220,
   "windowScale": 100,
@@ -96,6 +163,10 @@ function CadenceApp() {
   const [isPlaying, setIsPlaying] = React.useState(true);
   const [shuffleOn, setShuffleOn] = React.useState(false);
   const [repeatOn, setRepeatOn] = React.useState(true);
+  const [queueOpen, setQueueOpen] = React.useState(false);
+  const [eqOpen,    setEqOpen]    = React.useState(false);
+  const [prefsOpen,   setPrefsOpen]   = React.useState(false);
+  const [connectOpen,  setConnectOpen]  = React.useState(false);
 
   // Navigation state
   const [currentView, setCurrentView] = React.useState('grid'); // 'grid' | 'album'
@@ -161,6 +232,7 @@ function CadenceApp() {
       <div style={{
         transform: `scale(${scale})`,
         transformOrigin: '0 0',
+        position: 'relative',
       }}>
         {/* macOS Window */}
         <div style={{
@@ -174,48 +246,84 @@ function CadenceApp() {
           fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
           position: 'relative',
         }}>
-          {/* Main area: sidebar + content */}
+          {/* Main area: sidebar (full height) + right column */}
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
             <CadenceSidebar
               dark={dark}
               activeItem={activeItem}
               onItemClick={setActiveItem}
+              onSettingsClick={() => setPrefsOpen(true)}
             />
+            {/* Right column: content + player bar */}
             <div style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               background: contentBg,
               overflow: 'hidden',
             }}>
-              {currentView === 'album' && selectedAlbum ? (
-                <AlbumPage
-                  album={selectedAlbum}
+              {/* Content + Queue panel side by side */}
+              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'row' }}>
+                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  {currentView === 'album' && selectedAlbum ? (
+                    <AlbumPage
+                      album={selectedAlbum}
+                      dark={dark}
+                      playingTrackIdx={playingAlbum && playingAlbum.id === selectedAlbum.id ? playingTrackIdx : -1}
+                      isPlaying={isPlaying}
+                      onPlayTrack={handlePlayTrack}
+                      onBack={handleBack}
+                    />
+                  ) : (
+                    <CadenceContent dark={dark} onAlbumClick={handleAlbumClick} />
+                  )}
+                </div>
+                <QueuePanel
                   dark={dark}
-                  playingTrackIdx={playingAlbum && playingAlbum.id === selectedAlbum.id ? playingTrackIdx : -1}
-                  isPlaying={isPlaying}
-                  onPlayTrack={handlePlayTrack}
-                  onBack={handleBack}
+                  isOpen={queueOpen}
+                  onClose={() => setQueueOpen(false)}
+                  currentTrack={currentTracks[playingTrackIdx]}
+                  currentAlbum={playingAlbum}
                 />
-              ) : (
-                <CadenceContent dark={dark} onAlbumClick={handleAlbumClick} />
-              )}
+              </div>
+
+              {/* Now Playing Bar — only under content, not under sidebar */}
+              <NowPlayingBar
+                dark={dark}
+                isPlaying={isPlaying}
+                onPlayPause={() => setIsPlaying(!isPlaying)}
+                shuffleOn={shuffleOn}
+                repeatOn={repeatOn}
+                onShuffleToggle={() => setShuffleOn(!shuffleOn)}
+                onRepeatToggle={() => setRepeatOn(!repeatOn)}
+                trackTitle={npTitle}
+                trackArtist={npArtist}
+                trackColors={npColors}
+                trackDuration={npDuration}
+                queueOpen={queueOpen}
+                onQueueToggle={() => setQueueOpen(o => !o)}
+                eqOpen={eqOpen}
+                onEqToggle={() => setEqOpen(o => !o)}
+              />
             </div>
           </div>
-
-          {/* Now Playing Bar */}
-          <NowPlayingBar
-            dark={dark}
-            isPlaying={isPlaying}
-            onPlayPause={() => setIsPlaying(!isPlaying)}
-            shuffleOn={shuffleOn}
-            repeatOn={repeatOn}
-            onShuffleToggle={() => setShuffleOn(!shuffleOn)}
-            onRepeatToggle={() => setRepeatOn(!repeatOn)}
-            trackTitle={npTitle}
-            trackArtist={npArtist}
-            trackColors={npColors}
-            trackDuration={npDuration}
-          />
         </div>
+        {/* EQ floating window — sibling to main window, not clipped by overflow:hidden */}
+        <EQWindow
+          dark={dark}
+          isOpen={eqOpen}
+          onClose={() => setEqOpen(false)}
+        />
+        <PrefsWindow
+          isOpen={prefsOpen}
+          onClose={() => setPrefsOpen(false)}
+          appTheme={t.theme}
+          onThemeChange={v => setTweak('theme', v)}
+          onAddServer={() => { setPrefsOpen(false); setConnectOpen(true); }}
+        />
+        <ConnectWindow
+          dark={dark}
+          isOpen={connectOpen}
+          onClose={() => setConnectOpen(false)}
+        />
       </div>
       </div>
 

@@ -1,5 +1,21 @@
 import SwiftUI
 
+enum AppThemePreference: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: return "Системная"
+        case .light: return "Светлая"
+        case .dark: return "Тёмная"
+        }
+    }
+}
+
 @Observable
 final class AppUIState {
     var activeSidebarItem: SidebarItem = .albums
@@ -8,6 +24,13 @@ final class AppUIState {
     var forwardStack: [ContentRoute] = []
     var searchQuery = ""
     var hoveredTrackIndex: Int?
+
+    var isQueueOpen = false
+    var isEQOpen = false
+    var isPrefsOpen = false
+    var isConnectOpen = false
+    var appThemePreference: AppThemePreference = .system
+    var configuredServers: [ServerEntry] = []
 
     let libraryStore: LibraryStore
 
@@ -88,6 +111,48 @@ final class AppUIState {
 
     func canNavigateForward() -> Bool {
         !forwardStack.isEmpty
+    }
+
+    func toggleQueue() {
+        isQueueOpen.toggle()
+    }
+
+    func toggleEQ() {
+        isEQOpen.toggle()
+    }
+
+    func openPreferences() {
+        isPrefsOpen = true
+    }
+
+    func closePreferences() {
+        isPrefsOpen = false
+    }
+
+    func openConnectFromPreferences() {
+        isPrefsOpen = false
+        isConnectOpen = true
+    }
+
+    func closeConnect() {
+        isConnectOpen = false
+    }
+
+    func registerConnectedServer(
+        url: String,
+        username: String,
+        authMethod: String
+    ) {
+        let entry = ServerEntry(
+            id: UUID(),
+            name: url,
+            url: url,
+            status: .online,
+            isActive: configuredServers.isEmpty,
+            user: username,
+            authMethod: authMethod
+        )
+        configuredServers.append(entry)
     }
 
     private func syncSidebarItem(for route: ContentRoute) {

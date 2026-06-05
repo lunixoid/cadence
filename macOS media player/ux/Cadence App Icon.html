@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadence — App Icon Variants</title>
+
+  <template id="__bundler_thumbnail" data-bg-color="#1c1c1e">
+    <svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+      <!-- Three icon cards side by side -->
+      <!-- Card 1: EQ bars -->
+      <rect x="40" y="60" width="240" height="480" rx="14" fill="#222225"/>
+      <rect x="80" y="120" width="160" height="160" rx="22" fill="#3C1590"/>
+      <rect x="93" y="193" width="12" height="56" rx="6" fill="white" opacity="0.6"/>
+      <rect x="113" y="172" width="12" height="77" rx="6" fill="white" opacity="0.75"/>
+      <rect x="133" y="182" width="12" height="67" rx="6" fill="white" opacity="0.65"/>
+      <rect x="153" y="158" width="12" height="91" rx="6" fill="white"/>
+      <rect x="173" y="168" width="12" height="81" rx="6" fill="white" opacity="0.85"/>
+      <rect x="193" y="186" width="12" height="63" rx="6" fill="white" opacity="0.65"/>
+      <rect x="213" y="176" width="12" height="73" rx="6" fill="white" opacity="0.8"/>
+      <!-- Card 2: Note + Pulse -->
+      <rect x="330" y="60" width="240" height="480" rx="14" fill="#222225"/>
+      <rect x="370" y="120" width="160" height="160" rx="22" fill="#0B2244"/>
+      <ellipse cx="435" cy="248" rx="18" ry="14" fill="white" opacity="0.9" transform="rotate(-28 435 248)"/>
+      <rect x="450" y="178" width="6" height="74" rx="3" fill="white" opacity="0.9"/>
+      <path d="M456,183 L480,183 L491,162 L504,204 L516,183 L540,183" stroke="white" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.88"/>
+      <!-- Card 3: Organic C -->
+      <rect x="620" y="60" width="240" height="480" rx="14" fill="#222225"/>
+      <rect x="660" y="120" width="160" height="160" rx="22" fill="#1A0040"/>
+      <path d="M712 256 C686 240,678 218,678 200 C678 172,692 154,712 146 C730 138,756 138,772 146 L764 162 C750 156,734 156,722 162 C710 170,704 182,704 200 C704 218,710 232,722 242 Z" fill="url(#tg)" opacity="0.95"/>
+      <defs>
+        <linearGradient id="tg" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor="#FF6B35"/>
+          <stop offset="100%" stopColor="#9B40FF"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </template>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1c1c1e; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ── Squircle path (Apple-style superellipse approximation) ──────────────────
+const SQUIRCLE = "M512,0 C744,0 916,0 992,76 C1024,108 1024,282 1024,512 C1024,742 1024,916 948,992 C916,1024 742,1024 512,1024 C282,1024 108,1024 32,948 C0,916 0,742 0,512 C0,282 0,108 76,32 C108,0 282,0 512,0 Z";
+
+// ── ICON 1 — Ритмические полосы (EQ Wave) ──────────────────────────────────
+// Deep indigo-violet, 8 vertical bars in an irregular musical-rhythm pattern
+function Icon1({ size = 1024 }) {
+  const s = size / 1024;
+  // Bar pattern: heights as fraction of max (460px at 1024)
+  // Irregular rhythm — not a simple bell curve
+  const bars = [
+    { h: 0.58, o: 0.60 }, { h: 0.88, o: 0.72 }, { h: 0.44, o: 0.62 },
+    { h: 1.00, o: 1.00 }, { h: 0.72, o: 0.82 }, { h: 0.38, o: 0.58 },
+    { h: 0.84, o: 0.80 }, { h: 0.52, o: 0.65 },
+  ];
+  const maxH = 460, barW = 62, gap = 28;
+  const totalW = bars.length * barW + (bars.length - 1) * gap;
+  const startX = (1024 - totalW) / 2;
+  const bottomY = 760;
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
+      <defs>
+        <linearGradient id="i1bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"   stopColor="#1A0650"/>
+          <stop offset="45%"  stopColor="#3C1590"/>
+          <stop offset="100%" stopColor="#7040CC"/>
+        </linearGradient>
+        <radialGradient id="i1shine" cx="50%" cy="20%" r="65%">
+          <stop offset="0%"   stopColor="rgba(160,100,255,0.30)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <filter id="i1glow">
+          <feGaussianBlur stdDeviation="14" result="b"/>
+          <feComposite in="SourceGraphic" in2="b" operator="over"/>
+        </filter>
+        <clipPath id="i1clip"><path d={SQUIRCLE}/></clipPath>
+      </defs>
+
+      {/* BG */}
+      <path d={SQUIRCLE} fill="url(#i1bg)"/>
+      <path d={SQUIRCLE} fill="url(#i1shine)"/>
+
+      {/* Subtle bottom ground glow */}
+      <ellipse cx="512" cy="820" rx="340" ry="40" fill="rgba(140,82,220,0.28)" style={{ filter: 'blur(24px)' }}/>
+
+      {/* EQ Bars */}
+      <g clipPath="url(#i1clip)">
+        {/* Glow layer (blurred duplicate) */}
+        {bars.map((b, i) => {
+          const h = b.h * maxH;
+          const x = startX + i * (barW + gap);
+          const y = bottomY - h;
+          return (
+            <rect key={`gl${i}`} x={x+8} y={y+h*0.4} width={barW-16} height={h*0.6}
+              rx={16} fill={`rgba(200,160,255,${b.o * 0.35})`}
+              style={{ filter: 'blur(16px)' }} />
+          );
+        })}
+        {/* Bar shapes */}
+        {bars.map((b, i) => {
+          const h = b.h * maxH;
+          const x = startX + i * (barW + gap);
+          const y = bottomY - h;
+          return (
+            <rect key={i} x={x} y={y} width={barW} height={h}
+              rx={barW / 2} fill="white" opacity={b.o}/>
+          );
+        })}
+        {/* Thin horizontal accent line at bottom */}
+        <rect x={startX} y={bottomY + 8} width={totalW} height={5} rx="2.5"
+          fill="rgba(255,255,255,0.25)"/>
+      </g>
+
+      {/* Top reflection highlight */}
+      <path d="M232,0 H792 C916,0 1024,108 1024,232 Q860,60 512,52 Q164,60 0,232 C0,108 108,0 232,0 Z"
+        fill="rgba(255,255,255,0.07)"/>
+    </svg>
+  );
+}
+
+// ── ICON 2 — Нота + Пульс ────────────────────────────────────────────────────
+// Deep ocean navy, stylised eighth note whose stem flows into a rhythm pulse
+function Icon2({ size = 1024 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
+      <defs>
+        <linearGradient id="i2bg" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0%"   stopColor="#040C1C"/>
+          <stop offset="40%"  stopColor="#0B2244"/>
+          <stop offset="100%" stopColor="#0F3D7C"/>
+        </linearGradient>
+        <radialGradient id="i2shine" cx="35%" cy="18%" r="70%">
+          <stop offset="0%"   stopColor="rgba(60,140,255,0.22)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <radialGradient id="i2glow" cx="50%" cy="65%" r="55%">
+          <stop offset="0%"   stopColor="rgba(80,170,255,0.18)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <filter id="i2blur">
+          <feGaussianBlur stdDeviation="18"/>
+        </filter>
+        <clipPath id="i2clip"><path d={SQUIRCLE}/></clipPath>
+      </defs>
+
+      <path d={SQUIRCLE} fill="url(#i2bg)"/>
+      <path d={SQUIRCLE} fill="url(#i2shine)"/>
+      <path d={SQUIRCLE} fill="url(#i2glow)"/>
+
+      <g clipPath="url(#i2clip)">
+        {/* Glow bloom behind note */}
+        <ellipse cx="420" cy="680" rx="180" ry="120" fill="rgba(80,160,255,0.12)"
+          style={{ filter: 'blur(40px)' }}/>
+        <ellipse cx="560" cy="340" rx="240" ry="80" fill="rgba(80,160,255,0.10)"
+          style={{ filter: 'blur(30px)' }}/>
+
+        {/* === Note head — filled ellipse, tilted === */}
+        {/* Center ~(390, 700), rx=115, ry=80, rotate -28deg */}
+        <g transform="translate(390,700) rotate(-28)">
+          <ellipse cx="0" cy="0" rx="115" ry="80" fill="white" opacity="0.95"/>
+          {/* Inner shadow on left side */}
+          <ellipse cx="-20" cy="10" rx="60" ry="45" fill="rgba(0,0,0,0.12)"/>
+        </g>
+
+        {/* === Stem — vertical, goes from note head top to top area === */}
+        {/* Stem starts at right of note head ~(490, 648) goes to (490, 268) */}
+        <rect x="475" y="268" width="32" height="390" rx="16" fill="white" opacity="0.92"/>
+
+        {/* === Pulse line from stem top extending right === */}
+        {/* Starts at (507, 284) extends right to about x=800 */}
+        {/* Path: flat → spike up → flat → small down → flat */}
+        <path
+          d="M507,284 L580,284 L610,284 L636,192 L670,368 L700,284 L780,284"
+          stroke="white" strokeWidth="30" strokeLinecap="round" strokeLinejoin="round"
+          fill="none" opacity="0.90"/>
+
+        {/* Small dot at end of pulse line */}
+        <circle cx="790" cy="284" r="18" fill="white" opacity="0.7"/>
+
+        {/* Subtle second harmonic line below pulse, faded */}
+        <path
+          d="M507,330 L580,330 L608,330 L624,294 L648,360 L668,330 L780,330"
+          stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"
+          fill="none" opacity="0.20"/>
+      </g>
+
+      {/* Top highlight */}
+      <path d="M232,0 H792 C916,0 1024,108 1024,232 Q860,60 512,52 Q164,60 0,232 C0,108 108,0 232,0 Z"
+        fill="rgba(255,255,255,0.06)"/>
+    </svg>
+  );
+}
+
+// ── ICON 3 — Органическая волна ─────────────────────────────────────────────
+// Dark violet canvas, bold sweeping C-arc with a violet→rose→amber gradient stroke
+function Icon3({ size = 1024 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
+      <defs>
+        <linearGradient id="i3bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"   stopColor="#08001A"/>
+          <stop offset="45%"  stopColor="#1A0040"/>
+          <stop offset="100%" stopColor="#2C0060"/>
+        </linearGradient>
+        {/* Gradient for the arc shape itself — flows along the stroke */}
+        <linearGradient id="i3arc" x1="0.1" y1="0.9" x2="0.9" y2="0.1">
+          <stop offset="0%"   stopColor="#FF6B35"/>
+          <stop offset="35%"  stopColor="#E040A0"/>
+          <stop offset="65%"  stopColor="#9B40FF"/>
+          <stop offset="100%" stopColor="#5060FF"/>
+        </linearGradient>
+        <linearGradient id="i3arcInner" x1="0.1" y1="0.9" x2="0.9" y2="0.1">
+          <stop offset="0%"   stopColor="#FF9B60"/>
+          <stop offset="50%"  stopColor="#FF70C0"/>
+          <stop offset="100%" stopColor="#A080FF"/>
+        </linearGradient>
+        <radialGradient id="i3glow1" cx="30%" cy="75%" r="45%">
+          <stop offset="0%"   stopColor="rgba(255,80,40,0.28)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <radialGradient id="i3glow2" cx="70%" cy="28%" r="45%">
+          <stop offset="0%"   stopColor="rgba(80,80,255,0.22)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <radialGradient id="i3shine" cx="40%" cy="15%" r="60%">
+          <stop offset="0%"   stopColor="rgba(150,80,255,0.20)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <clipPath id="i3clip"><path d={SQUIRCLE}/></clipPath>
+      </defs>
+
+      <path d={SQUIRCLE} fill="url(#i3bg)"/>
+      <path d={SQUIRCLE} fill="url(#i3shine)"/>
+
+      <g clipPath="url(#i3clip)">
+        {/* Ambient glows */}
+        <path d={SQUIRCLE} fill="url(#i3glow1)"/>
+        <path d={SQUIRCLE} fill="url(#i3glow2)"/>
+
+        {/* === The bold sweeping arc === */}
+        {/* A thick C-shaped arc, wide in middle, tapering at ends */}
+        {/* Outer arc path: sweeps from bottom-left to top-right */}
+        {/* This is a fat stroke on a circular arc path */}
+
+        {/* Outer filled shape of the arc (the body) */}
+        <path
+          d="
+            M 248 880
+            C 100 800, 68 640, 68 512
+            C 68 280, 180 128, 340 76
+            C 440 44, 560 44, 660 76
+            C 700 90, 730 108, 750 124
+
+            L 688 208
+            C 668 192, 640 178, 608 168
+            C 528 142, 438 142, 360 172
+            C 240 218, 172 346, 172 512
+            C 172 652, 212 762, 306 826
+            Z
+          "
+          fill="url(#i3arc)"
+          opacity="0.95"
+        />
+
+        {/* Second, slightly inset arc shape for depth/layering */}
+        <path
+          d="
+            M 248 880
+            C 180 816, 148 698, 148 562
+            C 148 380, 200 246, 310 180
+            C 378 138, 458 126, 528 138
+
+            L 500 232
+            C 450 222, 398 228, 358 254
+            C 278 304, 244 416, 244 562
+            C 244 680, 270 768, 320 832
+            Z
+          "
+          fill="url(#i3arcInner)"
+          opacity="0.55"
+        />
+
+        {/* Bright inner highlight line along the top edge of arc */}
+        <path
+          d="M 330 100 C 430 58, 560 52, 680 90 L 640 170 C 540 138, 440 134, 358 166 Z"
+          fill="rgba(255,255,255,0.22)"
+        />
+
+        {/* Soft glow along bottom end of arc */}
+        <ellipse cx="280" cy="860" rx="80" ry="50"
+          fill="rgba(255,100,40,0.35)"
+          style={{ filter: 'blur(20px)' }}
+        />
+
+        {/* Soft glow along top end */}
+        <ellipse cx="710" cy="116" rx="80" ry="50"
+          fill="rgba(80,80,255,0.30)"
+          style={{ filter: 'blur(20px)' }}
+        />
+
+        {/* A small accent dot at top end of arc (like a period/accent) */}
+        <circle cx="736" cy="174" r="38" fill="url(#i3arcInner)" opacity="0.75"/>
+        <circle cx="736" cy="174" r="24" fill="rgba(255,255,255,0.30)"/>
+      </g>
+
+      {/* Top highlight */}
+      <path d="M232,0 H792 C916,0 1024,108 1024,232 Q860,60 512,52 Q164,60 0,232 C0,108 108,0 232,0 Z"
+        fill="rgba(255,255,255,0.05)"/>
+    </svg>
+  );
+}
+
+// ── Icon preview card ─────────────────────────────────────────────────────────
+
+function IconCard({ Icon, title, concept, colors, size = 256 }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+      {/* Main large preview — dark bg */}
+      <div style={{
+        background: '#111113', borderRadius: 20, padding: 28,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
+        width: '100%',
+      }}>
+        {/* Drop shadow behind icon */}
+        <div style={{ position: 'relative', marginBottom: 8 }}>
+          <div style={{
+            position: 'absolute', top: 12, left: 8, right: 8, bottom: 0,
+            borderRadius: 56, background: 'rgba(0,0,0,0.45)',
+            filter: 'blur(20px)',
+          }}></div>
+          <Icon size={size} />
+        </div>
+      </div>
+
+      {/* Light bg preview */}
+      <div style={{
+        background: '#E8E8ED', borderRadius: '0 0 12px 12px',
+        padding: '16px 28px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+        width: '100%',
+      }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            position: 'absolute', top: 6, left: 4, right: 4, bottom: 0,
+            borderRadius: 28, background: 'rgba(0,0,0,0.22)',
+            filter: 'blur(10px)',
+          }}></div>
+          <Icon size={128} />
+        </div>
+        {/* Size strip */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+            {[64, 32, 16].map(s => (
+              <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{
+                  background: 'rgba(0,0,0,0.1)', borderRadius: 6, padding: 2,
+                }}>
+                  <Icon size={s} />
+                </div>
+                <span style={{ fontSize: 9, color: 'rgba(0,0,0,0.4)', fontFamily: 'SF Mono, Menlo, monospace' }}>{s}px</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Dock context mockup ──────────────────────────────────────────────────────
+
+function FinderIcon({ size = 60 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60">
+      <defs>
+        <linearGradient id="fi" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5AC8FA"/>
+          <stop offset="100%" stopColor="#007AFF"/>
+        </linearGradient>
+      </defs>
+      <rect width="60" height="60" rx="13" fill="url(#fi)"/>
+      {/* Simplified Finder face */}
+      <rect x="8" y="10" width="44" height="40" rx="6" fill="white" opacity="0.15"/>
+      {/* Left eye area */}
+      <circle cx="20" cy="26" r="7" fill="white"/>
+      <circle cx="22" cy="26" r="4" fill="#1A1A2E"/>
+      {/* Right eye area */}
+      <circle cx="40" cy="26" r="7" fill="white"/>
+      <circle cx="38" cy="26" r="4" fill="#1A1A2E"/>
+      {/* Mouth / divider */}
+      <rect x="8" y="34" width="44" height="1.5" fill="rgba(255,255,255,0.3)"/>
+      {/* Smile */}
+      <path d="M18 42 Q30 50 42 42" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function SafariIcon({ size = 60 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60">
+      <defs>
+        <linearGradient id="si" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#34C6FF"/>
+          <stop offset="100%" stopColor="#0080FF"/>
+        </linearGradient>
+      </defs>
+      <rect width="60" height="60" rx="13" fill="url(#si)"/>
+      <circle cx="30" cy="30" r="20" fill="white" opacity="0.1"/>
+      <circle cx="30" cy="30" r="20" stroke="white" strokeWidth="1.5" fill="none" opacity="0.4"/>
+      {/* Compass needle */}
+      <path d="M30 14 L33 30 L30 31 Z" fill="#FF3B30" opacity="0.95"/>
+      <path d="M30 46 L27 30 L30 29 Z" fill="white" opacity="0.85"/>
+      {/* Center dot */}
+      <circle cx="30" cy="30" r="2.5" fill="white"/>
+    </svg>
+  );
+}
+
+function MusicIcon({ size = 60 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60">
+      <defs>
+        <linearGradient id="mi" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FC5C7D"/>
+          <stop offset="100%" stopColor="#E8003C"/>
+        </linearGradient>
+      </defs>
+      <rect width="60" height="60" rx="13" fill="url(#mi)"/>
+      {/* Simplified note */}
+      <ellipse cx="22" cy="40" rx="9" ry="7" fill="white" opacity="0.9" transform="rotate(-15 22 40)"/>
+      <rect x="29.5" y="16" width="3" height="26" rx="1.5" fill="white" opacity="0.9"/>
+      <rect x="29.5" y="16" width="14" height="3" rx="1.5" fill="white" opacity="0.9"/>
+      <ellipse cx="40" cy="32" rx="8" ry="6" fill="white" opacity="0.9" transform="rotate(-15 40 32)"/>
+    </svg>
+  );
+}
+
+function DockMockup({ ActiveIcon, variant }) {
+  const dockIcons = [
+    { C: FinderIcon, name: 'Finder' },
+    { C: SafariIcon, name: 'Safari' },
+    { C: MusicIcon,  name: 'Music'  },
+    { C: ActiveIcon, name: 'Cadence', active: true },
+  ];
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
+      width: '100%',
+    }}>
+      {/* Desktop wallpaper area */}
+      <div style={{
+        width: '100%', height: 120,
+        background: 'linear-gradient(145deg, #1a3a6c 0%, #2d1b4e 50%, #0d2040 100%)',
+        borderRadius: '12px 12px 0 0',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at 30% 50%, rgba(80,120,255,0.15) 0%, transparent 70%)',
+        }}></div>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          macOS Sequoia
+        </span>
+      </div>
+
+      {/* Dock */}
+      <div style={{
+        background: 'rgba(255,255,255,0.16)',
+        backdropFilter: 'blur(40px)',
+        border: '0.5px solid rgba(255,255,255,0.25)',
+        borderRadius: '0 0 16px 16px',
+        padding: '10px 16px 12px',
+        display: 'flex', alignItems: 'flex-end', gap: 10,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+      }}>
+        {dockIcons.map(({ C, name, active }, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+            <div style={{
+              position: 'relative',
+              transform: active ? 'scale(1.12) translateY(-4px)' : 'scale(1)',
+              transition: 'transform 0.2s',
+            }}>
+              {/* Drop shadow */}
+              <div style={{
+                position: 'absolute', bottom: -4, left: 6, right: 6, height: 6,
+                background: 'rgba(0,0,0,0.3)', borderRadius: '50%', filter: 'blur(4px)',
+              }}></div>
+              <C size={54} />
+            </div>
+            <div style={{
+              width: 4, height: 4, borderRadius: '50%',
+              background: active ? 'rgba(255,255,255,0.9)' : 'transparent',
+            }}></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── App ────────────────────────────────────────────────────────────────────────
+
+function App() {
+  const variants = [
+    { id: 'v1', Icon: Icon1, title: '01 — Ритм', concept: 'Звуковые волны' },
+    { id: 'v2', Icon: Icon2, title: '02 — Нота', concept: 'Нота + Пульс' },
+    { id: 'v3', Icon: Icon3, title: '03 — Форма', concept: 'Органическая волна' },
+  ];
+
+  return (
+    <DesignCanvas>
+      <DCSection id="icons" title="Варианты иконки" subtitle="Три концепции для Cadence">
+        {variants.map(({ id, Icon, title, concept }) => (
+          <DCArtboard key={id} id={id} label={`${title} · ${concept}`} width={340} height={580}>
+            <div style={{ width: 340, background: '#1a1a1c', borderRadius: 16, overflow: 'hidden' }}>
+              {/* Header */}
+              <div style={{
+                padding: '16px 20px 12px',
+                background: '#222225',
+                borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.01em' }}>{title}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 2 }}>{concept}</div>
+              </div>
+
+              <IconCard Icon={Icon} title={title} concept={concept} size={256} />
+            </div>
+          </DCArtboard>
+        ))}
+      </DCSection>
+
+      <DCSection id="dock" title="В контексте Dock" subtitle="Совместимость с нативными иконками macOS">
+        {variants.map(({ id, Icon, title }) => (
+          <DCArtboard key={`dock-${id}`} id={`dock-${id}`} label={title} width={340} height={270}>
+            <div style={{ width: 340 }}>
+              <DockMockup ActiveIcon={Icon} variant={id} />
+            </div>
+          </DCArtboard>
+        ))}
+      </DCSection>
+
+      <DCSection id="sizes" title="Масштабирование" subtitle="1024 → 512 → 128 → 32 → 16 px">
+        {variants.map(({ id, Icon, title }) => (
+          <DCArtboard key={`sz-${id}`} id={`sz-${id}`} label={title} width={420} height={180}>
+            <div style={{
+              width: 420, padding: '20px 24px',
+              background: '#111113', borderRadius: 12,
+              display: 'flex', alignItems: 'center', gap: 20,
+            }}>
+              {[128, 80, 48, 32, 20, 14].map(s => (
+                <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <Icon size={s} />
+                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'SF Mono, Menlo, monospace' }}>{s}</span>
+                </div>
+              ))}
+            </div>
+          </DCArtboard>
+        ))}
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

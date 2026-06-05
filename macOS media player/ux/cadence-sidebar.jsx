@@ -53,7 +53,7 @@ function CadenceSidebarSection({ title, dark }) {
   );
 }
 
-function CadenceSidebar({ dark, activeItem, onItemClick }) {
+function CadenceSidebar({ dark, activeItem, onItemClick, onSettingsClick }) {
   const accent = dark ? '#0A84FF' : '#007AFF';
   const sidebarBg = dark
     ? 'rgba(40,40,45,0.82)'
@@ -64,7 +64,6 @@ function CadenceSidebar({ dark, activeItem, onItemClick }) {
     { id: 'tracks', icon: <IconMusicNote size={15} />, label: 'Все треки' },
     { id: 'albums', icon: <IconAlbum size={15} />, label: 'Альбомы' },
     { id: 'artists', icon: <IconArtist size={15} />, label: 'Артисты' },
-    { id: 'genres', icon: <IconGenre size={15} />, label: 'Жанры' },
   ];
 
   const playlists = [
@@ -185,6 +184,24 @@ function CadenceSidebar({ dark, activeItem, onItemClick }) {
           dark={dark}
           onClick={() => onItemClick('downloaded')}
         />
+      </div>
+
+      {/* Settings button at bottom */}
+      <div style={{ flexShrink: 0, padding: '6px 8px 10px', borderTop: `0.5px solid ${borderColor}` }}>
+        <div
+          onClick={onSettingsClick}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            height: 28, padding: '0 10px', borderRadius: 6, cursor: 'pointer',
+            color: dark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.36)',
+            transition: 'background 0.12s, color 0.12s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = dark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = dark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.36)'; }}
+        >
+          <IconSettings size={14} color="currentColor" />
+          <span style={{ fontSize: 12 }}>Настройки</span>
+        </div>
       </div>
     </div>
   );

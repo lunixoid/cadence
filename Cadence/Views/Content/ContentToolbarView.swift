@@ -64,6 +64,7 @@ struct ContentToolbarView: View {
                 .tracking(-0.02 * 20)
                 .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .background(WindowDragRegion())
 
             searchField
         }

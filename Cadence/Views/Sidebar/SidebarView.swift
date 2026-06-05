@@ -17,7 +17,7 @@ struct SidebarView: View {
                 }
 
             VStack(spacing: 0) {
-                Color.clear
+                WindowDragRegion()
                     .frame(height: CadenceTheme.trafficLightsAreaHeight)
 
                 ScrollView {

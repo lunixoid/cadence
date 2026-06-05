@@ -29,7 +29,14 @@ struct PlaylistDetailView: View {
             } else {
                 ScrollView {
                     HStack {
-                        Button(action: { playbackController.play(tracks: tracks, startAt: 0) }) {
+                        Button(action: {
+                            playbackController.play(
+                                tracks: tracks,
+                                startAt: 0,
+                                source: .playlist(playlistID),
+                                originalTracks: tracks
+                            )
+                        }) {
                             Label("Воспроизвести", systemImage: "play.fill")
                                 .font(.system(size: 13, weight: .semibold))
                         }

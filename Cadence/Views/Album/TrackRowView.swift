@@ -1,0 +1,94 @@
+import AppKit
+import SwiftUI
+
+struct TrackRowView: View {
+    @Environment(PlaybackController.self) private var playbackController
+    @Environment(PlaylistStore.self) private var playlistStore
+    @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(\.colorScheme) private var colorScheme
+
+    let track: Track
+    let isActive: Bool
+    let isPlaying: Bool
+    let isHovered: Bool
+    var onPlay: () -> Void = {}
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Group {
+                if isActive && isPlaying {
+                    EqualizerBarsView(size: 13)
+                } else if isHovered {
+                    Button(action: onPlay) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(isActive ? CadenceTheme.accent(for: colorScheme) : CadenceTheme.primaryText(for: colorScheme))
+                    }
+                    .buttonStyle(.plain)
+                } else if isActive {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(CadenceTheme.accent(for: colorScheme))
+                } else {
+                    Text("\(track.index)")
+                        .font(.system(size: 13))
+                        .monospacedDigit()
+                        .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
+                }
+            }
+            .frame(width: 40)
+
+            Text(track.title.isEmpty ? "—" : track.title)
+                .font(.system(size: 13, weight: isActive ? .semibold : .regular))
+                .foregroundStyle(isActive ? CadenceTheme.accent(for: colorScheme) : CadenceTheme.primaryText(for: colorScheme))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.trailing, 12)
+
+            Text(CadenceTheme.formatTime(track.duration))
+                .font(.system(size: 12))
+                .monospacedDigit()
+                .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
+                .frame(width: 60, alignment: .trailing)
+        }
+        .padding(.horizontal, 28)
+        .frame(height: CadenceTheme.trackRowHeight)
+        .background(isHovered ? CadenceTheme.rowHoverBackground(for: colorScheme) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2, perform: onPlay)
+        .contextMenu {
+            trackContextMenu
+        }
+    }
+
+    @ViewBuilder
+    private var trackContextMenu: some View {
+        Button("Воспроизвести", action: onPlay)
+        Button("Воспроизвести далее") {
+            playbackController.playNext(track)
+        }
+        Button("Добавить в очередь") {
+            playbackController.addToQueue(track)
+        }
+        Divider()
+        Menu("Добавить в плейлист") {
+            if playlistStore.playlists.isEmpty {
+                Button("Создайте плейлист в сайдбаре") {}
+                    .disabled(true)
+            } else {
+                ForEach(playlistStore.playlists) { playlist in
+                    Button(playlist.name) {
+                        playlistStore.addTrack(track, to: playlist.id)
+                    }
+                }
+            }
+        }
+        Button(favoritesStore.isFavorite(track: track) ? "Убрать из избранного" : "В избранное") {
+            favoritesStore.toggle(track: track)
+        }
+        Divider()
+        Button("Показать в Finder") {
+            NSWorkspace.shared.activateFileViewerSelecting([track.fileURL])
+        }
+    }
+}

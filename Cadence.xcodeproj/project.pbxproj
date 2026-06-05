@@ -50,6 +50,8 @@
 	A10000010000000000000012 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000012 /* FavoritesView.swift */; };
 	A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000013 /* NowPlayingDetailView.swift */; };
 	A10000010000000000000014 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000014 /* PlaylistDetailView.swift */; };
+	A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */; };
+	A10000010000000000000016 /* MediaRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000016 /* MediaRemoteService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -97,6 +99,8 @@
 	B10000010000000000000012 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 	B10000010000000000000013 /* NowPlayingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingDetailView.swift; sourceTree = "<group>"; };
 	B10000010000000000000014 /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
+	B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackKeyboardMonitor.swift; sourceTree = "<group>"; };
+	B10000010000000000000016 /* MediaRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteService.swift; sourceTree = "<group>"; };
 	18646C3494E04914B698E7C8 /* Cadence.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cadence.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -190,6 +194,8 @@
 		children = (
 			B10000010000000000000008 /* AudioEngineService.swift */,
 			B10000010000000000000009 /* PlaybackController.swift */,
+			B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */,
+			B10000010000000000000016 /* MediaRemoteService.swift */,
 		);
 		path = Playback;
 		sourceTree = "<group>";
@@ -422,6 +428,8 @@
 			A10000010000000000000007 /* FolderPicker.swift in Sources */,
 			A10000010000000000000008 /* AudioEngineService.swift in Sources */,
 			A10000010000000000000009 /* PlaybackController.swift in Sources */,
+			A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */,
+			A10000010000000000000016 /* MediaRemoteService.swift in Sources */,
 			A1000001000000000000000A /* FavoritesStore.swift in Sources */,
 			A1000001000000000000000B /* RecentStore.swift in Sources */,
 			A1000001000000000000000C /* PlaylistStore.swift in Sources */,

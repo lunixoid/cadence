@@ -75,8 +75,6 @@ struct AlbumPageView: View {
                 HStack(spacing: 6) {
                     metaText(album.year.map(String.init) ?? "—")
                     metaSeparator
-                    metaText(album.genre ?? "—")
-                    metaSeparator
                     metaText(tracks.isEmpty ? "—" : "\(tracks.count) треков")
                     metaSeparator
                     metaText(tracks.isEmpty ? "—" : "\(totalMinutes) мин")

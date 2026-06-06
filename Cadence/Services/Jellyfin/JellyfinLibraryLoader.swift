@@ -44,8 +44,7 @@ final class JellyfinLibraryLoader {
             let scanResult = LibraryScanResult(
                 albums: albums.sorted { $0.title < $1.title },
                 tracks: allTracks,
-                artists: buildArtists(from: albums),
-                genres: buildGenres(from: albums)
+                artists: buildArtists(from: albums)
             )
 
             libraryStore.loadFromJellyfin(scanResult)
@@ -63,18 +62,6 @@ final class JellyfinLibraryLoader {
                 map[name] = Artist(name: name)
             }
             map[name]?.albumIDs.append(album.id)
-        }
-        return map.values.sorted { $0.name < $1.name }
-    }
-
-    private func buildGenres(from albums: [Album]) -> [Genre] {
-        var map: [String: Genre] = [:]
-        for album in albums {
-            guard let genre = album.genre, !genre.isEmpty else { continue }
-            if map[genre] == nil {
-                map[genre] = Genre(name: genre)
-            }
-            map[genre]?.albumIDs.append(album.id)
         }
         return map.values.sorted { $0.name < $1.name }
     }

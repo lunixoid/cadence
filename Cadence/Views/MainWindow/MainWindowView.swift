@@ -17,6 +17,7 @@ struct MainWindowView: View {
     @Environment(AppUIState.self) private var uiState
     @Environment(PlaybackController.self) private var playbackController
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var resolvedColorScheme: ColorScheme {
         switch uiState.appThemePreference {
@@ -49,7 +50,7 @@ struct MainWindowView: View {
     private var mainLayout: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                SidebarView()
+                sidebarPanel
 
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
@@ -61,6 +62,19 @@ struct MainWindowView: View {
                 }
             }
         }
+    }
+
+    private var sidebarPanel: some View {
+        ZStack(alignment: .trailing) {
+            if uiState.isSidebarOpen {
+                SidebarView()
+                    .frame(width: CadenceTheme.sidebarWidth)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+        }
+        .frame(width: uiState.isSidebarOpen ? CadenceTheme.sidebarWidth : 0)
+        .clipped()
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: uiState.isSidebarOpen)
     }
 
     private var overlayLayer: some View {

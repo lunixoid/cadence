@@ -62,10 +62,15 @@ struct CadenceApp: App {
                 }
             }
             CommandMenu("View") {
+                Button("Toggle Sidebar") {
+                    uiState.toggleSidebar()
+                }
+                .keyboardShortcut("b", modifiers: .command)
+
                 Button("Toggle Queue") {
                     uiState.toggleQueue()
                 }
-                .keyboardShortcut("q", modifiers: [.command, .shift])
+                .keyboardShortcut("l", modifiers: .command)
 
                 Button("Show Equalizer") {
                     uiState.isEQOpen = true

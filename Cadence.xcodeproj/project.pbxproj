@@ -61,9 +61,12 @@
 	C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000012 /* JellyfinLibraryLoader.swift */; };
 	C20000010000000000000023 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000013 /* KeychainHelper.swift */; };
 	C20000010000000000000024 /* JellyfinServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000014 /* JellyfinServer.swift */; };
+	C20000010000000000000025 /* JellyfinIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000015 /* JellyfinIdentity.swift */; };
+	C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000016 /* JellyfinFavoritesSync.swift */; };
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 		E10000010000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10000010000000000000001 /* Assets.xcassets */; };
+		T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000004 /* JellyfinFavoritesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -125,11 +128,22 @@
 	C20000010000000000000012 /* JellyfinLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryLoader.swift; sourceTree = "<group>"; };
 	C20000010000000000000013 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 	C20000010000000000000014 /* JellyfinServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinServer.swift; sourceTree = "<group>"; };
+	C20000010000000000000015 /* JellyfinIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinIdentity.swift; sourceTree = "<group>"; };
+	C20000010000000000000016 /* JellyfinFavoritesSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesSync.swift; sourceTree = "<group>"; };
 	D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+	T10000010000000000000003 /* CadenceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CadenceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+	T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 	4DF644D4774B4BB0B3E6D13E /* Frameworks */ = {
+		isa = PBXFrameworksBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+	T10000010000000000000008 /* Frameworks */ = {
 		isa = PBXFrameworksBuildPhase;
 		buildActionMask = 2147483647;
 		files = (
@@ -143,6 +157,7 @@
 		isa = PBXGroup;
 		children = (
 			65EFA0FDD80E4C388994AF6C /* Cadence.app */,
+			T10000010000000000000003 /* CadenceTests.xctest */,
 		);
 		name = Products;
 		sourceTree = "<group>";
@@ -210,6 +225,8 @@
 		children = (
 			C20000010000000000000011 /* JellyfinClient.swift */,
 			C20000010000000000000012 /* JellyfinLibraryLoader.swift */,
+			C20000010000000000000015 /* JellyfinIdentity.swift */,
+			C20000010000000000000016 /* JellyfinFavoritesSync.swift */,
 			C20000010000000000000013 /* KeychainHelper.swift */,
 		);
 		path = Jellyfin;
@@ -400,8 +417,17 @@
 		isa = PBXGroup;
 		children = (
 			480938F7E2774E9CB603A815 /* Cadence */,
+			T10000010000000000000005 /* CadenceTests */,
 			5D5B2F4DDA1845928146DD2A /* Products */,
 		);
+		sourceTree = "<group>";
+	};
+	T10000010000000000000005 /* CadenceTests */ = {
+		isa = PBXGroup;
+		children = (
+			T10000010000000000000004 /* JellyfinFavoritesTests.swift */,
+		);
+		path = CadenceTests;
 		sourceTree = "<group>";
 	};
 /* End PBXGroup section */
@@ -424,7 +450,42 @@
 		productReference = 65EFA0FDD80E4C388994AF6C /* Cadence.app */;
 		productType = "com.apple.product-type.application";
 	};
+	T10000010000000000000006 /* CadenceTests */ = {
+		isa = PBXNativeTarget;
+		buildConfigurationList = T1000001000000000000000D /* Build configuration list for PBXNativeTarget "CadenceTests" */;
+		buildPhases = (
+			T10000010000000000000007 /* Sources */,
+			T10000010000000000000008 /* Frameworks */,
+		);
+		buildRules = (
+		);
+		dependencies = (
+			T1000001000000000000000A /* PBXTargetDependency */,
+		);
+		name = CadenceTests;
+		productName = CadenceTests;
+		productReference = T10000010000000000000003 /* CadenceTests.xctest */;
+		productType = "com.apple.product-type.bundle.unit-test";
+	};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+	T10000010000000000000009 /* PBXContainerItemProxy */ = {
+		isa = PBXContainerItemProxy;
+		containerPortal = F442EFF0A0EF4D20BD0C70E5 /* Project object */;
+		proxyType = 1;
+		remoteGlobalIDString = 5C3537C056A049FC8522164B;
+		remoteInfo = Cadence;
+	};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+	T1000001000000000000000A /* PBXTargetDependency */ = {
+		isa = PBXTargetDependency;
+		target = 5C3537C056A049FC8522164B /* Cadence */;
+		targetProxy = T10000010000000000000009 /* PBXContainerItemProxy */;
+	};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 	F442EFF0A0EF4D20BD0C70E5 /* Project object */ = {
@@ -436,6 +497,10 @@
 			TargetAttributes = {
 				5C3537C056A049FC8522164B = {
 					CreatedOnToolsVersion = 15.0;
+				};
+				T10000010000000000000006 = {
+					CreatedOnToolsVersion = 15.0;
+					TestTargetID = 5C3537C056A049FC8522164B;
 				};
 			};
 		};
@@ -453,6 +518,7 @@
 		projectRoot = "";
 		targets = (
 			5C3537C056A049FC8522164B /* Cadence */,
+			T10000010000000000000006 /* CadenceTests */,
 		);
 	};
 /* End PBXProject section */
@@ -529,6 +595,16 @@
 			C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */,
 			C20000010000000000000023 /* KeychainHelper.swift in Sources */,
 			C20000010000000000000024 /* JellyfinServer.swift in Sources */,
+			C20000010000000000000025 /* JellyfinIdentity.swift in Sources */,
+			C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+	T10000010000000000000007 /* Sources */ = {
+		isa = PBXSourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -639,6 +715,48 @@
 		};
 		name = Release;
 	};
+	T1000001000000000000000B /* Debug */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			BUNDLE_LOADER = "$(TEST_HOST)";
+			CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 1;
+			GENERATE_INFOPLIST_FILE = YES;
+			LD_RUNPATH_SEARCH_PATHS = (
+				"$(inherited)",
+				"@executable_path/../Frameworks",
+				"@loader_path/../Frameworks",
+			);
+			MACOSX_DEPLOYMENT_TARGET = 14.0;
+			MARKETING_VERSION = 1.0;
+			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SWIFT_VERSION = 5.0;
+			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cadence.app/Contents/MacOS/Cadence";
+		};
+		name = Debug;
+	};
+	T1000001000000000000000C /* Release */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			BUNDLE_LOADER = "$(TEST_HOST)";
+			CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 1;
+			GENERATE_INFOPLIST_FILE = YES;
+			LD_RUNPATH_SEARCH_PATHS = (
+				"$(inherited)",
+				"@executable_path/../Frameworks",
+				"@loader_path/../Frameworks",
+			);
+			MACOSX_DEPLOYMENT_TARGET = 14.0;
+			MARKETING_VERSION = 1.0;
+			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SWIFT_VERSION = 5.0;
+			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cadence.app/Contents/MacOS/Cadence";
+		};
+		name = Release;
+	};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -656,6 +774,15 @@
 		buildConfigurations = (
 			6CC4BC77051D4FD491046231 /* Debug */,
 			53C59567ED50450E840AB450 /* Release */,
+		);
+		defaultConfigurationIsVisible = 0;
+		defaultConfigurationName = Release;
+	};
+	T1000001000000000000000D /* Build configuration list for PBXNativeTarget "CadenceTests" */ = {
+		isa = XCConfigurationList;
+		buildConfigurations = (
+			T1000001000000000000000B /* Debug */,
+			T1000001000000000000000C /* Release */,
 		);
 		defaultConfigurationIsVisible = 0;
 		defaultConfigurationName = Release;

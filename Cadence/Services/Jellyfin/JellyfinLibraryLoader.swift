@@ -29,7 +29,9 @@ final class JellyfinLibraryLoader {
                     group.addTask {
                         let album = await self.client.convertToAlbum(item: item)
                         let trackItems = (try? await self.client.getAlbumTracks(albumID: item.id)) ?? []
-                        let tracks = trackItems.compactMap { self.client.convertToTrack(item: $0, albumID: album.id) }
+                        let tracks = trackItems.enumerated().compactMap { offset, item in
+                            self.client.convertToTrack(item: item, albumID: album.id, positionInAlbum: offset + 1)
+                        }
                         return (album, tracks)
                     }
                 }

@@ -240,6 +240,13 @@ final class PlaybackController {
         persistState()
     }
 
+    func playUpNext(at index: Int) {
+        guard playbackQueue.hasActiveSession else { return }
+        guard let track = playbackQueue.jumpToUpNext(at: index) else { return }
+        playLoadedTrack(track)
+        persistState()
+    }
+
     func autoplayPreviewTracks(limit: Int = 7) -> [Track] {
         playbackQueue.autoplayPreview(limit: limit)
     }

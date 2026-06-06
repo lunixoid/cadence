@@ -81,6 +81,18 @@ struct PlaybackQueue: Equatable {
         upNext.removeAll()
     }
 
+    /// Jumps to a track in the explicit up-next list by index.
+    mutating func jumpToUpNext(at index: Int) -> Track? {
+        guard index >= 0, index < upNext.count else { return nil }
+        if let current {
+            history.append(current)
+        }
+        upNext.removeFirst(index)
+        let track = upNext.removeFirst()
+        current = track
+        return track
+    }
+
     func autoplayPreview(limit: Int = 7) -> [Track] {
         guard let autoplay, autoplay.cursor < autoplay.tracks.count else { return [] }
         let upNextIDs = Set(upNext.map(\.id))

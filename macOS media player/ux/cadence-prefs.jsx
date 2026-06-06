@@ -1,4 +1,55 @@
-// cadence-prefs.jsx — Preferences window for Cadence (always light theme)
+// cadence-prefs.jsx — Preferences window for Cadence (theme-aware)
+
+// ── Theme context ───────────────────────────────────────────────────────────
+
+const PrefThemeCtx = React.createContext({ dark: false });
+
+function useP() {
+  const { dark } = React.useContext(PrefThemeCtx);
+  return {
+    TEXT:   dark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.86)',
+    SUB:    dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.44)',
+    MUTED:  dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)',
+    BORDER: dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
+    HOVER:  dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+    ACCENT: dark ? '#0A84FF' : '#007AFF',
+    SEL_BG: dark ? 'rgba(10,132,255,0.18)' : 'rgba(0,122,255,0.09)',
+    CARD:   dark ? '#3a3a3c' : '#ffffff',
+    WIN_BG: dark ? '#2c2c2e' : '#f2f2f5',
+    BAR_BG: dark ? '#313133' : 'rgba(242,242,245,0.97)',
+    TRACK:  dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)',
+    SEG_BG: dark ? '#1e1e20' : 'rgba(0,0,0,0.07)',
+    SEG_BTN_SEL: dark ? '#48484a' : '#ffffff',
+    dark,
+  };
+}
+
+// ── Close button (macOS-style: × on hover) ─────────────────────────────────
+
+function CloseButton({ onClose }) {
+  const [hov, setHov] = React.useState(false);
+  return (
+    <div
+      onClick={onClose}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        width: 12, height: 12, borderRadius: '50%',
+        background: '#FF5F57',
+        border: '0.5px solid rgba(0,0,0,0.12)',
+        cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      {hov && (
+        <svg width="6" height="6" viewBox="0 0 6 6" fill="none">
+          <path d="M1 1l4 4M5 1L1 5" stroke="rgba(0,0,0,0.55)" strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+      )}
+    </div>
+  );
+}
 
 // ── Tab icons ──────────────────────────────────────────────────────────────
 
@@ -38,28 +89,19 @@ const PrefIconAppearance = ({ size = 22, color = 'currentColor' }) => (
   </svg>
 );
 
-// ── Color tokens ────────────────────────────────────────────────────────────
-
-const P_TEXT   = 'rgba(0,0,0,0.86)';
-const P_SUB    = 'rgba(0,0,0,0.44)';
-const P_MUTED  = 'rgba(0,0,0,0.28)';
-const P_BORDER = 'rgba(0,0,0,0.09)';
-const P_HOVER  = 'rgba(0,0,0,0.04)';
-const P_ACCENT = '#007AFF';
-const P_SEL_BG = 'rgba(0,122,255,0.09)';
-
 // ── Controls ────────────────────────────────────────────────────────────────
 
 function PSelect({ value, options, onChange, width = 200 }) {
+  const p = useP();
   return (
     <div style={{ position: 'relative', width }}>
       <select
         value={value} onChange={e => onChange(e.target.value)}
         style={{
           width: '100%', height: 26, borderRadius: 6,
-          background: '#fff',
-          border: `0.5px solid ${P_BORDER}`,
-          color: P_TEXT, fontSize: 13,
+          background: p.CARD,
+          border: `0.5px solid ${p.BORDER}`,
+          color: p.TEXT, fontSize: 13,
           padding: '0 24px 0 8px',
           outline: 'none', cursor: 'pointer',
           fontFamily: 'inherit',
@@ -71,18 +113,19 @@ function PSelect({ value, options, onChange, width = 200 }) {
           <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
         ))}
       </select>
-      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 9, color: P_SUB, pointerEvents: 'none' }}>▾</span>
+      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 9, color: p.SUB, pointerEvents: 'none' }}>▾</span>
     </div>
   );
 }
 
 function PToggle({ value, onChange }) {
+  const p = useP();
   return (
     <div
       onClick={() => onChange(!value)}
       style={{
         width: 36, height: 20, borderRadius: 10,
-        background: value ? P_ACCENT : 'rgba(0,0,0,0.15)',
+        background: value ? p.ACCENT : (p.dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)'),
         position: 'relative', cursor: 'pointer', flexShrink: 0,
         transition: 'background 0.18s',
       }}
@@ -98,6 +141,7 @@ function PToggle({ value, onChange }) {
 }
 
 function PSlider({ value, min, max, onChange, unit = '' }) {
+  const p = useP();
   const [hover, setHover] = React.useState(false);
   const pct = ((value - min) / (max - min)) * 100;
   return (
@@ -112,13 +156,13 @@ function PSlider({ value, min, max, onChange, unit = '' }) {
         }}
         style={{ width: 150, height: 20, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
       >
-        <div style={{ width: '100%', height: hover ? 5 : 3, borderRadius: 3, background: 'rgba(0,0,0,0.1)', position: 'relative', transition: 'height 0.12s' }}>
-          <div style={{ height: '100%', width: `${pct}%`, borderRadius: 3, background: P_ACCENT }}>
-            {hover && <div style={{ position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, borderRadius: '50%', background: '#fff', border: `2px solid ${P_ACCENT}`, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}></div>}
+        <div style={{ width: '100%', height: hover ? 5 : 3, borderRadius: 3, background: p.TRACK, position: 'relative', transition: 'height 0.12s' }}>
+          <div style={{ height: '100%', width: `${pct}%`, borderRadius: 3, background: p.ACCENT }}>
+            {hover && <div style={{ position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, borderRadius: '50%', background: '#fff', border: `2px solid ${p.ACCENT}`, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}></div>}
           </div>
         </div>
       </div>
-      <span style={{ fontSize: 12, color: P_SUB, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{value}{unit}</span>
+      <span style={{ fontSize: 12, color: p.SUB, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{value}{unit}</span>
     </div>
   );
 }
@@ -126,11 +170,12 @@ function PSlider({ value, min, max, onChange, unit = '' }) {
 // ── Layout primitives ───────────────────────────────────────────────────────
 
 function SectionLabel({ children, first }) {
+  const p = useP();
   return (
     <div style={{
       fontSize: 11, fontWeight: 700,
       textTransform: 'uppercase', letterSpacing: '0.06em',
-      color: P_MUTED,
+      color: p.MUTED,
       marginTop: first ? 0 : 20,
       marginBottom: 5,
       paddingLeft: 3,
@@ -141,13 +186,14 @@ function SectionLabel({ children, first }) {
 }
 
 function SettingsCard({ children }) {
+  const p = useP();
   return (
     <div style={{
-      background: '#fff',
-      border: `0.5px solid ${P_BORDER}`,
+      background: p.CARD,
+      border: `0.5px solid ${p.BORDER}`,
       borderRadius: 10,
       overflow: 'hidden',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      boxShadow: p.dark ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.04)',
     }}>
       {children}
     </div>
@@ -155,16 +201,17 @@ function SettingsCard({ children }) {
 }
 
 function SettingsRow({ label, sublabel, last, children }) {
+  const p = useP();
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       gap: 16, padding: sublabel ? '8px 14px' : '9px 14px',
-      borderBottom: last ? 'none' : `0.5px solid ${P_BORDER}`,
+      borderBottom: last ? 'none' : `0.5px solid ${p.BORDER}`,
       minHeight: 38,
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 13, color: P_TEXT, whiteSpace: 'nowrap' }}>{label}</span>
-        {sublabel && <span style={{ fontSize: 11, color: P_SUB }}>{sublabel}</span>}
+        <span style={{ fontSize: 13, color: p.TEXT, whiteSpace: 'nowrap' }}>{label}</span>
+        {sublabel && <span style={{ fontSize: 11, color: p.SUB }}>{sublabel}</span>}
       </div>
       <div style={{ flexShrink: 0 }}>{children}</div>
     </div>
@@ -179,6 +226,7 @@ const INIT_SERVERS = [
 ];
 
 function TabServers({ onAddServer }) {
+  const p = useP();
   const [servers, setServers] = React.useState(INIT_SERVERS);
   const [selId,   setSelId]   = React.useState('s1');
   const sel = servers.find(s => s.id === selId);
@@ -186,8 +234,10 @@ function TabServers({ onAddServer }) {
   const StatusBadge = ({ status }) => (
     <span style={{
       fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4,
-      background: status === 'online' ? 'rgba(52,199,89,0.12)' : 'rgba(0,0,0,0.06)',
-      color:      status === 'online' ? '#1A9A3C'              : P_MUTED,
+      background: status === 'online'
+        ? 'rgba(52,199,89,0.14)'
+        : (p.dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+      color: status === 'online' ? '#1A9A3C' : p.MUTED,
     }}>{status === 'online' ? 'Онлайн' : 'Офлайн'}</span>
   );
 
@@ -195,8 +245,8 @@ function TabServers({ onAddServer }) {
     <div style={{ display: 'flex', gap: 20, height: '100%' }}>
       {/* Server list */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ border: `0.5px solid ${P_BORDER}`, borderRadius: 8, overflow: 'hidden', background: '#fff', flex: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 70px', padding: '5px 12px', borderBottom: `0.5px solid ${P_BORDER}`, fontSize: 10, fontWeight: 700, color: P_MUTED, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ border: `0.5px solid ${p.BORDER}`, borderRadius: 8, overflow: 'hidden', background: p.CARD, flex: 1 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 70px', padding: '5px 12px', borderBottom: `0.5px solid ${p.BORDER}`, fontSize: 10, fontWeight: 700, color: p.MUTED, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             <span>Название</span><span>URL</span><span>Статус</span>
           </div>
           {servers.map(srv => (
@@ -206,27 +256,27 @@ function TabServers({ onAddServer }) {
               style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr 70px',
                 padding: '9px 12px', cursor: 'pointer', alignItems: 'center',
-                background: selId === srv.id ? P_SEL_BG : 'transparent',
-                borderBottom: `0.5px solid ${P_BORDER}`,
+                background: selId === srv.id ? p.SEL_BG : 'transparent',
+                borderBottom: `0.5px solid ${p.BORDER}`,
                 transition: 'background 0.1s',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-                {srv.active && <div style={{ width: 6, height: 6, borderRadius: '50%', background: P_ACCENT, flexShrink: 0 }}></div>}
-                <span style={{ fontSize: 13, color: P_TEXT, fontWeight: srv.active ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{srv.name}</span>
+                {srv.active && <div style={{ width: 6, height: 6, borderRadius: '50%', background: p.ACCENT, flexShrink: 0 }}></div>}
+                <span style={{ fontSize: 13, color: p.TEXT, fontWeight: srv.active ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{srv.name}</span>
               </div>
-              <span style={{ fontSize: 11, color: P_SUB, fontFamily: 'SF Mono, Menlo, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{srv.url}</span>
+              <span style={{ fontSize: 11, color: p.SUB, fontFamily: 'SF Mono, Menlo, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{srv.url}</span>
               <StatusBadge status={srv.status} />
             </div>
           ))}
         </div>
 
-        <div style={{ display: 'flex', marginTop: 6, border: `0.5px solid ${P_BORDER}`, borderRadius: 6, overflow: 'hidden', width: 'fit-content', background: '#fff' }}>
+        <div style={{ display: 'flex', marginTop: 6, border: `0.5px solid ${p.BORDER}`, borderRadius: 6, overflow: 'hidden', width: 'fit-content', background: p.CARD }}>
           {['+', '−'].map((ch, i) => (
             <button key={ch} onClick={i === 0 ? onAddServer : undefined} style={{
               width: 28, height: 22, background: 'transparent', border: 'none', cursor: 'pointer',
-              fontSize: 15, color: i === 1 ? P_MUTED : P_TEXT, fontFamily: 'inherit',
-              borderRight: i === 0 ? `0.5px solid ${P_BORDER}` : 'none',
+              fontSize: 15, color: i === 1 ? p.MUTED : p.TEXT, fontFamily: 'inherit',
+              borderRight: i === 0 ? `0.5px solid ${p.BORDER}` : 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
             }}>{ch}</button>
           ))}
@@ -236,15 +286,15 @@ function TabServers({ onAddServer }) {
       {/* Detail panel */}
       {sel && (
         <div style={{ width: 190, display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 2 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: P_TEXT, letterSpacing: '-0.01em' }}>{sel.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: p.TEXT, letterSpacing: '-0.01em' }}>{sel.name}</span>
           {[['URL', sel.url, true], ['Пользователь', sel.user, false], ['Авторизация', sel.auth, false]].map(([lbl, val, mono]) => (
             <div key={lbl} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: P_MUTED, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{lbl}</span>
-              <span style={{ fontSize: 12, color: P_TEXT, wordBreak: 'break-all', fontFamily: mono ? 'SF Mono, Menlo, monospace' : 'inherit' }}>{val}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: p.MUTED, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{lbl}</span>
+              <span style={{ fontSize: 12, color: p.TEXT, wordBreak: 'break-all', fontFamily: mono ? 'SF Mono, Menlo, monospace' : 'inherit' }}>{val}</span>
             </div>
           ))}
           <button
-            style={{ padding: '5px 12px', borderRadius: 6, background: P_ACCENT, border: 'none', color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', alignSelf: 'flex-start', marginTop: 4 }}
+            style={{ padding: '5px 12px', borderRadius: 6, background: p.ACCENT, border: 'none', color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', alignSelf: 'flex-start', marginTop: 4 }}
             onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
             onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}
           >Проверить связь</button>
@@ -304,6 +354,7 @@ const DOWNLOADED = [
 ];
 
 function TabCache() {
+  const p = useP();
   const [cacheLimit, setCacheLimit] = React.useState(10);
   const [downloads,  setDownloads]  = React.useState(DOWNLOADED);
   const usedGb = 2.4;
@@ -313,40 +364,34 @@ function TabCache() {
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <SectionLabel first>Хранилище</SectionLabel>
       <SettingsCard>
-        {/* Usage bar row */}
-        <div style={{
-          padding: '10px 14px 12px',
-          borderBottom: `0.5px solid ${P_BORDER}`,
-        }}>
+        <div style={{ padding: '10px 14px 12px', borderBottom: `0.5px solid ${p.BORDER}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
-            <span style={{ fontSize: 13, color: P_TEXT }}>Использовано</span>
-            <span style={{ fontSize: 12, color: P_MUTED, fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 13, color: p.TEXT }}>Использовано</span>
+            <span style={{ fontSize: 12, color: p.MUTED, fontVariantNumeric: 'tabular-nums' }}>
               {usedGb} ГБ из {cacheLimit} ГБ
             </span>
           </div>
-          <div style={{ height: 5, borderRadius: 3, background: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, borderRadius: 3, background: pct > 80 ? '#FF9500' : P_ACCENT, transition: 'width 0.3s' }}></div>
+          <div style={{ height: 5, borderRadius: 3, background: p.TRACK, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, borderRadius: 3, background: pct > 80 ? '#FF9500' : p.ACCENT, transition: 'width 0.3s' }}></div>
           </div>
         </div>
-
         <SettingsRow label="Максимальный размер" last>
           <PSlider value={cacheLimit} min={2} max={50} onChange={setCacheLimit} unit=" ГБ" />
         </SettingsRow>
       </SettingsCard>
 
-      {/* Clear cache button — right-aligned */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
         <button
-          style={{ padding: '5px 14px', borderRadius: 7, background: '#fff', border: `0.5px solid ${P_BORDER}`, color: P_TEXT, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}
-          onMouseEnter={e => e.currentTarget.style.background = '#f5f5f7'}
-          onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+          style={{ padding: '5px 14px', borderRadius: 7, background: p.CARD, border: `0.5px solid ${p.BORDER}`, color: p.TEXT, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >Очистить кеш</button>
       </div>
 
       <SectionLabel>Скачанное</SectionLabel>
       <SettingsCard>
         {downloads.length === 0 ? (
-          <div style={{ padding: '20px 14px', textAlign: 'center', color: P_MUTED, fontSize: 13 }}>Нет скачанного контента</div>
+          <div style={{ padding: '20px 14px', textAlign: 'center', color: p.MUTED, fontSize: 13 }}>Нет скачанного контента</div>
         ) : downloads.map((dl, i) => {
           const [h, setH] = React.useState(false);
           return (
@@ -356,19 +401,19 @@ function TabCache() {
               onMouseLeave={() => setH(false)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px',
-                borderBottom: i < downloads.length - 1 ? `0.5px solid ${P_BORDER}` : 'none',
-                background: h ? P_HOVER : 'transparent', transition: 'background 0.1s',
+                borderBottom: i < downloads.length - 1 ? `0.5px solid ${p.BORDER}` : 'none',
+                background: h ? p.HOVER : 'transparent', transition: 'background 0.1s',
               }}
             >
               <div style={{ width: 32, height: 32, borderRadius: 5, background: `linear-gradient(135deg,${dl.colors[0]},${dl.colors[1]},${dl.colors[2]})`, flexShrink: 0 }}></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: P_TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dl.name}</div>
-                <div style={{ fontSize: 11, color: P_SUB }}>{dl.artist}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: p.TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dl.name}</div>
+                <div style={{ fontSize: 11, color: p.SUB }}>{dl.artist}</div>
               </div>
-              <span style={{ fontSize: 12, color: P_MUTED, flexShrink: 0 }}>{dl.size}</span>
+              <span style={{ fontSize: 12, color: p.MUTED, flexShrink: 0 }}>{dl.size}</span>
               <div
-                onClick={() => setDownloads(p => p.filter(x => x.id !== dl.id))}
-                style={{ width: 18, height: 18, borderRadius: '50%', background: h ? 'rgba(0,0,0,0.08)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: P_MUTED, lineHeight: 1, opacity: h ? 1 : 0, transition: 'opacity 0.12s', flexShrink: 0 }}
+                onClick={() => setDownloads(prev => prev.filter(x => x.id !== dl.id))}
+                style={{ width: 18, height: 18, borderRadius: '50%', background: h ? p.HOVER : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: p.MUTED, lineHeight: 1, opacity: h ? 1 : 0, transition: 'opacity 0.12s', flexShrink: 0 }}
               >×</div>
             </div>
           );
@@ -381,10 +426,11 @@ function TabCache() {
 // ── Tab: Внешний вид ────────────────────────────────────────────────────────
 
 function TabAppearance({ appTheme, onThemeChange }) {
+  const p = useP();
   const themes = [
-    { value: 'light',  label: 'Светлая'   },
-    { value: 'dark',   label: 'Тёмная'    },
-    { value: 'system', label: 'Авто'      },
+    { value: 'light',  label: 'Светлая' },
+    { value: 'dark',   label: 'Тёмная'  },
+    { value: 'system', label: 'Авто'    },
   ];
 
   const SegButton = ({ value, current, label, onSelect }) => {
@@ -395,9 +441,9 @@ function TabAppearance({ appTheme, onThemeChange }) {
         style={{
           padding: '4px 14px', borderRadius: 5, cursor: 'pointer',
           fontSize: 13, fontWeight: sel ? 600 : 400,
-          background: sel ? '#fff' : 'transparent',
-          color: sel ? P_TEXT : P_SUB,
-          boxShadow: sel ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+          background: sel ? p.SEG_BTN_SEL : 'transparent',
+          color: sel ? p.TEXT : p.SUB,
+          boxShadow: sel ? (p.dark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.1)') : 'none',
           transition: 'all 0.15s', userSelect: 'none',
         }}
       >{label}</div>
@@ -409,7 +455,7 @@ function TabAppearance({ appTheme, onThemeChange }) {
       <SectionLabel first>Тема оформления</SectionLabel>
       <SettingsCard>
         <SettingsRow label="Оформление" last>
-          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.07)', borderRadius: 8, padding: 3, gap: 2 }}>
+          <div style={{ display: 'flex', background: p.SEG_BG, borderRadius: 8, padding: 3, gap: 2 }}>
             {themes.map(t => (
               <SegButton key={t.value} value={t.value} current={appTheme} label={t.label} onSelect={onThemeChange} />
             ))}
@@ -433,10 +479,15 @@ function PrefsWindow({ isOpen, onClose, appTheme, onThemeChange, onAddServer }) 
   const [activeTab, setActiveTab] = React.useState('servers');
   if (!isOpen) return null;
 
-  const winBg      = '#f2f2f5';
-  const toolbarBg  = 'rgba(242,242,245,0.97)';
-  const borderColor = 'rgba(0,0,0,0.09)';
-  const contentBg  = '#f2f2f5';
+  const dark = appTheme === 'dark';
+
+  // Token values computed locally for the window shell (not via hook — context not yet provided)
+  const ACCENT  = dark ? '#0A84FF' : '#007AFF';
+  const SUB     = dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.44)';
+  const BORDER  = dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)';
+  const WIN_BG  = dark ? '#2c2c2e' : '#f2f2f5';
+  const BAR_BG  = dark ? 'rgba(40,40,42,0.97)' : 'rgba(242,242,245,0.97)';
+  const TITLE_C = dark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.85)';
 
   const tabContent = {
     servers:    <TabServers onAddServer={onAddServer} />,
@@ -446,79 +497,81 @@ function PrefsWindow({ isOpen, onClose, appTheme, onThemeChange, onAddServer }) 
   };
 
   return (
-    <div style={{
-      position: 'absolute',
-      left: (1100 - 560) / 2, top: (700 - 460) / 2,
-      width: 560, borderRadius: 12,
-      background: winBg,
-      boxShadow: '0 0 0 0.5px rgba(0,0,0,0.13), 0 28px 90px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.1)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
-      zIndex: 300,
-      overflow: 'hidden',
-      animation: 'eqAppear 0.2s cubic-bezier(0.4,0,0.2,1)',
-      animationFillMode: 'forwards',
-    }}>
-
-      {/* Title bar */}
+    <PrefThemeCtx.Provider value={{ dark }}>
       <div style={{
-        height: 40, display: 'flex', alignItems: 'center', padding: '0 14px',
-        background: toolbarBg, borderBottom: `0.5px solid ${borderColor}`,
+        position: 'absolute',
+        left: (1100 - 560) / 2, top: (700 - 460) / 2,
+        width: 560, borderRadius: 12,
+        background: WIN_BG,
+        boxShadow: dark
+          ? '0 0 0 0.5px rgba(255,255,255,0.1), 0 28px 90px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.3)'
+          : '0 0 0 0.5px rgba(0,0,0,0.13), 0 28px 90px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.1)',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+        zIndex: 300,
+        overflow: 'hidden',
+        animation: 'eqAppear 0.2s cubic-bezier(0.4,0,0.2,1)',
+        animationFillMode: 'forwards',
+        transition: 'background 0.3s, box-shadow 0.3s',
       }}>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <div onClick={onClose} style={{ width: 11, height: 11, borderRadius: '50%', background: '#FF5F57', cursor: 'pointer', border: '0.5px solid rgba(0,0,0,0.1)' }}></div>
-          <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#FEBC2E', border: '0.5px solid rgba(0,0,0,0.1)' }}></div>
-          <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28C840', border: '0.5px solid rgba(0,0,0,0.1)' }}></div>
+
+        {/* Title bar */}
+        <div style={{
+          height: 40, display: 'flex', alignItems: 'center', padding: '0 14px',
+          background: BAR_BG, borderBottom: `0.5px solid ${BORDER}`,
+        }}>
+          <CloseButton onClose={onClose} />
+          <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 600, color: TITLE_C, letterSpacing: '-0.015em' }}>
+            Настройки
+          </div>
+          <div style={{ width: 12 }}></div>
         </div>
-        <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 600, color: 'rgba(0,0,0,0.85)', letterSpacing: '-0.015em' }}>
-          Настройки
+
+        {/* Tab toolbar */}
+        <div style={{
+          display: 'flex',
+          background: BAR_BG,
+          borderBottom: `0.5px solid ${BORDER}`,
+        }}>
+          {PREF_TABS.map(({ id, label, Icon }) => {
+            const sel = activeTab === id;
+            return (
+              <div
+                key={id}
+                onClick={() => setActiveTab(id)}
+                style={{
+                  flex: 1,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  padding: '10px 0 8px',
+                  cursor: 'pointer',
+                  borderBottom: sel ? `2px solid ${ACCENT}` : '2px solid transparent',
+                  color: sel ? ACCENT : SUB,
+                  transition: 'color 0.12s, border-color 0.12s',
+                  userSelect: 'none',
+                }}
+                onMouseEnter={e => { if (!sel) e.currentTarget.style.color = dark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)'; }}
+                onMouseLeave={e => { if (!sel) e.currentTarget.style.color = SUB; }}
+              >
+                <Icon size={20} color="currentColor" />
+                <span style={{ fontSize: 11, fontWeight: sel ? 600 : 400, letterSpacing: '-0.01em', lineHeight: 1 }}>
+                  {label}
+                </span>
+              </div>
+            );
+          })}
         </div>
-        <div style={{ width: 11 * 3 + 6 * 2 }}></div>
-      </div>
 
-      {/* Tab toolbar — full-width proportional tabs */}
-      <div style={{
-        display: 'flex',
-        background: toolbarBg,
-        borderBottom: `0.5px solid ${borderColor}`,
-      }}>
-        {PREF_TABS.map(({ id, label, Icon }) => {
-          const sel = activeTab === id;
-          return (
-            <div
-              key={id}
-              onClick={() => setActiveTab(id)}
-              style={{
-                flex: 1,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '10px 0 8px',
-                cursor: 'pointer',
-                borderBottom: sel ? `2px solid ${P_ACCENT}` : '2px solid transparent',
-                color: sel ? P_ACCENT : P_SUB,
-                transition: 'color 0.12s, border-color 0.12s',
-                userSelect: 'none',
-              }}
-              onMouseEnter={e => { if (!sel) e.currentTarget.style.color = 'rgba(0,0,0,0.6)'; }}
-              onMouseLeave={e => { if (!sel) e.currentTarget.style.color = P_SUB; }}
-            >
-              <Icon size={20} color="currentColor" />
-              <span style={{ fontSize: 11, fontWeight: sel ? 600 : 400, letterSpacing: '-0.01em', lineHeight: 1 }}>
-                {label}
-              </span>
-            </div>
-          );
-        })}
+        {/* Tab content */}
+        <div style={{
+          padding: '18px 20px 20px',
+          background: WIN_BG,
+          height: 358,
+          overflowY: 'auto',
+          transition: 'background 0.3s',
+        }}>
+          {tabContent[activeTab]}
+        </div>
       </div>
-
-      {/* Tab content */}
-      <div style={{
-        padding: '18px 20px 20px',
-        background: contentBg,
-        height: 358,
-        overflowY: 'auto',
-      }}>
-        {tabContent[activeTab]}
-      </div>
-    </div>
+    </PrefThemeCtx.Provider>
   );
 }
 

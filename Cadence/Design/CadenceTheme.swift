@@ -137,17 +137,67 @@ enum CadenceTheme {
         scheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.06)
     }
 
-    // MARK: - Preferences (always light)
+    // MARK: - Preferences (theme-aware)
 
-    static let prefsBackground = Color(red: 0.965, green: 0.965, blue: 0.973)
-    static let prefsToolbarBackground = Color(red: 0.941, green: 0.941, blue: 0.957).opacity(0.97)
-    static let prefsContentBackground = Color.white
-    static let prefsText = Color.black.opacity(0.86)
-    static let prefsSubtext = Color.black.opacity(0.42)
-    static let prefsMuted = Color.black.opacity(0.28)
-    static let prefsBorder = Color.black.opacity(0.1)
-    static let prefsAccent = Color(red: 0, green: 0.478, blue: 1.0)
-    static let prefsSelectionBackground = Color(red: 0, green: 0.478, blue: 1.0).opacity(0.09)
+    static func prefsBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0.173, green: 0.173, blue: 0.180)
+            : Color(red: 0.965, green: 0.965, blue: 0.973)
+    }
+
+    static func prefsToolbarBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0.157, green: 0.157, blue: 0.165).opacity(0.97)
+            : Color(red: 0.941, green: 0.941, blue: 0.957).opacity(0.97)
+    }
+
+    static func prefsCardBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(red: 0.227, green: 0.227, blue: 0.235) : Color.white
+    }
+
+    static func prefsText(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.88) : Color.black.opacity(0.86)
+    }
+
+    static func prefsSubtext(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.45) : Color.black.opacity(0.42)
+    }
+
+    static func prefsMuted(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.28) : Color.black.opacity(0.28)
+    }
+
+    static func prefsBorder(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.09) : Color.black.opacity(0.1)
+    }
+
+    static func prefsAccent(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0.039, green: 0.518, blue: 1.0)
+            : Color(red: 0, green: 0.478, blue: 1.0)
+    }
+
+    static func prefsSelectionBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0.039, green: 0.518, blue: 1.0).opacity(0.18)
+            : Color(red: 0, green: 0.478, blue: 1.0).opacity(0.09)
+    }
+
+    static func prefsSegmentBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(red: 0.118, green: 0.118, blue: 0.125) : Color.black.opacity(0.07)
+    }
+
+    static func prefsSegmentButtonSelected(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(red: 0.282, green: 0.282, blue: 0.290) : Color.white
+    }
+
+    static func prefsToggleTrack(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.18) : Color.black.opacity(0.16)
+    }
+
+    static func prefsSliderTrack(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.14) : Color.black.opacity(0.1)
+    }
 
     static func queuePanelBackground(for scheme: ColorScheme) -> Color {
         scheme == .dark

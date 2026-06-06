@@ -10,9 +10,10 @@ struct TrackRowView: View {
     let track: Track
     let isActive: Bool
     let isPlaying: Bool
-    let isHovered: Bool
     var disambiguationLabel: String? = nil
     var onPlay: () -> Void = {}
+
+    @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -62,6 +63,7 @@ struct TrackRowView: View {
         .frame(height: CadenceTheme.trackRowHeight)
         .background(isHovered ? CadenceTheme.rowHoverBackground(for: colorScheme) : Color.clear)
         .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
         .onTapGesture(count: 2, perform: onPlay)
         .contextMenu {
             trackContextMenu

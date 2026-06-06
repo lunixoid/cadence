@@ -101,6 +101,7 @@ final class LibraryStore {
         folderDisplayNames = [:]
         jellyfinAlbumIDs = []
         jellyfinTrackIDs = []
+        cachedAllTracks = []
         stopAccessingAllSecurityScopedResources()
     }
 
@@ -121,13 +122,7 @@ final class LibraryStore {
     }
 
     func allTracks() -> [Track] {
-        tracks.sorted { lhs, rhs in
-            let lhsAlbum = albumsByID[lhs.albumID]?.title ?? ""
-            let rhsAlbum = albumsByID[rhs.albumID]?.title ?? ""
-            if lhsAlbum != rhsAlbum { return lhsAlbum.localizedCaseInsensitiveCompare(rhsAlbum) == .orderedAscending }
-            if lhs.discNumber != rhs.discNumber { return lhs.discNumber < rhs.discNumber }
-            return lhs.index < rhs.index
-        }
+        cachedAllTracks
     }
 
     func localTracks() -> [Track] {
@@ -171,17 +166,11 @@ final class LibraryStore {
         track.fileURL.deletingPathExtension().lastPathComponent.lowercased()
     }
 
-    func duplicateFileNameKeys() -> Set<String> {
-        var counts: [String: Int] = [:]
-        for track in tracks {
-            let key = fileNameKey(for: track)
-            counts[key, default: 0] += 1
-        }
-        return Set(counts.filter { $0.value > 1 }.map(\.key))
-    }
+    private(set) var duplicateFileNameKeySet: Set<String> = []
+    private(set) var cachedAllTracks: [Track] = []
 
     func disambiguationLabel(for track: Track) -> String? {
-        guard duplicateFileNameKeys().contains(fileNameKey(for: track)) else { return nil }
+        guard duplicateFileNameKeySet.contains(fileNameKey(for: track)) else { return nil }
 
         let albumTitle = album(for: track.albumID)?.title ?? ""
         if !albumTitle.isEmpty && albumTitle != "Unknown Album" {
@@ -356,6 +345,20 @@ final class LibraryStore {
         genres = genreAlbumMap
             .map { Genre(name: $0.key, albumIDs: Array($0.value)) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+
+        var counts: [String: Int] = [:]
+        for track in tracks {
+            counts[fileNameKey(for: track), default: 0] += 1
+        }
+        duplicateFileNameKeySet = Set(counts.filter { $0.value > 1 }.map(\.key))
+
+        cachedAllTracks = tracks.sorted { lhs, rhs in
+            let lhsAlbum = albumsByID[lhs.albumID]?.title ?? ""
+            let rhsAlbum = albumsByID[rhs.albumID]?.title ?? ""
+            if lhsAlbum != rhsAlbum { return lhsAlbum.localizedCaseInsensitiveCompare(rhsAlbum) == .orderedAscending }
+            if lhs.discNumber != rhs.discNumber { return lhs.discNumber < rhs.discNumber }
+            return lhs.index < rhs.index
+        }
     }
 
     private func stopAccessingAllSecurityScopedResources() {

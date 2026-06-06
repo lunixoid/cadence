@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 struct AlbumPageView: View {
@@ -18,7 +17,7 @@ struct AlbumPageView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            albumToolbar
+            ContentToolbarView(title: "Альбомы")
 
             ScrollView {
                 VStack(spacing: 0) {
@@ -47,38 +46,6 @@ struct AlbumPageView: View {
                     Color.clear.frame(height: 24)
                 }
             }
-        }
-    }
-
-    private var albumToolbar: some View {
-        HStack(spacing: 12) {
-            Button(action: { uiState.navigateBack() }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(CadenceTheme.iconColor(for: colorScheme))
-                    .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
-                    .background(
-                        RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
-                            .fill(CadenceTheme.navBackground(for: colorScheme))
-                    )
-            }
-            .buttonStyle(.plain)
-
-            Button("Альбомы") {
-                uiState.navigateBack()
-            }
-            .buttonStyle(.plain)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
-
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .frame(height: CadenceTheme.toolbarHeight)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.06))
-                .frame(height: 0.5)
         }
     }
 

@@ -53,6 +53,55 @@ function CadenceSidebarSection({ title, dark }) {
   );
 }
 
+function PlaylistContextMenu({ x, y, dark, onDelete, onClose }) {
+  const menuBg = dark ? 'rgba(50,50,54,0.96)' : 'rgba(255,255,255,0.96)';
+  const borderColor = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+  const [hovered, setHovered] = React.useState(false);
+
+  React.useEffect(() => {
+    const handler = (e) => { e.stopPropagation && null; onClose(); };
+    window.addEventListener('click', handler);
+    window.addEventListener('contextmenu', handler);
+    return () => {
+      window.removeEventListener('click', handler);
+      window.removeEventListener('contextmenu', handler);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        position: 'fixed', left: x, top: y, zIndex: 2000,
+        background: menuBg,
+        backdropFilter: 'blur(30px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+        borderRadius: 8, padding: '4px 0',
+        border: `0.5px solid ${borderColor}`,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.1)',
+        minWidth: 160,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+      }}
+    >
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={() => { onDelete(); onClose(); }}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '5px 12px', borderRadius: 4, cursor: 'default',
+          background: hovered ? '#FF3B30' : 'transparent',
+          color: hovered ? '#fff' : '#FF3B30',
+          fontSize: 13, fontWeight: 400,
+          transition: 'background 0.08s, color 0.08s',
+        }}
+      >
+        Удалить
+      </div>
+    </div>
+  );
+}
+
 function CadenceSidebar({ dark, activeItem, onItemClick, onSettingsClick }) {
   const accent = dark ? '#0A84FF' : '#007AFF';
   const sidebarBg = dark
@@ -66,12 +115,24 @@ function CadenceSidebar({ dark, activeItem, onItemClick, onSettingsClick }) {
     { id: 'artists', icon: <IconArtist size={15} />, label: 'Артисты' },
   ];
 
-  const playlists = [
+  const [playlists, setPlaylists] = React.useState([
     { id: 'pl-chill', label: 'Вечерний чилл' },
     { id: 'pl-workout', label: 'Тренировка' },
     { id: 'pl-focus', label: 'Фокус' },
     { id: 'pl-drive', label: 'В дорогу' },
-  ];
+  ]);
+  const [contextMenu, setContextMenu] = React.useState(null);
+
+  const handlePlaylistContextMenu = (e, pl) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, id: pl.id });
+  };
+
+  const deletePlaylist = (id) => {
+    setPlaylists(prev => prev.filter(p => p.id !== id));
+    if (activeItem === id) onItemClick('albums');
+  };
 
   return (
     <div style={{
@@ -134,15 +195,25 @@ function CadenceSidebar({ dark, activeItem, onItemClick, onSettingsClick }) {
         {/* Playlists */}
         <CadenceSidebarSection title="Плейлисты" dark={dark} />
         {playlists.map(pl => (
-          <CadenceSidebarItem
-            key={pl.id}
-            icon={<IconPlaylist size={15} />}
-            label={pl.label}
-            selected={activeItem === pl.id}
-            dark={dark}
-            onClick={() => onItemClick(pl.id)}
-          />
+          <div key={pl.id} onContextMenu={e => handlePlaylistContextMenu(e, pl)}>
+            <CadenceSidebarItem
+              icon={<IconPlaylist size={15} />}
+              label={pl.label}
+              selected={activeItem === pl.id}
+              dark={dark}
+              onClick={() => onItemClick(pl.id)}
+            />
+          </div>
         ))}
+        {contextMenu && (
+          <PlaylistContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            dark={dark}
+            onDelete={() => deletePlaylist(contextMenu.id)}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
         {/* Create playlist button */}
         <div
           style={{

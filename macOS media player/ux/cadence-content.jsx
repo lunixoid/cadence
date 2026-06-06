@@ -104,7 +104,7 @@ function AlbumCard({ album, dark, onClick }) {
   );
 }
 
-function CadenceToolbar({ dark, title = 'Альбомы', canGoBack = false, onBack }) {
+function CadenceToolbar({ dark, title = 'Альбомы', canGoBack = false, canGoForward = false, onBack, onForward }) {
   const textColor = dark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)';
   const mutedColor = dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
   const iconColor = dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)';
@@ -137,11 +137,16 @@ function CadenceToolbar({ dark, title = 'Альбомы', canGoBack = false, onB
           }}>
           <IconChevronLeft size={14} color={mutedColor} />
         </div>
-        <div style={{
-          width: 28, height: 28, borderRadius: 6,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: navBg, cursor: 'pointer', color: mutedColor,
-        }}>
+        <div
+          onClick={canGoForward ? onForward : undefined}
+          style={{
+            width: 28, height: 28, borderRadius: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: navBg,
+            cursor: canGoForward ? 'pointer' : 'default',
+            opacity: canGoForward ? 1 : 0.4,
+            transition: 'opacity 0.12s',
+          }}>
           <IconChevronRight size={14} color={mutedColor} />
         </div>
       </div>

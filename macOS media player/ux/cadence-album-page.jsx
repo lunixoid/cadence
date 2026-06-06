@@ -160,29 +160,14 @@ function AlbumPage({ album, dark, playingTrackIdx, isPlaying, onPlayTrack, onBac
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Toolbar with back button */}
-      <div style={{
-        height: 52, display: 'flex', alignItems: 'center', gap: 12,
-        padding: '0 20px', flexShrink: 0,
-        borderBottom: `0.5px solid ${borderColor}`,
-      }}>
-        <div
-          onClick={onBack}
-          style={{
-            width: 28, height: 28, borderRadius: 6,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-            cursor: 'pointer',
-          }}
-        >
-          <IconChevronLeft size={14} color={dark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)'} />
-        </div>
-        <span style={{
-          fontSize: 13, fontWeight: 500, color: subColor,
-          cursor: 'pointer',
-        }} onClick={onBack}>Альбомы</span>
-        <div style={{ flex: 1 }}></div>
-      </div>
+      {/* Toolbar */}
+      <CadenceToolbar
+        dark={dark}
+        title="Альбомы"
+        canGoBack={true}
+        canGoForward={false}
+        onBack={onBack}
+      />
 
       {/* Scrollable content */}
       <div style={{

@@ -7,6 +7,10 @@ enum CadenceTheme {
     static let trafficLightsAreaHeight: CGFloat = 52
     static let toolbarHeight: CGFloat = 52
     static let nowPlayingBarHeight: CGFloat = 96
+    static let nowPlayingCollapsedBarHeight: CGFloat = 10
+    static let nowPlayingHeroCoverSize: CGFloat = 260
+    static let nowPlayingRightPanelWidth: CGFloat = 262
+    static let nowPlayingWideThreshold: CGFloat = 760
     static let queuePanelWidth: CGFloat = 300
     static let queueHeaderHeight: CGFloat = 52
     static let overlayWindowRadius: CGFloat = 12

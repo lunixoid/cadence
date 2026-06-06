@@ -58,6 +58,13 @@ struct SidebarView: View {
                                 }(),
                                 action: { uiState.selectPlaylist(playlist) }
                             )
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    deletePlaylist(playlist)
+                                } label: {
+                                    Label("Удалить", systemImage: "trash")
+                                }
+                            }
                         }
 
                         createPlaylistButton
@@ -104,6 +111,13 @@ struct SidebarView: View {
         } message: {
             Text("Введите название плейлиста")
         }
+    }
+
+    private func deletePlaylist(_ playlist: Playlist) {
+        if case .playlistDetail(let id) = uiState.contentRoute, id == playlist.id {
+            uiState.selectSidebarItem(.albums)
+        }
+        playlistStore.deletePlaylist(id: playlist.id)
     }
 
     private var sidebarDivider: some View {

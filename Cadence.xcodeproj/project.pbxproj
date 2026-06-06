@@ -65,6 +65,7 @@
 	C20000010000000000000024 /* JellyfinServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000014 /* JellyfinServer.swift */; };
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
+		E10000010000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10000010000000000000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -128,6 +129,7 @@
 	C20000010000000000000012 /* JellyfinLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryLoader.swift; sourceTree = "<group>"; };
 	C20000010000000000000013 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 	C20000010000000000000014 /* JellyfinServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinServer.swift; sourceTree = "<group>"; };
+	D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +161,7 @@
 			E873D6061BA44732B83D06E2 /* App */,
 			EBFCE09F2FEA4932B8AE0EA9 /* Preview */,
 			EDD4A1AEA8D44E3494620F7B /* Views */,
+			D10000010000000000000001 /* Assets.xcassets */,
 			18646C3494E04914B698E7C8 /* Cadence.entitlements */,
 		);
 		path = Cadence;
@@ -465,6 +468,7 @@
 		isa = PBXResourcesBuildPhase;
 		buildActionMask = 2147483647;
 		files = (
+			E10000010000000000000001 /* Assets.xcassets in Resources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};

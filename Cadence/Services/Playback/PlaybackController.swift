@@ -13,8 +13,10 @@ final class PlaybackController {
     private let stateStore = PlaybackStateStore()
 
     private var playbackQueue = PlaybackQueue()
+    private var loadTask: Task<Void, Never>?
 
     var isPlaying = false
+    var isLoading = false
     var shuffleOn = false
     var repeatMode: RepeatMode = .off
     var progress: TimeInterval = 0
@@ -25,6 +27,15 @@ final class PlaybackController {
             persistState()
         }
     }
+
+    var eqEnabled = true {
+        didSet {
+            audioEngine.setEQEnabled(eqEnabled)
+            persistState()
+        }
+    }
+
+    var eqGains: [Double] = Array(repeating: 0, count: 10)
 
     var currentTrack: Track? {
         playbackQueue.current
@@ -56,6 +67,13 @@ final class PlaybackController {
         }
     }
 
+    func setEQGain(at index: Int, gain: Double) {
+        guard index < eqGains.count else { return }
+        eqGains[index] = gain
+        audioEngine.setBandGain(at: index, gain: Float(gain))
+        persistState()
+    }
+
     func restoreSavedState() {
         guard let snapshot = stateStore.load(),
               let queue = stateStore.restoreQueue(from: snapshot, library: libraryStore) else {
@@ -70,6 +88,17 @@ final class PlaybackController {
         repeatMode = snapshot.repeatMode
         volume = snapshot.volume
         progress = snapshot.progress
+
+        if let savedEnabled = snapshot.eqEnabled {
+            eqEnabled = savedEnabled
+            audioEngine.setEQEnabled(savedEnabled)
+        }
+        if let savedGains = snapshot.eqGains {
+            eqGains = savedGains
+            for (i, gain) in savedGains.enumerated() {
+                audioEngine.setBandGain(at: i, gain: Float(gain))
+            }
+        }
 
         loadCurrentTrack(seekTo: snapshot.progress, shouldPlay: snapshot.isPlaying)
     }
@@ -245,17 +274,30 @@ final class PlaybackController {
     }
 
     private func playLoadedTrack(_ track: Track) {
-        do {
-            try audioEngine.load(url: track.fileURL)
-            duration = audioEngine.duration()
-            progress = 0
-            audioEngine.play()
-            isPlaying = true
-            recentStore.record(track: track)
-            mediaRemote.publishNowPlayingInfo()
-        } catch {
-            logger.error("Failed to load track: \(error.localizedDescription)")
-            next()
+        loadTask?.cancel()
+        isLoading = true
+
+        loadTask = Task {
+            do {
+                if track.fileURL.isFileURL {
+                    try audioEngine.load(url: track.fileURL)
+                } else {
+                    try await audioEngine.loadRemote(url: track.fileURL)
+                }
+                guard !Task.isCancelled else { return }
+                duration = audioEngine.duration()
+                progress = 0
+                audioEngine.play()
+                isPlaying = true
+                isLoading = false
+                recentStore.record(track: track)
+                mediaRemote.publishNowPlayingInfo()
+            } catch {
+                guard !Task.isCancelled else { return }
+                logger.error("Failed to load track: \(error.localizedDescription)")
+                isLoading = false
+                next()
+            }
         }
     }
 
@@ -309,7 +351,9 @@ final class PlaybackController {
             isPlaying: isPlaying,
             shuffleOn: shuffleOn,
             repeatMode: repeatMode,
-            volume: volume
+            volume: volume,
+            eqEnabled: eqEnabled,
+            eqGains: eqGains
         )
         stateStore.save(snapshot)
     }

@@ -89,13 +89,6 @@ final class AppUIState {
         activeSidebarItem = .artists
     }
 
-    func openGenre(_ name: String) {
-        navigationStack.append(contentRoute)
-        forwardStack.removeAll()
-        contentRoute = .genreDetail(name)
-        activeSidebarItem = .genres
-    }
-
     func navigateBack() {
         if let previous = navigationStack.popLast() {
             forwardStack.append(contentRoute)
@@ -218,8 +211,6 @@ final class AppUIState {
             return SidebarItem.albums.label
         case .artistsGrid, .artistDetail:
             return SidebarItem.artists.label
-        case .genresGrid, .genreDetail:
-            return SidebarItem.genres.label
         case .favorites:
             return SidebarItem.favorites.label
         case .recent:
@@ -237,7 +228,6 @@ final class AppUIState {
         case .tracks: return .tracksList
         case .albums: return .albumsGrid
         case .artists: return .artistsGrid
-        case .genres: return .genresGrid
         case .favorites: return .favorites
         case .recent: return .recent
         case .downloaded: return .downloaded

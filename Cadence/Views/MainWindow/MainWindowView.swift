@@ -129,10 +129,6 @@ struct MainWindowView: View {
                 ArtistGridView()
             case .artistDetail(let name):
                 ArtistDetailView(artistName: name)
-            case .genresGrid:
-                GenreGridView()
-            case .genreDetail(let name):
-                GenreDetailView(genreName: name)
             case .favorites:
                 FavoritesView()
             case .recent:

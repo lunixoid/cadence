@@ -19,7 +19,7 @@ struct LocalLibraryScanner {
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles]
         ) else {
-            return LibraryScanResult(albums: [], tracks: [], artists: [], genres: [])
+            return LibraryScanResult(albums: [], tracks: [], artists: [])
         }
 
         var scannedTracks: [ScannedTrack] = []
@@ -63,7 +63,6 @@ struct LocalLibraryScanner {
             albumArtist: albumArtist,
             trackNumber: metadata.trackNumber ?? 0,
             discNumber: metadata.discNumber ?? 1,
-            genre: metadata.genre,
             year: metadata.year,
             duration: duration,
             embeddedCoverData: metadata.artworkData
@@ -85,7 +84,6 @@ struct LocalLibraryScanner {
         var albums: [Album] = []
         var tracks: [Track] = []
         var artistAlbumMap: [String: Set<UUID>] = [:]
-        var genreAlbumMap: [String: Set<UUID>] = [:]
 
         for (key, groupTracks) in albumGroups {
             let albumID = UUID()
@@ -100,14 +98,12 @@ struct LocalLibraryScanner {
             let folderURL = commonFolder(for: sortedGroup.map(\.fileURL))
             let coverURL = resolveCoverURL(for: sortedGroup, folderURL: folderURL)
             let year = sortedGroup.compactMap(\.year).first
-            let genre = sortedGroup.compactMap(\.genre).first
 
             let album = Album(
                 id: albumID,
                 title: key.title,
                 artist: key.artist,
                 year: year,
-                genre: genre,
                 accentColors: accentColors(for: albumID),
                 coverURL: coverURL,
                 folderURL: folderURL
@@ -115,9 +111,6 @@ struct LocalLibraryScanner {
             albums.append(album)
 
             artistAlbumMap[key.artist, default: []].insert(albumID)
-            if let genre {
-                genreAlbumMap[genre, default: []].insert(albumID)
-            }
 
             for (offset, scannedTrack) in sortedGroup.enumerated() {
                 let index = scannedTrack.trackNumber > 0 ? scannedTrack.trackNumber : offset + 1
@@ -136,9 +129,8 @@ struct LocalLibraryScanner {
         }
 
         let artists = artistAlbumMap.map { Artist(name: $0.key, albumIDs: Array($0.value)) }
-        let genres = genreAlbumMap.map { Genre(name: $0.key, albumIDs: Array($0.value)) }
 
-        return LibraryScanResult(albums: albums, tracks: tracks, artists: artists, genres: genres)
+        return LibraryScanResult(albums: albums, tracks: tracks, artists: artists)
     }
 
     private func commonFolder(for urls: [URL]) -> URL? {
@@ -210,7 +202,6 @@ struct LocalLibraryScanner {
         var albumArtist: String
         var trackNumber: Int
         var discNumber: Int
-        var genre: String?
         var year: Int?
         var duration: TimeInterval
         var embeddedCoverData: Data?
@@ -223,7 +214,6 @@ struct LocalLibraryScanner {
         var albumArtist: String?
         var trackNumber: Int?
         var discNumber: Int?
-        var genre: String?
         var year: Int?
         var artworkData: Data?
     }
@@ -273,8 +263,6 @@ struct LocalLibraryScanner {
                     result.trackNumber = parseTrackNumber(stringValue(from: item)) ?? result.trackNumber
                 } else if idString.contains("discnumber") || idString.contains("disc") {
                     result.discNumber = parseTrackNumber(stringValue(from: item)) ?? result.discNumber
-                } else if idString.contains("genre") {
-                    result.genre = stringValue(from: item) ?? result.genre
                 } else if idString.contains("date") || idString.contains("year") {
                     if let value = stringValue(from: item), let year = Int(value.prefix(4)) {
                         result.year = year

@@ -7,8 +7,6 @@ enum ContentRoute: Equatable, Hashable {
     case albumDetail(UUID)
     case artistsGrid
     case artistDetail(String)
-    case genresGrid
-    case genreDetail(String)
     case favorites
     case recent
     case downloaded
@@ -20,7 +18,6 @@ enum ContentRoute: Equatable, Hashable {
         case .tracksList: return .tracks
         case .albumsGrid, .albumDetail: return .albums
         case .artistsGrid, .artistDetail: return .artists
-        case .genresGrid, .genreDetail: return .genres
         case .favorites: return .favorites
         case .recent: return .recent
         case .downloaded: return .downloaded

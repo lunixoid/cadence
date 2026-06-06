@@ -7,7 +7,6 @@ struct LibraryScanResult {
     var albums: [Album]
     var tracks: [Track]
     var artists: [Artist]
-    var genres: [Genre]
 }
 
 @Observable
@@ -15,7 +14,6 @@ final class LibraryStore {
     private(set) var albums: [Album] = []
     private(set) var tracks: [Track] = []
     private(set) var artists: [Artist] = []
-    private(set) var genres: [Genre] = []
 
     private var tracksByAlbumID: [UUID: [Track]] = [:]
     private var tracksByID: [UUID: Track] = [:]
@@ -91,7 +89,6 @@ final class LibraryStore {
         albums = []
         tracks = []
         artists = []
-        genres = []
         tracksByAlbumID = [:]
         tracksByID = [:]
         albumsByID = [:]
@@ -134,19 +131,14 @@ final class LibraryStore {
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
     }
 
-    func albums(forGenre name: String) -> [Album] {
-        albums.filter { ($0.genre ?? "").caseInsensitiveCompare(name) == .orderedSame }
-            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
-    }
-
     func filteredAlbums(query: String) -> [Album] {
-        filterItems(albums, query: query) { [$0.title, $0.artist, $0.genre ?? ""] }
+        filterItems(albums, query: query) { [$0.title, $0.artist] }
     }
 
     func filteredTracks(query: String, from source: [Track]) -> [Track] {
         filterItems(source, query: query) { track in
             let album = albumsByID[track.albumID]
-            var fields = [track.title, track.artist, album?.title ?? "", album?.genre ?? ""]
+            var fields = [track.title, track.artist, album?.title ?? ""]
             if let label = disambiguationLabel(for: track) {
                 fields.append(label)
             }
@@ -156,10 +148,6 @@ final class LibraryStore {
 
     func filteredArtists(query: String) -> [Artist] {
         filterItems(artists, query: query) { [$0.name] }
-    }
-
-    func filteredGenres(query: String) -> [Genre] {
-        filterItems(genres, query: query) { [$0.name] }
     }
 
     func fileNameKey(for track: Track) -> String {
@@ -220,7 +208,6 @@ final class LibraryStore {
                 albumIDMap[newAlbum.id] = existing.id
                 var updated = existing
                 updated.year = newAlbum.year ?? updated.year
-                updated.genre = newAlbum.genre ?? updated.genre
                 updated.coverURL = newAlbum.coverURL ?? updated.coverURL
                 updated.folderURL = newAlbum.folderURL ?? updated.folderURL
                 replaceAlbum(updated)
@@ -231,7 +218,6 @@ final class LibraryStore {
                     title: newAlbum.title,
                     artist: newAlbum.artist,
                     year: newAlbum.year,
-                    genre: newAlbum.genre,
                     accentColors: newAlbum.accentColors,
                     coverURL: newAlbum.coverURL,
                     folderURL: newAlbum.folderURL
@@ -282,9 +268,6 @@ final class LibraryStore {
         artists = result.artists.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
-        genres = result.genres.sorted {
-            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-        }
 
         albumsByID = Dictionary(uniqueKeysWithValues: albums.map { ($0.id, $0) })
         tracksByID = Dictionary(uniqueKeysWithValues: tracks.map { ($0.id, $0) })
@@ -329,21 +312,13 @@ final class LibraryStore {
         }
 
         var artistAlbumMap: [String: Set<UUID>] = [:]
-        var genreAlbumMap: [String: Set<UUID>] = [:]
 
         for album in albums {
             artistAlbumMap[album.artist, default: []].insert(album.id)
-            if let genre = album.genre {
-                genreAlbumMap[genre, default: []].insert(album.id)
-            }
         }
 
         artists = artistAlbumMap
             .map { Artist(name: $0.key, albumIDs: Array($0.value)) }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-
-        genres = genreAlbumMap
-            .map { Genre(name: $0.key, albumIDs: Array($0.value)) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
 
         var counts: [String: Int] = [:]

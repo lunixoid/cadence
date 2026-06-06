@@ -49,7 +49,6 @@ struct JellyfinItem: Decodable {
     let indexNumber: Int?
     let parentIndexNumber: Int?
     let productionYear: Int?
-    let genres: [String]?
     let imageTags: [String: String]?
 
     enum CodingKeys: String, CodingKey {
@@ -65,7 +64,6 @@ struct JellyfinItem: Decodable {
         case indexNumber = "IndexNumber"
         case parentIndexNumber = "ParentIndexNumber"
         case productionYear = "ProductionYear"
-        case genres = "Genres"
         case imageTags = "ImageTags"
     }
 
@@ -202,7 +200,7 @@ final class JellyfinClient: Sendable {
             URLQueryItem(name: "Recursive", value: "true"),
             URLQueryItem(name: "Limit", value: "\(limit)"),
             URLQueryItem(name: "StartIndex", value: "\(offset)"),
-            URLQueryItem(name: "Fields", value: "Genres,ProductionYear,ImageTags"),
+            URLQueryItem(name: "Fields", value: "ProductionYear,ImageTags"),
         ])
         return try await fetchItems(from: components)
     }
@@ -434,7 +432,6 @@ extension JellyfinClient {
             title: item.name,
             artist: item.albumArtist ?? item.albumArtists?.first?.name ?? "Неизвестный артист",
             year: item.productionYear,
-            genre: item.genres?.first,
             accentColors: accentColors,
             coverURL: artworkURL(itemID: item.id, maxWidth: 300)
         )

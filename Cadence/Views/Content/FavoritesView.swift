@@ -83,7 +83,7 @@ struct DownloadedView: View {
     @State private var hoveredRow: UUID?
 
     private var tracks: [Track] {
-        libraryStore.filteredTracks(query: uiState.searchQuery, from: libraryStore.allTracks())
+        libraryStore.filteredTracks(query: uiState.searchQuery, from: libraryStore.localTracks())
     }
 
     var body: some View {

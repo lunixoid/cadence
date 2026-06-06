@@ -17,6 +17,8 @@ struct PlaybackStateSnapshot: Codable, Equatable {
     var shuffleOn: Bool
     var repeatMode: RepeatMode
     var volume: Double
+    var eqEnabled: Bool?
+    var eqGains: [Double]?
 }
 
 @MainActor
@@ -46,7 +48,9 @@ final class PlaybackStateStore {
         isPlaying: Bool,
         shuffleOn: Bool,
         repeatMode: RepeatMode,
-        volume: Double
+        volume: Double,
+        eqEnabled: Bool,
+        eqGains: [Double]
     ) -> PlaybackStateSnapshot {
         PlaybackStateSnapshot(
             currentTrackID: queue.current?.id,
@@ -64,7 +68,9 @@ final class PlaybackStateStore {
             isPlaying: isPlaying,
             shuffleOn: shuffleOn,
             repeatMode: repeatMode,
-            volume: volume
+            volume: volume,
+            eqEnabled: eqEnabled,
+            eqGains: eqGains
         )
     }
 

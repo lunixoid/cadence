@@ -195,7 +195,7 @@ struct PreferencesWindowView: View {
 
                     Button {
                         guard let selectedServerID else { return }
-                        uiState.configuredServers.removeAll { $0.id == selectedServerID }
+                        uiState.removeJellyfinServer(selectedServerID)
                         self.selectedServerID = uiState.configuredServers.first?.id
                     } label: {
                         Text("−")

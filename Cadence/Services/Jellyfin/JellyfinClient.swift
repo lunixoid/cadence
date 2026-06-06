@@ -213,7 +213,7 @@ final class JellyfinClient: Sendable {
             URLQueryItem(name: "SortBy", value: "ParentIndexNumber,IndexNumber,SortName"),
             URLQueryItem(name: "SortOrder", value: "Ascending"),
             URLQueryItem(name: "Recursive", value: "true"),
-            URLQueryItem(name: "Fields", value: "MediaSources,RunTimeTicks"),
+            URLQueryItem(name: "Fields", value: "MediaSources,RunTimeTicks,IndexNumber,ParentIndexNumber"),
         ])
         return try await fetchItems(from: components)
     }
@@ -437,11 +437,11 @@ extension JellyfinClient {
         )
     }
 
-    func convertToTrack(item: JellyfinItem, albumID: UUID) -> Track? {
+    func convertToTrack(item: JellyfinItem, albumID: UUID, positionInAlbum: Int) -> Track? {
         guard let streamURL = streamURL(itemID: item.id) else { return nil }
         return Track(
             id: UUID(uuidString: item.id) ?? UUID(),
-            index: item.indexNumber ?? 0,
+            index: item.indexNumber ?? positionInAlbum,
             title: item.name,
             artist: item.artists?.first ?? item.albumArtist ?? "Неизвестный артист",
             albumID: albumID,

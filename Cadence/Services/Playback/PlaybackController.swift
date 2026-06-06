@@ -35,7 +35,7 @@ final class PlaybackController {
         }
     }
 
-    var eqGains: [Double] = Array(repeating: 0, count: 10)
+    var eqGains: [Double] = EQPreset.rock.gains
 
     var currentTrack: Track? {
         playbackQueue.current
@@ -48,9 +48,12 @@ final class PlaybackController {
     init(libraryStore: LibraryStore, recentStore: RecentStore) {
         self.libraryStore = libraryStore
         self.recentStore = recentStore
-        self.volume = 72
 
         mediaRemote.configure(controller: self)
+
+        for (i, gain) in eqGains.enumerated() {
+            audioEngine.setBandGain(at: i, gain: Float(gain))
+        }
 
         audioEngine.onProgress = { [weak self] current, total in
             Task { @MainActor in
@@ -75,19 +78,7 @@ final class PlaybackController {
     }
 
     func restoreSavedState() {
-        guard let snapshot = stateStore.load(),
-              let queue = stateStore.restoreQueue(from: snapshot, library: libraryStore) else {
-            if stateStore.load() != nil {
-                stateStore.clear()
-            }
-            return
-        }
-
-        playbackQueue = queue
-        shuffleOn = snapshot.shuffleOn
-        repeatMode = snapshot.repeatMode
-        volume = snapshot.volume
-        progress = snapshot.progress
+        guard let snapshot = stateStore.load() else { return }
 
         if let savedEnabled = snapshot.eqEnabled {
             eqEnabled = savedEnabled
@@ -99,6 +90,16 @@ final class PlaybackController {
                 audioEngine.setBandGain(at: i, gain: Float(gain))
             }
         }
+
+        guard let queue = stateStore.restoreQueue(from: snapshot, library: libraryStore) else {
+            return
+        }
+
+        playbackQueue = queue
+        shuffleOn = snapshot.shuffleOn
+        repeatMode = snapshot.repeatMode
+        volume = snapshot.volume
+        progress = snapshot.progress
 
         loadCurrentTrack(seekTo: snapshot.progress, shouldPlay: snapshot.isPlaying)
     }

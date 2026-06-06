@@ -4,6 +4,7 @@ struct NowPlayingDetailView: View {
     @Environment(AppUIState.self) private var uiState
     @Environment(PlaybackController.self) private var playbackController
     @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(JellyfinFavoritesSync.self) private var jellyfinFavoritesSync
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -187,7 +188,9 @@ struct NowPlayingDetailView: View {
 
     private func actionRow(track: Track, album: Album) -> some View {
         HStack(spacing: 10) {
-            Button(action: { favoritesStore.toggle(track: track) }) {
+            Button(action: {
+                jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+            }) {
                 Image(systemName: favoritesStore.isFavorite(track: track) ? "heart.fill" : "heart")
                     .font(.system(size: 22))
                     .foregroundStyle(

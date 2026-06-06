@@ -5,6 +5,8 @@ struct TrackRowView: View {
     @Environment(PlaybackController.self) private var playbackController
     @Environment(PlaylistStore.self) private var playlistStore
     @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(JellyfinFavoritesSync.self) private var jellyfinFavoritesSync
+    @Environment(AppUIState.self) private var uiState
     @Environment(\.colorScheme) private var colorScheme
 
     let track: Track
@@ -93,7 +95,7 @@ struct TrackRowView: View {
             }
         }
         Button(favoritesStore.isFavorite(track: track) ? "Убрать из избранного" : "В избранное") {
-            favoritesStore.toggle(track: track)
+            jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
         }
         Divider()
         Button("Показать в Finder") {

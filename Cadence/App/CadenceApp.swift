@@ -5,6 +5,7 @@ struct CadenceApp: App {
     @State private var libraryStore = LibraryStore()
     @State private var playlistStore = PlaylistStore()
     @State private var favoritesStore = FavoritesStore()
+    @State private var jellyfinFavoritesSync: JellyfinFavoritesSync
     @State private var recentStore = RecentStore()
     @State private var playbackController: PlaybackController
     @State private var uiState: AppUIState
@@ -12,7 +13,13 @@ struct CadenceApp: App {
     init() {
         let library = LibraryStore()
         let recent = RecentStore()
+        let favorites = FavoritesStore()
         _libraryStore = State(initialValue: library)
+        _favoritesStore = State(initialValue: favorites)
+        _jellyfinFavoritesSync = State(initialValue: JellyfinFavoritesSync(
+            favoritesStore: favorites,
+            libraryStore: library
+        ))
         _recentStore = State(initialValue: recent)
         let playback = PlaybackController(libraryStore: library, recentStore: recent)
         _playbackController = State(initialValue: playback)
@@ -27,11 +34,12 @@ struct CadenceApp: App {
                 .environment(libraryStore)
                 .environment(playlistStore)
                 .environment(favoritesStore)
+                .environment(jellyfinFavoritesSync)
                 .environment(recentStore)
                 .environment(playbackController)
                 .task {
                     await libraryStore.restoreSavedFolders()
-                    uiState.restoreServers()
+                    await uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
                     playbackController.restoreSavedState()
                 }
         }

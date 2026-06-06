@@ -22,6 +22,7 @@ enum ConnectAuthMethod: String, CaseIterable, Identifiable {
 
 struct ConnectWindowView: View {
     @Environment(AppUIState.self) private var uiState
+    @Environment(JellyfinFavoritesSync.self) private var jellyfinFavoritesSync
     @Environment(\.colorScheme) private var colorScheme
 
     let isOpen: Bool
@@ -243,7 +244,7 @@ struct ConnectWindowView: View {
 
     private func finish() {
         guard let server = connectedServer else { return }
-        uiState.connectJellyfinServer(server)
+        uiState.connectJellyfinServer(server, favoritesSync: jellyfinFavoritesSync)
         resetForm()
         onClose()
     }

@@ -32,7 +32,6 @@
 	62371AF4AA18474E84E8BA85 /* PlayerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5467B54A224745F0801D3FEF /* PlayerButton.swift */; };
 	A10000010000000000000001 /* RepeatMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000001 /* RepeatMode.swift */; };
 	A10000010000000000000002 /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000002 /* Artist.swift */; };
-	A10000010000000000000003 /* Genre.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000003 /* Genre.swift */; };
 	A10000010000000000000004 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000004 /* Playlist.swift */; };
 	A10000010000000000000005 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000005 /* LibraryStore.swift */; };
 	A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000006 /* LocalLibraryScanner.swift */; };
@@ -48,7 +47,6 @@
 	A1000001000000000000000E /* LibraryContentShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000E /* LibraryContentShell.swift */; };
 	A1000001000000000000000F /* TrackListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000F /* TrackListView.swift */; };
 	A10000010000000000000010 /* ArtistGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000010 /* ArtistGridView.swift */; };
-	A10000010000000000000011 /* GenreGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000011 /* GenreGridView.swift */; };
 	A10000010000000000000012 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000012 /* FavoritesView.swift */; };
 	A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000013 /* NowPlayingDetailView.swift */; };
 	A10000010000000000000014 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000014 /* PlaylistDetailView.swift */; };
@@ -95,7 +93,6 @@
 	5467B54A224745F0801D3FEF /* PlayerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerButton.swift; sourceTree = "<group>"; };
 	B10000010000000000000001 /* RepeatMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatMode.swift; sourceTree = "<group>"; };
 	B10000010000000000000002 /* Artist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
-	B10000010000000000000003 /* Genre.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Genre.swift; sourceTree = "<group>"; };
 	B10000010000000000000004 /* Playlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playlist.swift; sourceTree = "<group>"; };
 	B10000010000000000000005 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
 	B10000010000000000000006 /* LocalLibraryScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryScanner.swift; sourceTree = "<group>"; };
@@ -111,7 +108,6 @@
 	B1000001000000000000000E /* LibraryContentShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryContentShell.swift; sourceTree = "<group>"; };
 	B1000001000000000000000F /* TrackListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackListView.swift; sourceTree = "<group>"; };
 	B10000010000000000000010 /* ArtistGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistGridView.swift; sourceTree = "<group>"; };
-	B10000010000000000000011 /* GenreGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenreGridView.swift; sourceTree = "<group>"; };
 	B10000010000000000000012 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 	B10000010000000000000013 /* NowPlayingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingDetailView.swift; sourceTree = "<group>"; };
 	B10000010000000000000014 /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
@@ -189,7 +185,6 @@
 			54F2787290194F9E9E64F8CC /* Album.swift */,
 			B10000010000000000000002 /* Artist.swift */,
 			AF630A99CAAC476599ABBA5E /* ContentRoute.swift */,
-			B10000010000000000000003 /* Genre.swift */,
 			C20000010000000000000014 /* JellyfinServer.swift */,
 			B10000010000000000000004 /* Playlist.swift */,
 			B10000010000000000000001 /* RepeatMode.swift */,
@@ -368,7 +363,6 @@
 			C5D7EAD3F8A549DA97615024 /* ContentAreaView.swift */,
 			18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */,
 			B10000010000000000000012 /* FavoritesView.swift */,
-			B10000010000000000000011 /* GenreGridView.swift */,
 			B1000001000000000000000E /* LibraryContentShell.swift */,
 			B1000001000000000000000F /* TrackListView.swift */,
 		);
@@ -504,7 +498,6 @@
 			62371AF4AA18474E84E8BA85 /* PlayerButton.swift in Sources */,
 			A10000010000000000000001 /* RepeatMode.swift in Sources */,
 			A10000010000000000000002 /* Artist.swift in Sources */,
-			A10000010000000000000003 /* Genre.swift in Sources */,
 			A10000010000000000000004 /* Playlist.swift in Sources */,
 			A10000010000000000000005 /* LibraryStore.swift in Sources */,
 			A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */,
@@ -524,7 +517,6 @@
 			A1000001000000000000000E /* LibraryContentShell.swift in Sources */,
 			A1000001000000000000000F /* TrackListView.swift in Sources */,
 			A10000010000000000000010 /* ArtistGridView.swift in Sources */,
-			A10000010000000000000011 /* GenreGridView.swift in Sources */,
 			A10000010000000000000012 /* FavoritesView.swift in Sources */,
 			A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */,
 			A10000010000000000000014 /* PlaylistDetailView.swift in Sources */,

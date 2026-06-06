@@ -10,7 +10,6 @@ enum PreviewData {
         title: "Preview Album",
         artist: "Preview Artist",
         year: 2024,
-        genre: "Electronic",
         accentColors: [
             Color(red: 0.36, green: 0.22, blue: 0.57),
             Color(red: 0.56, green: 0.27, blue: 0.68),
@@ -40,8 +39,7 @@ enum PreviewData {
         env.1.loadPreview(result: LibraryScanResult(
             albums: [album],
             tracks: tracks,
-            artists: [Artist(name: album.artist, albumIDs: [album.id])],
-            genres: [Genre(name: album.genre ?? "Electronic", albumIDs: [album.id])]
+            artists: [Artist(name: album.artist, albumIDs: [album.id])]
         ))
         env.0.contentRoute = .albumDetail(album.id)
         env.5.loadPreviewState(

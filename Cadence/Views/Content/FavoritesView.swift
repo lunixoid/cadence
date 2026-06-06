@@ -6,8 +6,6 @@ struct FavoritesView: View {
     @Environment(FavoritesStore.self) private var favoritesStore
     @Environment(PlaybackController.self) private var playbackController
 
-    @State private var hoveredRow: UUID?
-
     private var tracks: [Track] {
         let source = libraryStore.allTracks().filter { favoritesStore.isFavorite(track: $0) }
         return libraryStore.filteredTracks(query: uiState.searchQuery, from: source)
@@ -19,19 +17,20 @@ struct FavoritesView: View {
                 EmptyLibraryStateView(message: "Нет избранного")
             } else {
                 ScrollView {
-                    TrackListHeaderView()
-                    ForEach(tracks) { track in
-                        TrackRowView(
-                            track: track,
-                            isActive: playbackController.playingTrackID == track.id,
-                            isPlaying: playbackController.isPlaying,
-                            isHovered: hoveredRow == track.id,
-                            disambiguationLabel: libraryStore.disambiguationLabel(for: track),
-                            onPlay: { playbackController.playTrack(track) }
-                        )
-                        .onHover { hoveredRow = $0 ? track.id : nil }
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        Section(header: TrackListHeaderView()) {
+                            ForEach(tracks) { track in
+                                TrackRowView(
+                                    track: track,
+                                    isActive: playbackController.playingTrackID == track.id,
+                                    isPlaying: playbackController.isPlaying,
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
+                                    onPlay: { playbackController.playTrack(track) }
+                                )
+                            }
+                            Color.clear.frame(height: 24)
+                        }
                     }
-                    Color.clear.frame(height: 24)
                 }
             }
         }
@@ -44,8 +43,6 @@ struct RecentView: View {
     @Environment(RecentStore.self) private var recentStore
     @Environment(PlaybackController.self) private var playbackController
 
-    @State private var hoveredRow: UUID?
-
     private var tracks: [Track] {
         libraryStore.filteredTracks(query: uiState.searchQuery, from: recentStore.tracks(from: libraryStore))
     }
@@ -56,19 +53,20 @@ struct RecentView: View {
                 EmptyLibraryStateView(message: "Нет недавних треков")
             } else {
                 ScrollView {
-                    TrackListHeaderView()
-                    ForEach(tracks) { track in
-                        TrackRowView(
-                            track: track,
-                            isActive: playbackController.playingTrackID == track.id,
-                            isPlaying: playbackController.isPlaying,
-                            isHovered: hoveredRow == track.id,
-                            disambiguationLabel: libraryStore.disambiguationLabel(for: track),
-                            onPlay: { playbackController.playTrack(track) }
-                        )
-                        .onHover { hoveredRow = $0 ? track.id : nil }
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        Section(header: TrackListHeaderView()) {
+                            ForEach(tracks) { track in
+                                TrackRowView(
+                                    track: track,
+                                    isActive: playbackController.playingTrackID == track.id,
+                                    isPlaying: playbackController.isPlaying,
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
+                                    onPlay: { playbackController.playTrack(track) }
+                                )
+                            }
+                            Color.clear.frame(height: 24)
+                        }
                     }
-                    Color.clear.frame(height: 24)
                 }
             }
         }
@@ -80,8 +78,6 @@ struct DownloadedView: View {
     @Environment(LibraryStore.self) private var libraryStore
     @Environment(PlaybackController.self) private var playbackController
 
-    @State private var hoveredRow: UUID?
-
     private var tracks: [Track] {
         libraryStore.filteredTracks(query: uiState.searchQuery, from: libraryStore.localTracks())
     }
@@ -92,19 +88,20 @@ struct DownloadedView: View {
                 EmptyLibraryStateView(message: "Нет скачанных треков")
             } else {
                 ScrollView {
-                    TrackListHeaderView()
-                    ForEach(tracks) { track in
-                        TrackRowView(
-                            track: track,
-                            isActive: playbackController.playingTrackID == track.id,
-                            isPlaying: playbackController.isPlaying,
-                            isHovered: hoveredRow == track.id,
-                            disambiguationLabel: libraryStore.disambiguationLabel(for: track),
-                            onPlay: { playbackController.playTrack(track) }
-                        )
-                        .onHover { hoveredRow = $0 ? track.id : nil }
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        Section(header: TrackListHeaderView()) {
+                            ForEach(tracks) { track in
+                                TrackRowView(
+                                    track: track,
+                                    isActive: playbackController.playingTrackID == track.id,
+                                    isPlaying: playbackController.isPlaying,
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
+                                    onPlay: { playbackController.playTrack(track) }
+                                )
+                            }
+                            Color.clear.frame(height: 24)
+                        }
                     }
-                    Color.clear.frame(height: 24)
                 }
             }
         }

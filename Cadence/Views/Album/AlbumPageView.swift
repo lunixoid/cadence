@@ -8,8 +8,6 @@ struct AlbumPageView: View {
 
     let album: Album
 
-    @State private var hoveredRow: UUID?
-
     private var tracks: [Track] {
         uiState.tracks(for: album)
     }
@@ -41,10 +39,8 @@ struct AlbumPageView: View {
                                 track: track,
                                 isActive: playbackController.playingTrackID == track.id,
                                 isPlaying: playbackController.isPlaying,
-                                isHovered: hoveredRow == track.id,
                                 onPlay: { playbackController.playTrack(track) }
                             )
-                            .onHover { hoveredRow = $0 ? track.id : nil }
                         }
                     }
 

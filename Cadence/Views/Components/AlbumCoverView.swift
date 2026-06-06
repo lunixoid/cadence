@@ -5,10 +5,12 @@ struct AlbumCoverView: View {
     var size: CGFloat = CadenceTheme.miniCoverSize
     var cornerRadius: CGFloat = CadenceTheme.miniCoverRadius
 
+    @State private var image: NSImage?
+
     var body: some View {
         Group {
-            if let coverURL = album?.coverURL, let nsImage = NSImage(contentsOf: coverURL) {
-                Image(nsImage: nsImage)
+            if let image {
+                Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             } else {
@@ -21,5 +23,17 @@ struct AlbumCoverView: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .task(id: album?.coverURL) {
+            guard let coverURL = album?.coverURL else {
+                image = nil
+                return
+            }
+            let loaded = await Task.detached(priority: .userInitiated) {
+                NSImage(contentsOf: coverURL)
+            }.value
+            if !Task.isCancelled {
+                image = loaded
+            }
+        }
     }
 }

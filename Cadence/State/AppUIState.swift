@@ -26,6 +26,7 @@ final class AppUIState {
     var searchQuery = ""
     var hoveredTrackIndex: Int?
 
+    var isSidebarOpen = true
     var isQueueOpen = false
     var isEQOpen = false
     var isPrefsOpen = false
@@ -114,7 +115,12 @@ final class AppUIState {
         !forwardStack.isEmpty
     }
 
+    func toggleSidebar() {
+        isSidebarOpen.toggle()
+    }
+
     func toggleQueue() {
+        guard activeSidebarItem != .nowPlaying else { return }
         isQueueOpen.toggle()
     }
 

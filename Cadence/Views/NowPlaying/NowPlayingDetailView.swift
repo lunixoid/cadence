@@ -311,7 +311,7 @@ struct NowPlayingDetailView: View {
                 metadataRow(label: "Каналы", value: "—")
                 metadataRow(
                     label: "Трек",
-                    value: "\(track.index) из \(albumTracks.count)"
+                    value: "\((albumTracks.firstIndex(where: { $0.id == track.id }) ?? 0) + 1) из \(albumTracks.count)"
                 )
                 metadataRow(label: "Диск", value: "\(track.discNumber)")
             }

@@ -261,25 +261,9 @@ final class LibraryStore {
     }
 
     private func applyScanResult(_ result: LibraryScanResult) {
-        albums = result.albums.sorted {
-            $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
-        }
+        albums = result.albums
         tracks = result.tracks
-        artists = result.artists.sorted {
-            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-        }
-
-        albumsByID = Dictionary(uniqueKeysWithValues: albums.map { ($0.id, $0) })
-        tracksByID = Dictionary(uniqueKeysWithValues: tracks.map { ($0.id, $0) })
-        tracksByAlbumID = Dictionary(grouping: tracks, by: \.albumID).mapValues { albumTracks in
-            albumTracks.sorted {
-                if $0.discNumber != $1.discNumber { return $0.discNumber < $1.discNumber }
-                return $0.index < $1.index
-            }
-        }
-        tracksByFilePath = Dictionary(uniqueKeysWithValues: tracks.map {
-            ($0.fileURL.standardizedFileURL.path, $0.id)
-        })
+        rebuildDerivedData()
     }
 
     private func replaceAlbum(_ album: Album) {
@@ -296,20 +280,51 @@ final class LibraryStore {
         tracksByID[track.id] = track
     }
 
+    private func sortTracksWithinAlbum(_ albumTracks: [Track]) -> [Track] {
+        albumTracks.sorted { lhs, rhs in
+            if lhs.discNumber != rhs.discNumber { return lhs.discNumber < rhs.discNumber }
+            if lhs.index != rhs.index { return lhs.index < rhs.index }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+    }
+
     private func rebuildDerivedData() {
         albums.sort { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
-
         albumsByID = Dictionary(uniqueKeysWithValues: albums.map { ($0.id, $0) })
+
+        let groupedTracks = Dictionary(grouping: tracks, by: \.albumID)
+        var sortedByAlbumID: [UUID: [Track]] = [:]
+        for (albumID, albumTracks) in groupedTracks {
+            sortedByAlbumID[albumID] = sortTracksWithinAlbum(albumTracks)
+        }
+
+        var globalTracks: [Track] = []
+        var globalIndex = 1
+
+        for album in albums {
+            guard let albumTracks = sortedByAlbumID[album.id] else { continue }
+            for var track in albumTracks {
+                track.index = globalIndex
+                globalIndex += 1
+                globalTracks.append(track)
+            }
+        }
+
+        let assignedIDs = Set(globalTracks.map(\.id))
+        let orphanTracks = tracks.filter { !assignedIDs.contains($0.id) }
+        for var track in sortTracksWithinAlbum(orphanTracks) {
+            track.index = globalIndex
+            globalIndex += 1
+            globalTracks.append(track)
+        }
+
+        tracks = globalTracks
+        cachedAllTracks = globalTracks
         tracksByID = Dictionary(uniqueKeysWithValues: tracks.map { ($0.id, $0) })
         tracksByFilePath = Dictionary(uniqueKeysWithValues: tracks.map {
             ($0.fileURL.standardizedFileURL.path, $0.id)
         })
-        tracksByAlbumID = Dictionary(grouping: tracks, by: \.albumID).mapValues { albumTracks in
-            albumTracks.sorted {
-                if $0.discNumber != $1.discNumber { return $0.discNumber < $1.discNumber }
-                return $0.index < $1.index
-            }
-        }
+        tracksByAlbumID = Dictionary(grouping: tracks, by: \.albumID)
 
         var artistAlbumMap: [String: Set<UUID>] = [:]
 
@@ -326,14 +341,6 @@ final class LibraryStore {
             counts[fileNameKey(for: track), default: 0] += 1
         }
         duplicateFileNameKeySet = Set(counts.filter { $0.value > 1 }.map(\.key))
-
-        cachedAllTracks = tracks.sorted { lhs, rhs in
-            let lhsAlbum = albumsByID[lhs.albumID]?.title ?? ""
-            let rhsAlbum = albumsByID[rhs.albumID]?.title ?? ""
-            if lhsAlbum != rhsAlbum { return lhsAlbum.localizedCaseInsensitiveCompare(rhsAlbum) == .orderedAscending }
-            if lhs.discNumber != rhs.discNumber { return lhs.discNumber < rhs.discNumber }
-            return lhs.index < rhs.index
-        }
     }
 
     private func stopAccessingAllSecurityScopedResources() {

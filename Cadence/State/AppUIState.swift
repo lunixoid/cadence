@@ -60,6 +60,9 @@ final class AppUIState {
     }
 
     func selectSidebarItem(_ item: SidebarItem) {
+        if item == .nowPlaying {
+            isQueueOpen = false
+        }
         activeSidebarItem = item
         navigationStack.removeAll()
         forwardStack.removeAll()

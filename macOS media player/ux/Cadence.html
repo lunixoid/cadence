@@ -94,6 +94,10 @@
       from { transform: scale(0.94); }
       to   { transform: scale(1); }
     }
+    @keyframes npBreathe {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.018); }
+    }
     @keyframes eqAppear {
       from { transform: scale(0.95) translateY(8px); }
       to   { transform: scale(1)    translateY(0px); }
@@ -130,6 +134,7 @@
   <script type="text/babel" src="cadence-prefs.jsx"></script>
   <script type="text/babel" src="cadence-connect.jsx"></script>
   <script type="text/babel" src="cadence-player.jsx"></script>
+  <script type="text/babel" src="cadence-nowplaying.jsx"></script>
   <script type="text/babel" src="tweaks-panel.jsx"></script>
 </head>
 <body class="light">
@@ -138,7 +143,7 @@
 
 <script type="text/babel">
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "theme": "dark",
+  "theme": "light",
   "accentColor": "#007AFF",
   "sidebarWidth": 220,
   "windowScale": 100,
@@ -172,6 +177,27 @@ function CadenceApp() {
   const [currentView, setCurrentView] = React.useState('grid'); // 'grid' | 'album'
   const [selectedAlbum, setSelectedAlbum] = React.useState(null);
 
+  // Next / Prev track
+  const handleNext = () => {
+    const trks = getAlbumTracks(playingAlbum);
+    setPlayingTrackIdx(i => (i + 1) % trks.length);
+    setIsPlaying(true);
+  };
+  const handlePrev = () => {
+    const trks = getAlbumTracks(playingAlbum);
+    setPlayingTrackIdx(i => (i - 1 + trks.length) % trks.length);
+    setIsPlaying(true);
+  };
+  const handleGoToAlbum = () => {
+    setSelectedAlbum(playingAlbum);
+    setCurrentView('album');
+    setActiveItem('albums');
+  };
+  const handleNowPlayingTrack = (idx) => {
+    setPlayingTrackIdx(idx);
+    setIsPlaying(true);
+  };
+
   // Current playing track — start with album 3 (Static Dreams), track index 2 (3rd track)
   const defaultAlbum = ALBUM_DATA[2]; // Static Dreams
   const [playingAlbum, setPlayingAlbum] = React.useState(defaultAlbum);
@@ -181,6 +207,11 @@ function CadenceApp() {
   React.useEffect(() => {
     document.body.className = dark ? 'dark' : 'light';
   }, [dark]);
+
+  // Close queue panel when entering Now Playing
+  React.useEffect(() => {
+    if (activeItem === 'nowplaying') setQueueOpen(false);
+  }, [activeItem]);
 
   const windowWidth = 1100;
   const windowHeight = 700;
@@ -263,7 +294,23 @@ function CadenceApp() {
               {/* Content + Queue panel side by side */}
               <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'row' }}>
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  {currentView === 'album' && selectedAlbum ? (
+                  {activeItem === 'nowplaying' ? (
+                    <NowPlayingScreen
+                      dark={dark}
+                      isPlaying={isPlaying}
+                      onPlayPause={() => setIsPlaying(p => !p)}
+                      shuffleOn={shuffleOn}
+                      repeatOn={repeatOn}
+                      onShuffleToggle={() => setShuffleOn(s => !s)}
+                      onRepeatToggle={() => setRepeatOn(r => !r)}
+                      playingAlbum={playingAlbum}
+                      playingTrackIdx={playingTrackIdx}
+                      onNext={handleNext}
+                      onPrev={handlePrev}
+                      onGoToAlbum={handleGoToAlbum}
+                      onPlayTrack={handleNowPlayingTrack}
+                    />
+                  ) : currentView === 'album' && selectedAlbum ? (
                     <AlbumPage
                       album={selectedAlbum}
                       dark={dark}
@@ -302,6 +349,7 @@ function CadenceApp() {
                 onQueueToggle={() => setQueueOpen(o => !o)}
                 eqOpen={eqOpen}
                 onEqToggle={() => setEqOpen(o => !o)}
+                collapsed={activeItem === 'nowplaying'}
               />
             </div>
           </div>

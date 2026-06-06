@@ -252,6 +252,49 @@ final class JellyfinClient: Sendable {
         return try await fetchItems(from: components)
     }
 
+    func markFavorite(itemID: String) async throws {
+        var components = URLComponents(
+            url: serverURL.appendingPathComponent("UserFavoriteItems/\(itemID)"),
+            resolvingAgainstBaseURL: false
+        )!
+        components.queryItems = [URLQueryItem(name: "userId", value: userID)]
+        guard let url = components.url else { throw JellyfinError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+
+        let (_, response) = try await session.data(for: request)
+        try Self.validateHTTPResponse(response)
+    }
+
+    func unmarkFavorite(itemID: String) async throws {
+        var components = URLComponents(
+            url: serverURL.appendingPathComponent("UserFavoriteItems/\(itemID)"),
+            resolvingAgainstBaseURL: false
+        )!
+        components.queryItems = [URLQueryItem(name: "userId", value: userID)]
+        guard let url = components.url else { throw JellyfinError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+
+        let (_, response) = try await session.data(for: request)
+        try Self.validateHTTPResponse(response)
+    }
+
+    func getFavoriteItems(limit: Int = 10000) async throws -> [JellyfinItem] {
+        var components = itemsURLComponents()
+        components.queryItems?.append(contentsOf: [
+            URLQueryItem(name: "Filters", value: "IsFavorite"),
+            URLQueryItem(name: "IncludeItemTypes", value: "Audio"),
+            URLQueryItem(name: "Recursive", value: "true"),
+            URLQueryItem(name: "Limit", value: "\(limit)"),
+        ])
+        return try await fetchItems(from: components)
+    }
+
     func search(query: String, limit: Int = 50) async throws -> [JellyfinItem] {
         var components = itemsURLComponents()
         components.queryItems?.append(contentsOf: [
@@ -426,7 +469,7 @@ final class JellyfinClient: Sendable {
 
 extension JellyfinClient {
     func convertToAlbum(item: JellyfinItem, accentColors: [Color] = CadenceTheme.placeholderGradientColors) -> Album {
-        let albumID = UUID(uuidString: item.id) ?? UUID()
+        let albumID = StableIdentity.jellyfinItemID(item.id)
         return Album(
             id: albumID,
             title: item.name,
@@ -440,7 +483,7 @@ extension JellyfinClient {
     func convertToTrack(item: JellyfinItem, albumID: UUID, positionInAlbum: Int) -> Track? {
         guard let streamURL = streamURL(itemID: item.id) else { return nil }
         return Track(
-            id: UUID(uuidString: item.id) ?? UUID(),
+            id: StableIdentity.jellyfinItemID(item.id),
             index: item.indexNumber ?? positionInAlbum,
             title: item.name,
             artist: item.artists?.first ?? item.albumArtist ?? "Неизвестный артист",

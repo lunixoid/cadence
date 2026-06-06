@@ -145,13 +145,15 @@ final class AppUIState {
         isConnectOpen = false
     }
 
-    func connectJellyfinServer(_ server: JellyfinServer) {
+    func connectJellyfinServer(_ server: JellyfinServer, favoritesSync: JellyfinFavoritesSync) {
         var updated = server
         updated.isActive = true
         jellyfinServers.removeAll { $0.isActive }
         jellyfinServers.append(updated)
         saveServers()
-        activateClient(for: updated)
+        Task {
+            await activateClient(for: updated, favoritesSync: favoritesSync)
+        }
     }
 
     func removeJellyfinServer(_ id: UUID) {
@@ -162,12 +164,12 @@ final class AppUIState {
         saveServers()
     }
 
-    func restoreServers() {
+    func restoreServers(favoritesSync: JellyfinFavoritesSync) async {
         guard let data = UserDefaults.standard.data(forKey: serversKey),
               let servers = try? JSONDecoder().decode([JellyfinServer].self, from: data) else { return }
         jellyfinServers = servers
         if let active = servers.first(where: { $0.isActive }) {
-            activateClient(for: active)
+            await activateClient(for: active, favoritesSync: favoritesSync)
         }
     }
 
@@ -192,12 +194,13 @@ final class AppUIState {
         UserDefaults.standard.set(data, forKey: serversKey)
     }
 
-    private func activateClient(for server: JellyfinServer) {
+    private func activateClient(for server: JellyfinServer, favoritesSync: JellyfinFavoritesSync? = nil) async {
         guard let client = try? JellyfinClient(server: server) else { return }
         activeJellyfinClient = client
-        Task {
-            let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore)
-            await loader.loadFullLibrary()
+        let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore)
+        await loader.loadFullLibrary()
+        if let favoritesSync {
+            await favoritesSync.syncFromServer(client: client)
         }
     }
 

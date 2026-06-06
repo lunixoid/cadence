@@ -24,17 +24,19 @@ enum PreviewData {
     ]
 
     @MainActor
-    static func makeEnvironment() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, RecentStore, PlaybackController) {
+    static func makeEnvironment() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, JellyfinFavoritesSync, RecentStore, PlaybackController) {
         let library = LibraryStore()
         let recent = RecentStore()
+        let favorites = FavoritesStore()
+        let favoritesSync = JellyfinFavoritesSync(favoritesStore: favorites, libraryStore: library)
         let playback = PlaybackController(libraryStore: library, recentStore: recent)
         let uiState = AppUIState(libraryStore: library)
 
-        return (uiState, library, PlaylistStore(), FavoritesStore(), recent, playback)
+        return (uiState, library, PlaylistStore(), favorites, favoritesSync, recent, playback)
     }
 
     @MainActor
-    static func stateWithAlbumPage() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, RecentStore, PlaybackController) {
+    static func stateWithAlbumPage() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, JellyfinFavoritesSync, RecentStore, PlaybackController) {
         let env = makeEnvironment()
         env.1.loadPreview(result: LibraryScanResult(
             albums: [album],
@@ -42,7 +44,7 @@ enum PreviewData {
             artists: [Artist(name: album.artist, albumIDs: [album.id])]
         ))
         env.0.contentRoute = .albumDetail(album.id)
-        env.5.loadPreviewState(
+        env.6.loadPreviewState(
             tracks: tracks,
             currentIndex: 1,
             isPlaying: true,
@@ -62,6 +64,7 @@ enum PreviewData {
         .environment(env.3)
         .environment(env.4)
         .environment(env.5)
+        .environment(env.6)
         .frame(width: 1100, height: 700)
 }
 
@@ -74,6 +77,7 @@ enum PreviewData {
         .environment(env.3)
         .environment(env.4)
         .environment(env.5)
+        .environment(env.6)
         .frame(width: 880, height: 600)
 }
 
@@ -86,6 +90,7 @@ enum PreviewData {
         .environment(env.3)
         .environment(env.4)
         .environment(env.5)
+        .environment(env.6)
         .frame(width: 1100)
 }
 #endif

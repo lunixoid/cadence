@@ -4,6 +4,7 @@ struct NowPlayingBarView: View {
     @Environment(AppUIState.self) private var uiState
     @Environment(PlaybackController.self) private var playbackController
     @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(JellyfinFavoritesSync.self) private var jellyfinFavoritesSync
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -162,7 +163,7 @@ struct NowPlayingBarView: View {
                     size: 36,
                     isActive: favoritesStore.isFavorite(track: track)
                 ) {
-                    favoritesStore.toggle(track: track)
+                    jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
                 } label: {
                     Image(systemName: favoritesStore.isFavorite(track: track) ? "heart.fill" : "heart")
                         .font(.system(size: 17))

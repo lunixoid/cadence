@@ -27,6 +27,9 @@ final class LibraryStore {
     private var securityScopedURLs: [URL] = []
     private var folderDisplayNames: [String: String] = [:]
 
+    private var jellyfinAlbumIDs: Set<UUID> = []
+    private var jellyfinTrackIDs: Set<UUID> = []
+
     private let scanner = LocalLibraryScanner()
     private let savedFoldersStore = SavedFoldersStore()
 
@@ -73,6 +76,17 @@ final class LibraryStore {
     }
     #endif
 
+    @MainActor
+    func loadFromJellyfin(_ result: LibraryScanResult) {
+        albums.removeAll { jellyfinAlbumIDs.contains($0.id) }
+        tracks.removeAll { jellyfinTrackIDs.contains($0.id) }
+        jellyfinAlbumIDs = Set(result.albums.map(\.id))
+        jellyfinTrackIDs = Set(result.tracks.map(\.id))
+        albums.append(contentsOf: result.albums)
+        tracks.append(contentsOf: result.tracks)
+        rebuildDerivedData()
+    }
+
     func clearLibrary() {
         albums = []
         tracks = []
@@ -85,6 +99,8 @@ final class LibraryStore {
         albumSourceFolderPaths = [:]
         loadedFolderPaths = []
         folderDisplayNames = [:]
+        jellyfinAlbumIDs = []
+        jellyfinTrackIDs = []
         stopAccessingAllSecurityScopedResources()
     }
 
@@ -112,6 +128,10 @@ final class LibraryStore {
             if lhs.discNumber != rhs.discNumber { return lhs.discNumber < rhs.discNumber }
             return lhs.index < rhs.index
         }
+    }
+
+    func localTracks() -> [Track] {
+        allTracks().filter { $0.fileURL.isFileURL }
     }
 
     func albums(forArtist name: String) -> [Album] {

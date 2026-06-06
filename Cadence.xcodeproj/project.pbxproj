@@ -59,6 +59,10 @@
 		A1000001000000000000001B /* EQWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001B /* EQWindowView.swift */; };
 		A1000001000000000000001C /* PreferencesWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001C /* PreferencesWindowView.swift */; };
 		A1000001000000000000001D /* ConnectWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001D /* ConnectWindowView.swift */; };
+	C20000010000000000000021 /* JellyfinClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000011 /* JellyfinClient.swift */; };
+	C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000012 /* JellyfinLibraryLoader.swift */; };
+	C20000010000000000000023 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000013 /* KeychainHelper.swift */; };
+	C20000010000000000000024 /* JellyfinServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000014 /* JellyfinServer.swift */; };
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 /* End PBXBuildFile section */
@@ -120,6 +124,10 @@
 	B1000001000000000000001D /* ConnectWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectWindowView.swift; sourceTree = "<group>"; };
 	B1000001000000000000001E /* PlaybackQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackQueue.swift; sourceTree = "<group>"; };
 	B1000001000000000000001F /* PlaybackStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackStateStore.swift; sourceTree = "<group>"; };
+	C20000010000000000000011 /* JellyfinClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinClient.swift; sourceTree = "<group>"; };
+	C20000010000000000000012 /* JellyfinLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryLoader.swift; sourceTree = "<group>"; };
+	C20000010000000000000013 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+	C20000010000000000000014 /* JellyfinServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinServer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -179,6 +187,7 @@
 			B10000010000000000000002 /* Artist.swift */,
 			AF630A99CAAC476599ABBA5E /* ContentRoute.swift */,
 			B10000010000000000000003 /* Genre.swift */,
+			C20000010000000000000014 /* JellyfinServer.swift */,
 			B10000010000000000000004 /* Playlist.swift */,
 			B10000010000000000000001 /* RepeatMode.swift */,
 			6224B01B44704CB08A6F4B7C /* SidebarItem.swift */,
@@ -190,11 +199,22 @@
 	C10000010000000000000001 /* Services */ = {
 		isa = PBXGroup;
 		children = (
+			C20000010000000000000010 /* Jellyfin */,
 			C10000010000000000000002 /* Library */,
 			C10000010000000000000003 /* Playback */,
 			C10000010000000000000004 /* UserData */,
 		);
 		path = Services;
+		sourceTree = "<group>";
+	};
+	C20000010000000000000010 /* Jellyfin */ = {
+		isa = PBXGroup;
+		children = (
+			C20000010000000000000011 /* JellyfinClient.swift */,
+			C20000010000000000000012 /* JellyfinLibraryLoader.swift */,
+			C20000010000000000000013 /* KeychainHelper.swift */,
+		);
+		path = Jellyfin;
 		sourceTree = "<group>";
 	};
 	C10000010000000000000002 /* Library */ = {
@@ -509,6 +529,10 @@
 			A1000001000000000000001B /* EQWindowView.swift in Sources */,
 			A1000001000000000000001C /* PreferencesWindowView.swift in Sources */,
 			A1000001000000000000001D /* ConnectWindowView.swift in Sources */,
+			C20000010000000000000021 /* JellyfinClient.swift in Sources */,
+			C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */,
+			C20000010000000000000023 /* KeychainHelper.swift in Sources */,
+			C20000010000000000000024 /* JellyfinServer.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};

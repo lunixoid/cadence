@@ -33,8 +33,8 @@ struct ConnectWindowView: View {
     @State private var username = ""
     @State private var password = ""
     @State private var apiKey = ""
-    @State private var hasError = false
-    @State private var connectedServerName = ""
+    @State private var errorMessage = ""
+    @State private var connectedServer: JellyfinServer?
 
     var body: some View {
         if isOpen {
@@ -91,14 +91,14 @@ struct ConnectWindowView: View {
                     label: "Адрес сервера",
                     text: $serverURL,
                     placeholder: "https://jellyfin.example.com",
-                    hasError: hasError
+                    hasError: !errorMessage.isEmpty
                 )
 
-                if hasError {
+                if !errorMessage.isEmpty {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.circle")
                             .foregroundStyle(.red)
-                        Text("Не удалось подключиться. Проверьте адрес сервера.")
+                        Text(errorMessage)
                             .font(.system(size: 12))
                             .foregroundStyle(.red)
                     }
@@ -131,7 +131,6 @@ struct ConnectWindowView: View {
                 .buttonStyle(ConnectPrimaryButtonStyle())
                 .disabled(step == .checking || serverURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .frame(maxWidth: .infinity)
-                .frame(maxWidth: .infinity)
             }
         }
     }
@@ -143,7 +142,7 @@ struct ConnectWindowView: View {
                 Text("Подключено!")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
-                Text(connectedServerName.isEmpty ? serverURL : connectedServerName)
+                Text(connectedServer?.name ?? serverURL)
                     .font(.system(size: 13))
                     .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
             }
@@ -211,31 +210,40 @@ struct ConnectWindowView: View {
     }
 
     private func connect() {
-        hasError = false
+        errorMessage = ""
         step = .checking
 
         Task {
-            try? await Task.sleep(for: .milliseconds(900))
-            await MainActor.run {
-                let trimmedURL = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
-                let isValid = trimmedURL.hasPrefix("http://") || trimmedURL.hasPrefix("https://")
-                if isValid {
-                    connectedServerName = trimmedURL
-                    step = .success
+            do {
+                let server: JellyfinServer
+                if authMethod == .password {
+                    server = try await JellyfinClient.authenticate(
+                        serverURLString: serverURL.trimmingCharacters(in: .whitespacesAndNewlines),
+                        username: username.trimmingCharacters(in: .whitespacesAndNewlines),
+                        password: password
+                    )
                 } else {
+                    server = try await JellyfinClient.authenticateWithAPIKey(
+                        serverURLString: serverURL.trimmingCharacters(in: .whitespacesAndNewlines),
+                        apiKey: apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                    )
+                }
+                await MainActor.run {
+                    connectedServer = server
+                    step = .success
+                }
+            } catch {
+                await MainActor.run {
                     step = .form
-                    hasError = true
+                    errorMessage = error.localizedDescription
                 }
             }
         }
     }
 
     private func finish() {
-        uiState.registerConnectedServer(
-            url: connectedServerName.isEmpty ? serverURL : connectedServerName,
-            username: displayUsername,
-            authMethod: authMethod == .apiKey ? "API Key" : "Пароль"
-        )
+        guard let server = connectedServer else { return }
+        uiState.connectJellyfinServer(server)
         resetForm()
         onClose()
     }
@@ -247,12 +255,12 @@ struct ConnectWindowView: View {
 
     private func resetForm() {
         step = .form
-        hasError = false
+        errorMessage = ""
         serverURL = ""
         username = ""
         password = ""
         apiKey = ""
-        connectedServerName = ""
+        connectedServer = nil
     }
 }
 

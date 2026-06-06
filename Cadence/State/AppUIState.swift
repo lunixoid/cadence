@@ -17,6 +17,7 @@ enum AppThemePreference: String, CaseIterable, Identifiable {
 }
 
 @Observable
+@MainActor
 final class AppUIState {
     var activeSidebarItem: SidebarItem = .albums
     var contentRoute: ContentRoute = .albumsGrid
@@ -30,7 +31,11 @@ final class AppUIState {
     var isPrefsOpen = false
     var isConnectOpen = false
     var appThemePreference: AppThemePreference = .system
-    var configuredServers: [ServerEntry] = []
+
+    var jellyfinServers: [JellyfinServer] = []
+    var activeJellyfinClient: JellyfinClient?
+
+    private let serversKey = "cadence.jellyfinServers"
 
     let libraryStore: LibraryStore
 
@@ -39,7 +44,7 @@ final class AppUIState {
     }
 
     var downloadedCount: Int {
-        libraryStore.allTracks().count
+        libraryStore.localTracks().count
     }
 
     var albums: [Album] {
@@ -138,21 +143,60 @@ final class AppUIState {
         isConnectOpen = false
     }
 
-    func registerConnectedServer(
-        url: String,
-        username: String,
-        authMethod: String
-    ) {
-        let entry = ServerEntry(
-            id: UUID(),
-            name: url,
-            url: url,
-            status: .online,
-            isActive: configuredServers.isEmpty,
-            user: username,
-            authMethod: authMethod
-        )
-        configuredServers.append(entry)
+    func connectJellyfinServer(_ server: JellyfinServer) {
+        var updated = server
+        updated.isActive = true
+        jellyfinServers.removeAll { $0.isActive }
+        jellyfinServers.append(updated)
+        saveServers()
+        activateClient(for: updated)
+    }
+
+    func removeJellyfinServer(_ id: UUID) {
+        jellyfinServers.removeAll { $0.id == id }
+        if activeJellyfinClient != nil && !jellyfinServers.contains(where: { $0.isActive }) {
+            activeJellyfinClient = nil
+        }
+        saveServers()
+    }
+
+    func restoreServers() {
+        guard let data = UserDefaults.standard.data(forKey: serversKey),
+              let servers = try? JSONDecoder().decode([JellyfinServer].self, from: data) else { return }
+        jellyfinServers = servers
+        if let active = servers.first(where: { $0.isActive }) {
+            activateClient(for: active)
+        }
+    }
+
+    var configuredServers: [ServerEntry] {
+        jellyfinServers.map { server in
+            ServerEntry(
+                id: server.id,
+                name: server.name,
+                url: server.urlString,
+                status: .online,
+                isActive: server.isActive,
+                user: server.username.isEmpty ? server.userID : server.username,
+                authMethod: server.username == "API Key" ? "API Key" : "Пароль"
+            )
+        }
+    }
+
+    // MARK: - Private
+
+    private func saveServers() {
+        guard let data = try? JSONEncoder().encode(jellyfinServers) else { return }
+        UserDefaults.standard.set(data, forKey: serversKey)
+    }
+
+    private func activateClient(for server: JellyfinServer) {
+        guard let client = try? JellyfinClient(server: server) else { return }
+        activeJellyfinClient = client
+        Task {
+            let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore)
+            await loader.loadFullLibrary()
+        }
     }
 
     private func syncSidebarItem(for route: ContentRoute) {

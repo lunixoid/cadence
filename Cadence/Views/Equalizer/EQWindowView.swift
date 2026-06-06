@@ -45,21 +45,26 @@ enum EQPreset: String, CaseIterable, Identifiable {
         case .custom: return Array(repeating: 0, count: 10)
         }
     }
+
+    static func matching(gains: [Double]) -> EQPreset {
+        allCases.first { $0 != .custom && $0.gains == gains } ?? .custom
+    }
 }
 
 struct EQWindowView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(PlaybackController.self) private var playbackController
 
     let isOpen: Bool
     let onClose: () -> Void
 
-    @State private var isEnabled = true
-    @State private var selectedPreset: EQPreset = .flat
-    @State private var bandGains: [Double] = EQPreset.flat.gains
-
     private let minGain: Double = -12
     private let maxGain: Double = 12
     private let trackHeight: CGFloat = 150
+
+    private var selectedPreset: EQPreset {
+        EQPreset.matching(gains: playbackController.eqGains)
+    }
 
     var body: some View {
         if isOpen {
@@ -93,11 +98,19 @@ struct EQWindowView: View {
 
     private var controlsRow: some View {
         HStack(spacing: 10) {
-            EQToggle(isOn: isEnabled) {
-                isEnabled.toggle()
+            EQToggle(isOn: playbackController.eqEnabled) {
+                playbackController.eqEnabled.toggle()
             }
 
-            Picker("Пресет", selection: $selectedPreset) {
+            Picker("Пресет", selection: Binding(
+                get: { selectedPreset },
+                set: { preset in
+                    guard preset != .custom else { return }
+                    for (i, gain) in preset.gains.enumerated() {
+                        playbackController.setEQGain(at: i, gain: gain)
+                    }
+                }
+            )) {
                 ForEach(EQPreset.allCases.filter { $0 != .custom }) { preset in
                     Text(preset.rawValue).tag(preset)
                 }
@@ -108,22 +121,7 @@ struct EQWindowView: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .frame(maxWidth: .infinity)
-            .disabled(!isEnabled)
-            .onChange(of: selectedPreset) { _, newValue in
-                guard newValue != .custom else { return }
-                bandGains = newValue.gains
-            }
-
-            if selectedPreset == .custom {
-                Button("Сохранить") {}
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .frame(height: 28)
-                    .background(CadenceTheme.accent(for: colorScheme))
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    .buttonStyle(.plain)
-            }
+            .disabled(!playbackController.eqEnabled)
         }
         .padding(.horizontal, 20)
         .frame(height: 44)
@@ -151,15 +149,14 @@ struct EQWindowView: View {
             HStack(spacing: 0) {
                 ForEach(Array(EQBand.allCases.enumerated()), id: \.element.id) { index, band in
                     EQSliderView(
-                        value: bandGains[index],
+                        value: playbackController.eqGains[index],
                         bandLabel: band.rawValue,
                         minGain: minGain,
                         maxGain: maxGain,
                         trackHeight: trackHeight,
-                        isEnabled: isEnabled,
+                        isEnabled: playbackController.eqEnabled,
                         onChange: { newValue in
-                            bandGains[index] = newValue
-                            syncPresetFromBands()
+                            playbackController.setEQGain(at: index, gain: newValue)
                         }
                     )
                     .frame(maxWidth: .infinity)
@@ -168,17 +165,9 @@ struct EQWindowView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
-        .opacity(isEnabled ? 1 : 0.38)
-        .allowsHitTesting(isEnabled)
-        .animation(.easeOut(duration: 0.2), value: isEnabled)
-    }
-
-    private func syncPresetFromBands() {
-        if let matched = EQPreset.allCases.first(where: { $0 != .custom && $0.gains == bandGains }) {
-            selectedPreset = matched
-        } else {
-            selectedPreset = .custom
-        }
+        .opacity(playbackController.eqEnabled ? 1 : 0.38)
+        .allowsHitTesting(playbackController.eqEnabled)
+        .animation(.easeOut(duration: 0.2), value: playbackController.eqEnabled)
     }
 }
 

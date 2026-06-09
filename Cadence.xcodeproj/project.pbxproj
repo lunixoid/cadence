@@ -34,7 +34,7 @@
 	A10000010000000000000002 /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000002 /* Artist.swift */; };
 	A10000010000000000000004 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000004 /* Playlist.swift */; };
 	A10000010000000000000005 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000005 /* LibraryStore.swift */; };
-	A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000006 /* LocalLibraryScanner.swift */; };
+		A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000006 /* LocalLibraryScanner.swift */; };
 	A10000010000000000000007 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000007 /* FolderPicker.swift */; };
 	A10000010000000000000017 /* SavedFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000017 /* SavedFoldersStore.swift */; };
 	A10000010000000000000018 /* StableIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000018 /* StableIdentity.swift */; };
@@ -98,7 +98,7 @@
 	B10000010000000000000002 /* Artist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
 	B10000010000000000000004 /* Playlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playlist.swift; sourceTree = "<group>"; };
 	B10000010000000000000005 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
-	B10000010000000000000006 /* LocalLibraryScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryScanner.swift; sourceTree = "<group>"; };
+		B10000010000000000000006 /* LocalLibraryScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryScanner.swift; sourceTree = "<group>"; };
 	B10000010000000000000007 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
 	B10000010000000000000017 /* SavedFoldersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFoldersStore.swift; sourceTree = "<group>"; };
 	B10000010000000000000018 /* StableIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StableIdentity.swift; sourceTree = "<group>"; };

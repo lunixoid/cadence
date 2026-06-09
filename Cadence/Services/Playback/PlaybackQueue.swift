@@ -146,6 +146,18 @@ struct PlaybackQueue: Equatable {
         autoplay = ctx
     }
 
+    /// Returns the next track without advancing the queue.
+    func peekNext(repeatMode: RepeatMode) -> Track? {
+        if !upNext.isEmpty {
+            return upNext.first
+        } else if let ctx = autoplay, ctx.cursor < ctx.tracks.count {
+            return ctx.tracks[ctx.cursor]
+        } else if repeatMode == .queue, let ctx = autoplay, !ctx.tracks.isEmpty {
+            return ctx.tracks[0]
+        }
+        return nil
+    }
+
     /// Advances to the next track. Returns nil when playback should stop.
     mutating func consumeNext(repeatMode: RepeatMode) -> Track? {
         let nextTrack: Track?

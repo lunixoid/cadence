@@ -132,8 +132,14 @@ struct NowPlayingBarView: View {
     // MARK: - Full Bar Sections
 
     private var leftSection: some View {
-        HStack(spacing: 12) {
-            Button(action: { uiState.selectSidebarItem(.nowPlaying) }) {
+        let ui = uiState
+        let favorites = favoritesStore
+        let favoritesSync = jellyfinFavoritesSync
+
+        return HStack(spacing: 12) {
+            Button(action: {
+                ui.selectSidebarItem(.nowPlaying)
+            }) {
                 HStack(spacing: 12) {
                     AlbumCoverView(
                         album: currentAlbum,
@@ -161,11 +167,11 @@ struct NowPlayingBarView: View {
             if let track = currentTrack {
                 PlayerButton(
                     size: 36,
-                    isActive: favoritesStore.isFavorite(track: track)
+                    isActive: favorites.isFavorite(track: track)
                 ) {
-                    jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+                    favoritesSync.toggle(track: track, client: ui.activeJellyfinClient)
                 } label: {
-                    Image(systemName: favoritesStore.isFavorite(track: track) ? "heart.fill" : "heart")
+                    Image(systemName: favorites.isFavorite(track: track) ? "heart.fill" : "heart")
                         .font(.system(size: 17))
                 }
             }
@@ -174,21 +180,28 @@ struct NowPlayingBarView: View {
     }
 
     private var centerSection: some View {
-        VStack(spacing: 8) {
+        let pc = playbackController
+
+        return VStack(spacing: 8) {
             HStack(spacing: 4) {
-                PlayerButton(size: CadenceTheme.playerIconButtonSize, isActive: playbackController.shuffleOn) {
-                    playbackController.toggleShuffle()
+                PlayerButton(
+                    size: CadenceTheme.playerIconButtonSize,
+                    isActive: pc.shuffleOn
+                ) {
+                    pc.toggleShuffle()
                 } label: {
                     Image(systemName: "shuffle")
                         .font(.system(size: 20))
                 }
 
                 transportButton(icon: "backward.fill") {
-                    playbackController.previous()
+                    pc.previous()
                 }
 
-                Button(action: { playbackController.togglePlayPause() }) {
-                    Image(systemName: playbackController.isPlaying ? "pause.fill" : "play.fill")
+                Button(action: {
+                    pc.togglePlayPause()
+                }) {
+                    Image(systemName: pc.isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 22))
                         .foregroundStyle(colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : .white)
                         .frame(width: CadenceTheme.playButtonSize, height: CadenceTheme.playButtonSize)
@@ -202,16 +215,16 @@ struct NowPlayingBarView: View {
                 .animation(.easeOut(duration: 0.1), value: isPlayHovered)
 
                 transportButton(icon: "forward.fill") {
-                    playbackController.next()
+                    pc.next()
                 }
 
                 PlayerButton(
                     size: CadenceTheme.playerIconButtonSize,
-                    isActive: playbackController.repeatMode != .off
+                    isActive: pc.repeatMode != .off
                 ) {
-                    playbackController.toggleRepeat()
+                    pc.toggleRepeat()
                 } label: {
-                    Image(systemName: playbackController.repeatMode.iconName)
+                    Image(systemName: pc.repeatMode.iconName)
                         .font(.system(size: 20))
                 }
             }

@@ -205,6 +205,33 @@ final class JellyfinClient: Sendable {
         return try await fetchItems(from: components)
     }
 
+    func getAllAudioItems(pageSize: Int = 500) async throws -> [JellyfinItem] {
+        var allItems: [JellyfinItem] = []
+        var startIndex = 0
+
+        while true {
+            var components = itemsURLComponents()
+            components.queryItems?.append(contentsOf: [
+                URLQueryItem(name: "IncludeItemTypes", value: "Audio"),
+                URLQueryItem(name: "SortBy", value: "SortName"),
+                URLQueryItem(name: "SortOrder", value: "Ascending"),
+                URLQueryItem(name: "Recursive", value: "true"),
+                URLQueryItem(name: "Limit", value: "\(pageSize)"),
+                URLQueryItem(name: "StartIndex", value: "\(startIndex)"),
+                URLQueryItem(name: "Fields", value: "MediaSources,RunTimeTicks,IndexNumber,ParentIndexNumber,Album,AlbumArtist,Artists,ProductionYear,AlbumId,ImageTags"),
+            ])
+
+            let (page, totalCount) = try await fetchItemsPage(from: components)
+            allItems.append(contentsOf: page)
+            startIndex += page.count
+            if page.isEmpty || startIndex >= totalCount {
+                break
+            }
+        }
+
+        return allItems
+    }
+
     func getAlbumTracks(albumID: String) async throws -> [JellyfinItem] {
         var components = itemsURLComponents()
         components.queryItems?.append(contentsOf: [
@@ -213,7 +240,7 @@ final class JellyfinClient: Sendable {
             URLQueryItem(name: "SortBy", value: "ParentIndexNumber,IndexNumber,SortName"),
             URLQueryItem(name: "SortOrder", value: "Ascending"),
             URLQueryItem(name: "Recursive", value: "true"),
-            URLQueryItem(name: "Fields", value: "MediaSources,RunTimeTicks,IndexNumber,ParentIndexNumber"),
+            URLQueryItem(name: "Fields", value: "MediaSources,RunTimeTicks,IndexNumber,ParentIndexNumber,Album,AlbumArtist,Artists"),
         ])
         return try await fetchItems(from: components)
     }
@@ -410,6 +437,10 @@ final class JellyfinClient: Sendable {
     }
 
     private func fetchItems(from components: URLComponents) async throws -> [JellyfinItem] {
+        try await fetchItemsPage(from: components).items
+    }
+
+    private func fetchItemsPage(from components: URLComponents) async throws -> (items: [JellyfinItem], totalCount: Int) {
         guard let url = components.url else { throw JellyfinError.invalidURL }
         var request = URLRequest(url: url)
         request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
@@ -419,11 +450,11 @@ final class JellyfinClient: Sendable {
 
         do {
             let decoded = try JSONDecoder().decode(JellyfinItemsResponse.self, from: data)
-            return decoded.items
+            return (decoded.items, decoded.totalRecordCount)
         } catch {
             // Some endpoints (like Artists) return a flat array
             if let items = try? JSONDecoder().decode([JellyfinItem].self, from: data) {
-                return items
+                return (items, items.count)
             }
             throw JellyfinError.decodingFailed(error)
         }
@@ -492,5 +523,44 @@ extension JellyfinClient {
             fileURL: streamURL,
             discNumber: item.parentIndexNumber ?? 1
         )
+    }
+
+    func convertToAlbum(from trackItems: [JellyfinItem], albumID: UUID) -> Album? {
+        guard let first = trackItems.first else { return nil }
+        let title = normalizedTag(first.album) ?? "Unknown Album"
+        let artist = normalizedTag(first.albumArtist) ?? first.artists?.first ?? "Unknown Artist"
+        let artworkItemID = artworkItemID(for: trackItems)
+        return Album(
+            id: albumID,
+            title: title,
+            artist: artist,
+            year: trackItems.compactMap(\.productionYear).first,
+            coverURL: artworkURL(itemID: artworkItemID, maxWidth: 300)
+        )
+    }
+
+    func artworkItemID(for trackItems: [JellyfinItem]) -> String {
+        if let withCover = trackItems.first(where: { $0.imageTags?["Primary"] != nil }) {
+            return withCover.id
+        }
+        return trackItems[0].id
+    }
+
+    func albumGroupKey(for item: JellyfinItem) -> String {
+        let title = normalizedTag(item.album) ?? "Unknown Album"
+        let artist = normalizedTag(item.albumArtist) ?? item.artists?.first ?? "Unknown Artist"
+        return "\(title.lowercased())|\(artist.lowercased())"
+    }
+
+    func cadenceAlbumID(for firstItem: JellyfinItem) -> UUID {
+        let title = normalizedTag(firstItem.album) ?? "Unknown Album"
+        let artist = normalizedTag(firstItem.albumArtist) ?? firstItem.artists?.first ?? "Unknown Artist"
+        return StableIdentity.jellyfinTaggedAlbumID(title: title, artist: artist)
+    }
+
+    private func normalizedTag(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

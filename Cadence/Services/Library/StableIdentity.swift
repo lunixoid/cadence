@@ -14,6 +14,10 @@ enum StableIdentity {
         stableUUID(from: "jellyfin:\(itemID)")
     }
 
+    static func jellyfinTaggedAlbumID(title: String, artist: String) -> UUID {
+        stableUUID(from: "jellyfin-album:\(title)|\(artist)")
+    }
+
     private static func stableUUID(from string: String) -> UUID {
         let hash = SHA256.hash(data: Data(string.utf8))
         let bytes = Array(hash.prefix(16))

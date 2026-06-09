@@ -3,6 +3,7 @@ import Foundation
 enum AutoplaySource: Codable, Equatable {
     case album(UUID)
     case playlist(UUID)
+    case library
     case adHoc
     case none
 }
@@ -46,7 +47,7 @@ struct PlaybackQueue: Equatable {
                     cursor: clampedIndex + 1
                 )
                 : nil
-        case .album, .playlist, .adHoc:
+        case .album, .playlist, .library, .adHoc:
             autoplay = AutoplayContext(
                 source: source,
                 tracks: tracks,
@@ -54,6 +55,29 @@ struct PlaybackQueue: Equatable {
                 cursor: clampedIndex + 1
             )
         }
+    }
+
+    private func unplayedFromContext(excludingUpNext: Bool = true) -> [Track] {
+        guard let ctx = autoplay else { return [] }
+        var playedIDs = Set(history.map(\.id))
+        if let current {
+            playedIDs.insert(current.id)
+        }
+        if excludingUpNext {
+            playedIDs.formUnion(upNext.map(\.id))
+        }
+        return ctx.originalTracks.filter { !playedIDs.contains($0.id) }
+    }
+
+    private func forwardRemainingFromContext() -> [Track] {
+        guard let ctx = autoplay, let current else { return [] }
+        let playedIDs = Set(history.map(\.id) + [current.id])
+        guard let currentIndex = ctx.originalTracks.firstIndex(of: current) else {
+            return ctx.originalTracks.filter { !playedIDs.contains($0.id) }
+        }
+        return ctx.originalTracks
+            .dropFirst(currentIndex + 1)
+            .filter { !playedIDs.contains($0.id) }
     }
 
     mutating func insertPlayNext(_ track: Track) {
@@ -105,19 +129,20 @@ struct PlaybackQueue: Equatable {
     }
 
     mutating func shuffleRemainingAutoplay() {
-        guard var ctx = autoplay, ctx.cursor < ctx.tracks.count else { return }
-        let played = Array(ctx.tracks[..<ctx.cursor])
-        var remaining = Array(ctx.tracks[ctx.cursor...])
-        remaining.shuffle()
-        ctx.tracks = played + remaining
+        guard var ctx = autoplay else { return }
+        var pool = unplayedFromContext()
+        guard !pool.isEmpty else { return }
+        pool.shuffle()
+        ctx.tracks = pool
+        ctx.cursor = 0
         autoplay = ctx
     }
 
     mutating func restoreOriginalAutoplayOrder() {
-        guard var ctx = autoplay, ctx.cursor <= ctx.originalTracks.count else { return }
-        let played = Array(ctx.originalTracks[..<ctx.cursor])
-        let remaining = Array(ctx.originalTracks[ctx.cursor...])
-        ctx.tracks = played + remaining
+        guard var ctx = autoplay else { return }
+        let remaining = forwardRemainingFromContext()
+        ctx.tracks = remaining
+        ctx.cursor = 0
         autoplay = ctx
     }
 

@@ -133,6 +133,14 @@ final class PlaybackController {
         play(tracks: [track], startAt: 0, source: .none)
     }
 
+    func playTrack(_ track: Track, in tracks: [Track], source: AutoplaySource) {
+        guard let index = tracks.firstIndex(of: track) else {
+            playTrack(track)
+            return
+        }
+        play(tracks: tracks, startAt: index, source: source, originalTracks: tracks)
+    }
+
     func togglePlayPause() {
         if !playbackQueue.hasActiveSession, let track = currentTrack {
             playTrack(track)

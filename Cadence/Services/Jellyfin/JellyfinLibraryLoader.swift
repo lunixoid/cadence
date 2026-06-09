@@ -8,10 +8,12 @@ private let logger = Logger(subsystem: "dev.personal.cadence", category: "Jellyf
 final class JellyfinLibraryLoader {
     private let client: JellyfinClient
     private let libraryStore: LibraryStore
+    private let serverID: UUID
 
-    init(client: JellyfinClient, libraryStore: LibraryStore) {
+    init(client: JellyfinClient, libraryStore: LibraryStore, serverID: UUID) {
         self.client = client
         self.libraryStore = libraryStore
+        self.serverID = serverID
     }
 
     func loadFullLibrary() async {
@@ -28,11 +30,14 @@ final class JellyfinLibraryLoader {
 
             var albums: [Album] = []
             var allTracks: [Track] = []
+            var artworkItemIDs: [UUID: String] = [:]
 
             for (_, trackItems) in groupedTracks {
                 let sortedItems = sortTrackItems(trackItems)
                 let albumID = client.cadenceAlbumID(for: sortedItems[0])
                 guard let album = client.convertToAlbum(from: sortedItems, albumID: albumID) else { continue }
+
+                artworkItemIDs[album.id] = client.artworkItemID(for: sortedItems)
 
                 let tracks = sortedItems.enumerated().compactMap { offset, item in
                     client.convertToTrack(item: item, albumID: album.id, positionInAlbum: offset + 1)
@@ -49,6 +54,7 @@ final class JellyfinLibraryLoader {
             )
 
             libraryStore.loadFromJellyfin(scanResult)
+            JellyfinLibraryCache.save(scanResult, serverID: serverID, artworkItemIDs: artworkItemIDs)
             logger.info("Jellyfin library loaded: \(albums.count) albums, \(allTracks.count) tracks")
         } catch {
             logger.error("Failed to load Jellyfin library: \(error.localizedDescription)")

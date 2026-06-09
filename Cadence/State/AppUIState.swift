@@ -161,6 +161,7 @@ final class AppUIState {
         if activeJellyfinClient != nil && !jellyfinServers.contains(where: { $0.isActive }) {
             activeJellyfinClient = nil
         }
+        JellyfinLibraryCache.remove(serverID: id)
         saveServers()
     }
 
@@ -197,7 +198,16 @@ final class AppUIState {
     private func activateClient(for server: JellyfinServer, favoritesSync: JellyfinFavoritesSync? = nil) async {
         guard let client = try? JellyfinClient(server: server) else { return }
         activeJellyfinClient = client
-        let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore)
+
+        if let cached = JellyfinLibraryCache.load(serverID: server.id) {
+            libraryStore.loadFromJellyfin(cached)
+            let coverURLs = cached.albums.compactMap(\.coverURL)
+            Task(priority: .utility) {
+                await ArtworkCache.shared.prefetch(coverURLs: coverURLs)
+            }
+        }
+
+        let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore, serverID: server.id)
         await loader.loadFullLibrary()
         if let favoritesSync {
             await favoritesSync.syncFromServer(client: client)

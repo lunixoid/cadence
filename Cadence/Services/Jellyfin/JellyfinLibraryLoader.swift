@@ -17,30 +17,29 @@ final class JellyfinLibraryLoader {
     func loadFullLibrary() async {
         logger.info("Starting Jellyfin library load")
         do {
-            let albumItems = try await client.getAlbums(limit: 10000)
-            logger.info("Fetched \(albumItems.count) albums from Jellyfin")
+            let audioItems = try await client.getAllAudioItems()
+            logger.info("Fetched \(audioItems.count) audio items from Jellyfin")
+
+            var groupedTracks: [String: [JellyfinItem]] = [:]
+            for item in audioItems {
+                let key = client.albumGroupKey(for: item)
+                groupedTracks[key, default: []].append(item)
+            }
 
             var albums: [Album] = []
             var allTracks: [Track] = []
-            var tracksByAlbumID: [UUID: [Track]] = [:]
 
-            await withTaskGroup(of: (Album, [Track]).self) { group in
-                for item in albumItems {
-                    group.addTask {
-                        let album = await self.client.convertToAlbum(item: item)
-                        let trackItems = (try? await self.client.getAlbumTracks(albumID: item.id)) ?? []
-                        let tracks = trackItems.enumerated().compactMap { offset, item in
-                            self.client.convertToTrack(item: item, albumID: album.id, positionInAlbum: offset + 1)
-                        }
-                        return (album, tracks)
-                    }
+            for (_, trackItems) in groupedTracks {
+                let sortedItems = sortTrackItems(trackItems)
+                let albumID = client.cadenceAlbumID(for: sortedItems[0])
+                guard let album = client.convertToAlbum(from: sortedItems, albumID: albumID) else { continue }
+
+                let tracks = sortedItems.enumerated().compactMap { offset, item in
+                    client.convertToTrack(item: item, albumID: album.id, positionInAlbum: offset + 1)
                 }
 
-                for await (album, tracks) in group {
-                    albums.append(album)
-                    allTracks.append(contentsOf: tracks)
-                    tracksByAlbumID[album.id] = tracks
-                }
+                albums.append(album)
+                allTracks.append(contentsOf: tracks)
             }
 
             let scanResult = LibraryScanResult(
@@ -53,6 +52,20 @@ final class JellyfinLibraryLoader {
             logger.info("Jellyfin library loaded: \(albums.count) albums, \(allTracks.count) tracks")
         } catch {
             logger.error("Failed to load Jellyfin library: \(error.localizedDescription)")
+        }
+    }
+
+    private func sortTrackItems(_ items: [JellyfinItem]) -> [JellyfinItem] {
+        items.sorted { lhs, rhs in
+            let lhsDisc = lhs.parentIndexNumber ?? 1
+            let rhsDisc = rhs.parentIndexNumber ?? 1
+            if lhsDisc != rhsDisc { return lhsDisc < rhsDisc }
+
+            let lhsIndex = lhs.indexNumber ?? Int.max
+            let rhsIndex = rhs.indexNumber ?? Int.max
+            if lhsIndex != rhsIndex { return lhsIndex < rhsIndex }
+
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
     }
 

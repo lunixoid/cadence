@@ -28,9 +28,8 @@ struct AlbumCoverView: View {
                 image = nil
                 return
             }
-            let loaded = await Task.detached(priority: .userInitiated) {
-                NSImage(contentsOf: coverURL)
-            }.value
+            let maxWidth = Int(size * 2)
+            let loaded = await ArtworkCache.shared.image(for: coverURL, maxWidth: maxWidth)
             if !Task.isCancelled {
                 image = loaded
             }

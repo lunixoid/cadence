@@ -38,8 +38,9 @@ struct CadenceApp: App {
                 .environment(recentStore)
                 .environment(playbackController)
                 .task {
-                    await libraryStore.restoreSavedFolders()
-                    await uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
+                    async let folders: Void = libraryStore.restoreSavedFolders()
+                    async let servers: Void = uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
+                    _ = await (folders, servers)
                     playbackController.restoreSavedState()
                 }
         }

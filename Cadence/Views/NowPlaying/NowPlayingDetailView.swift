@@ -139,36 +139,40 @@ struct NowPlayingDetailView: View {
     }
 
     private var transportControls: some View {
-        HStack(spacing: 2) {
-            PlayerButton(size: 44, isActive: playbackController.shuffleOn) {
-                playbackController.toggleShuffle()
+        let pc = playbackController
+
+        return HStack(spacing: 2) {
+            PlayerButton(size: 44, isActive: pc.shuffleOn) {
+                pc.toggleShuffle()
             } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 22))
             }
 
             transportButton(icon: "backward.fill", size: 48) {
-                playbackController.previous()
+                pc.previous()
             }
 
-            playPauseButton
+            playPauseButton(pc: pc)
 
             transportButton(icon: "forward.fill", size: 48) {
-                playbackController.next()
+                pc.next()
             }
 
-            PlayerButton(size: 44, isActive: playbackController.repeatMode != .off) {
-                playbackController.toggleRepeat()
+            PlayerButton(size: 44, isActive: pc.repeatMode != .off) {
+                pc.toggleRepeat()
             } label: {
-                Image(systemName: playbackController.repeatMode.iconName)
+                Image(systemName: pc.repeatMode.iconName)
                     .font(.system(size: 22))
             }
         }
     }
 
-    private var playPauseButton: some View {
-        Button(action: { playbackController.togglePlayPause() }) {
-            Image(systemName: playbackController.isPlaying ? "pause.fill" : "play.fill")
+    private func playPauseButton(pc: PlaybackController) -> some View {
+        Button(action: {
+            pc.togglePlayPause()
+        }) {
+            Image(systemName: pc.isPlaying ? "pause.fill" : "play.fill")
                 .font(.system(size: 26))
                 .foregroundStyle(colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : .white)
                 .frame(width: 72, height: 72)
@@ -187,14 +191,18 @@ struct NowPlayingDetailView: View {
     }
 
     private func actionRow(track: Track, album: Album) -> some View {
-        HStack(spacing: 10) {
+        let ui = uiState
+        let favorites = favoritesStore
+        let favoritesSync = jellyfinFavoritesSync
+
+        return HStack(spacing: 10) {
             Button(action: {
-                jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+                favoritesSync.toggle(track: track, client: ui.activeJellyfinClient)
             }) {
-                Image(systemName: favoritesStore.isFavorite(track: track) ? "heart.fill" : "heart")
+                Image(systemName: favorites.isFavorite(track: track) ? "heart.fill" : "heart")
                     .font(.system(size: 22))
                     .foregroundStyle(
-                        favoritesStore.isFavorite(track: track)
+                        favorites.isFavorite(track: track)
                             ? Color(red: 1, green: 0.216, blue: 0.373)
                             : CadenceTheme.mutedText(for: colorScheme)
                     )
@@ -207,14 +215,14 @@ struct NowPlayingDetailView: View {
                 icon: "square.stack",
                 label: "К альбому",
                 colorScheme: colorScheme,
-                action: { uiState.openAlbum(album) }
+                action: { ui.openAlbum(album) }
             )
 
             NowPlayingActionPill(
                 icon: "person",
                 label: "К артисту",
                 colorScheme: colorScheme,
-                action: { uiState.openArtist(track.artist) }
+                action: { ui.openArtist(track.artist) }
             )
         }
     }

@@ -23,7 +23,7 @@ struct TrackListView: View {
                                     isActive: playbackController.playingTrackID == track.id,
                                     isPlaying: playbackController.isPlaying,
                                     disambiguationLabel: libraryStore.disambiguationLabel(for: track),
-                                    onPlay: { playbackController.playTrack(track) }
+                                    onPlay: { playbackController.playTrack(track, in: tracks, source: .library) }
                                 )
                             }
                             Color.clear.frame(height: 24)

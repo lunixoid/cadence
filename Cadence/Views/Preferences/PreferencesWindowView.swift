@@ -65,6 +65,7 @@ struct PreferencesWindowView: View {
     @State private var crossfadeEnabled = false
     @State private var crossfadeLength = 3
     @State private var cacheLimitGB = 10
+    @State private var cacheRevision = 0
 
     private let outputDevices = ["Системное устройство"]
 
@@ -381,7 +382,8 @@ struct PreferencesWindowView: View {
     // MARK: - Cache tab
 
     private var cacheTab: some View {
-        let usedGb = 0.0
+        let _ = cacheRevision
+        let usedGb = Double(ArtworkCache.totalDiskUsageBytes()) / 1_073_741_824
         let pct = min(usedGb / Double(cacheLimitGB), 1.0)
 
         return VStack(alignment: .leading, spacing: 0) {
@@ -421,7 +423,13 @@ struct PreferencesWindowView: View {
 
             HStack {
                 Spacer()
-                Button("Очистить кеш") {}
+                Button("Очистить кеш") {
+                    Task {
+                        await ArtworkCache.shared.clearAll()
+                        JellyfinLibraryCache.clearAll()
+                        cacheRevision += 1
+                    }
+                }
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(CadenceTheme.prefsText(for: cs))
                     .padding(.horizontal, 14)

@@ -14,6 +14,8 @@ final class PlaybackController {
 
     private var playbackQueue = PlaybackQueue()
     private var loadTask: Task<Void, Never>?
+    private var prefetchTask: Task<Void, Never>?
+    private var prefetchedCache: (trackID: UUID, fileURL: URL)?
 
     var isPlaying = false
     var isLoading = false
@@ -291,13 +293,19 @@ final class PlaybackController {
 
     private func playLoadedTrack(_ track: Track) {
         loadTask?.cancel()
+        prefetchTask?.cancel()
+        prefetchTask = nil
         isLoading = true
 
         loadTask = Task {
             do {
                 if track.fileURL.isFileURL {
                     try audioEngine.load(url: track.fileURL)
+                } else if let cached = prefetchedCache, cached.trackID == track.id {
+                    prefetchedCache = nil
+                    try audioEngine.load(url: cached.fileURL)
                 } else {
+                    prefetchedCache = nil
                     try await audioEngine.loadRemote(url: track.fileURL)
                 }
                 guard !Task.isCancelled else { return }
@@ -308,11 +316,43 @@ final class PlaybackController {
                 isLoading = false
                 recentStore.record(track: track)
                 mediaRemote.publishNowPlayingInfo()
+                schedulePrefetch()
             } catch {
                 guard !Task.isCancelled else { return }
                 logger.error("Failed to load track: \(error.localizedDescription)")
                 isLoading = false
                 next()
+            }
+        }
+    }
+
+    private func schedulePrefetch() {
+        prefetchTask?.cancel()
+        guard let next = playbackQueue.peekNext(repeatMode: repeatMode),
+              !next.fileURL.isFileURL,
+              prefetchedCache?.trackID != next.id else { return }
+
+        let url = next.fileURL
+        let trackID = next.id
+
+        prefetchTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 60
+                let (localURL, response) = try await URLSession.shared.download(for: request)
+                guard !Task.isCancelled else { return }
+                let ext = (response as? HTTPURLResponse)
+                    .flatMap { $0.value(forHTTPHeaderField: "Content-Type") }
+                    .flatMap { AudioEngineService.ext(forContentType: $0) } ?? "mp3"
+                let destURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("prefetch_\(trackID)")
+                    .appendingPathExtension(ext)
+                try? FileManager.default.removeItem(at: destURL)
+                try FileManager.default.moveItem(at: localURL, to: destURL)
+                self.prefetchedCache = (trackID: trackID, fileURL: destURL)
+            } catch {
+                // Prefetch failed — next transition will download normally.
             }
         }
     }

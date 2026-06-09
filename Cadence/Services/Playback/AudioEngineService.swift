@@ -74,7 +74,7 @@ final class AudioEngineService {
         try load(url: destURL)
     }
 
-    private static func ext(forContentType contentType: String) -> String? {
+    static func ext(forContentType contentType: String) -> String? {
         let type = contentType.split(separator: ";").first.map(String.init) ?? contentType
         switch type.trimmingCharacters(in: .whitespaces) {
         case "audio/flac": return "flac"

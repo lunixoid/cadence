@@ -19,8 +19,8 @@ enum AppThemePreference: String, CaseIterable, Identifiable {
 @Observable
 @MainActor
 final class AppUIState {
-    var activeSidebarItem: SidebarItem = .albums
-    var contentRoute: ContentRoute = .albumsGrid
+    var activeSidebarItem: SidebarItem = .tracks
+    var contentRoute: ContentRoute = .tracksList
     var navigationStack: [ContentRoute] = []
     var forwardStack: [ContentRoute] = []
     var searchQuery = ""
@@ -37,6 +37,7 @@ final class AppUIState {
     var activeJellyfinClient: JellyfinClient?
 
     private let serversKey = "cadence.jellyfinServers"
+    private let navigationStateStore = NavigationStateStore()
 
     let libraryStore: LibraryStore
 
@@ -68,12 +69,14 @@ final class AppUIState {
         navigationStack.removeAll()
         forwardStack.removeAll()
         contentRoute = route(for: item)
+        persistNavigationState()
     }
 
     func selectPlaylist(_ playlist: Playlist) {
         navigationStack.append(contentRoute)
         forwardStack.removeAll()
         contentRoute = .playlistDetail(playlist.id)
+        persistNavigationState()
     }
 
     func openAlbum(_ album: Album) {
@@ -81,6 +84,7 @@ final class AppUIState {
         forwardStack.removeAll()
         contentRoute = .albumDetail(album.id)
         activeSidebarItem = .albums
+        persistNavigationState()
     }
 
     func openArtist(_ name: String) {
@@ -88,6 +92,7 @@ final class AppUIState {
         forwardStack.removeAll()
         contentRoute = .artistDetail(name)
         activeSidebarItem = .artists
+        persistNavigationState()
     }
 
     func navigateBack() {
@@ -98,6 +103,7 @@ final class AppUIState {
         } else {
             contentRoute = route(for: activeSidebarItem)
         }
+        persistNavigationState()
     }
 
     func navigateForward() {
@@ -105,6 +111,25 @@ final class AppUIState {
         navigationStack.append(contentRoute)
         contentRoute = next
         syncSidebarItem(for: next)
+        persistNavigationState()
+    }
+
+    func restoreNavigationState(playlistStore: PlaylistStore) {
+        guard let snapshot = navigationStateStore.load() else { return }
+
+        contentRoute = normalizeRoute(snapshot.contentRoute, playlistStore: playlistStore)
+        navigationStack = snapshot.navigationStack.filter {
+            isRouteValid($0, playlistStore: playlistStore)
+        }
+        forwardStack = snapshot.forwardStack.filter {
+            isRouteValid($0, playlistStore: playlistStore)
+        }
+
+        if let sidebar = contentRoute.sidebarItem {
+            activeSidebarItem = sidebar
+        } else {
+            activeSidebarItem = snapshot.activeSidebarItem
+        }
     }
 
     func canNavigateBack() -> Bool {
@@ -250,6 +275,46 @@ final class AppUIState {
         case .favorites: return .favorites
         case .recent: return .recent
         case .downloaded: return .downloaded
+        }
+    }
+
+    private func persistNavigationState() {
+        navigationStateStore.save(
+            NavigationStateSnapshot(
+                activeSidebarItem: activeSidebarItem,
+                contentRoute: contentRoute,
+                navigationStack: navigationStack,
+                forwardStack: forwardStack
+            )
+        )
+    }
+
+    private func isRouteValid(_ route: ContentRoute, playlistStore: PlaylistStore) -> Bool {
+        switch route {
+        case .albumDetail(let id):
+            return libraryStore.album(for: id) != nil
+        case .artistDetail(let name):
+            return libraryStore.artists.contains { $0.name == name }
+        case .playlistDetail(let id):
+            return playlistStore.playlist(for: id) != nil
+        default:
+            return true
+        }
+    }
+
+    private func normalizeRoute(_ route: ContentRoute, playlistStore: PlaylistStore) -> ContentRoute {
+        if isRouteValid(route, playlistStore: playlistStore) {
+            return route
+        }
+        switch route {
+        case .albumDetail:
+            return .albumsGrid
+        case .artistDetail:
+            return .artistsGrid
+        case .playlistDetail:
+            return .tracksList
+        default:
+            return .tracksList
         }
     }
 }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum SidebarItem: String, CaseIterable, Identifiable {
+enum SidebarItem: String, CaseIterable, Identifiable, Codable {
     case nowPlaying
     case tracks
     case albums

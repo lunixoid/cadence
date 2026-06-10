@@ -1,6 +1,6 @@
 import Foundation
 
-enum ContentRoute: Equatable, Hashable {
+enum ContentRoute: Equatable, Hashable, Codable {
     case nowPlaying
     case tracksList
     case albumsGrid

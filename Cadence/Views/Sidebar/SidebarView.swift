@@ -115,7 +115,7 @@ struct SidebarView: View {
 
     private func deletePlaylist(_ playlist: Playlist) {
         if case .playlistDetail(let id) = uiState.contentRoute, id == playlist.id {
-            uiState.selectSidebarItem(.albums)
+            uiState.selectSidebarItem(.tracks)
         }
         playlistStore.deletePlaylist(id: playlist.id)
     }

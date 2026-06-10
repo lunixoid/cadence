@@ -65,6 +65,7 @@
 	C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000016 /* JellyfinFavoritesSync.swift */; };
 	C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000011 /* JellyfinLibraryCache.swift */; };
 	C30000010000000000000002 /* ArtworkCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000012 /* ArtworkCache.swift */; };
+	C30000010000000000000003 /* AudioCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000013 /* AudioCache.swift */; };
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 		E10000010000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10000010000000000000001 /* Assets.xcassets */; };
@@ -134,6 +135,7 @@
 	C20000010000000000000016 /* JellyfinFavoritesSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesSync.swift; sourceTree = "<group>"; };
 	C30000010000000000000011 /* JellyfinLibraryCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryCache.swift; sourceTree = "<group>"; };
 	C30000010000000000000012 /* ArtworkCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkCache.swift; sourceTree = "<group>"; };
+	C30000010000000000000013 /* AudioCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCache.swift; sourceTree = "<group>"; };
 	D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 	T10000010000000000000003 /* CadenceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CadenceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 	T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
@@ -230,6 +232,7 @@
 		children = (
 			C30000010000000000000011 /* JellyfinLibraryCache.swift */,
 			C30000010000000000000012 /* ArtworkCache.swift */,
+			C30000010000000000000013 /* AudioCache.swift */,
 		);
 		path = Cache;
 		sourceTree = "<group>";
@@ -613,6 +616,7 @@
 			C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */,
 			C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */,
 			C30000010000000000000002 /* ArtworkCache.swift in Sources */,
+			C30000010000000000000003 /* AudioCache.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};

@@ -42,6 +42,7 @@ struct CadenceApp: App {
                     async let servers: Void = uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
                     _ = await (folders, servers)
                     playbackController.restoreSavedState()
+                    uiState.restoreNavigationState(playlistStore: playlistStore)
                 }
         }
         .defaultSize(
@@ -100,7 +101,6 @@ struct CadenceApp: App {
         guard let url = FolderPicker.pickMusicFolder() else { return }
         Task {
             await libraryStore.loadFolder(url)
-            uiState.selectSidebarItem(.albums)
         }
     }
 }

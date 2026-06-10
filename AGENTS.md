@@ -1,5 +1,10 @@
 # Cadence — инструкции для агентов
 
+## Документы
+
+- Спецификация: [`SPEC.md`](SPEC.md)
+- Дизайн: [`ux/`](ux/)
+
 ## Версионирование (SemVer)
 
 Проект использует [Semantic Versioning 2.0.0](https://semver.org/lang/ru/): `MAJOR.MINOR.PATCH` (`X.Y.Z`).

@@ -93,7 +93,9 @@ actor ArtworkCache {
     }
 
     nonisolated static func totalDiskUsageBytes() -> Int64 {
-        directorySize(at: artworkDirectory) + JellyfinLibraryCache.diskUsageBytes()
+        directorySize(at: artworkDirectory)
+            + JellyfinLibraryCache.diskUsageBytes()
+            + AudioCache.totalDiskUsageBytes()
     }
 
     // MARK: - Private

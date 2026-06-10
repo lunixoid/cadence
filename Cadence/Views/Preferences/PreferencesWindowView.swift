@@ -426,6 +426,7 @@ struct PreferencesWindowView: View {
                 Button("Очистить кеш") {
                     Task {
                         await ArtworkCache.shared.clearAll()
+                        await AudioCache.shared.clearAll()
                         JellyfinLibraryCache.clearAll()
                         cacheRevision += 1
                     }

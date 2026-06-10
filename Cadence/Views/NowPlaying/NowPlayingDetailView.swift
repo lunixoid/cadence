@@ -537,12 +537,17 @@ private struct NowPlayingSeekBar: View {
 
     @State private var isHovered = false
     @State private var isDragging = false
+    @State private var scrubPosition: TimeInterval?
 
     private var active: Bool { isHovered || isDragging }
 
+    private var displayedProgress: TimeInterval {
+        scrubPosition ?? progress
+    }
+
     var body: some View {
         HStack(spacing: 10) {
-            Text(CadenceTheme.formatTime(progress))
+            Text(CadenceTheme.formatTime(displayedProgress))
                 .font(.system(size: 11, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
@@ -577,10 +582,14 @@ private struct NowPlayingSeekBar: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             isDragging = true
-                            seek(at: value.location.x, width: geometry.size.width)
+                            scrubPosition = seekTime(at: value.location.x, width: geometry.size.width)
                         }
                         .onEnded { _ in
+                            if let scrubPosition {
+                                onSeek(scrubPosition)
+                            }
                             isDragging = false
+                            scrubPosition = nil
                         }
                 )
             }
@@ -597,13 +606,13 @@ private struct NowPlayingSeekBar: View {
 
     private var progressRatio: CGFloat {
         guard duration > 0 else { return 0 }
-        return CGFloat(min(1, progress / duration))
+        return CGFloat(min(1, displayedProgress / duration))
     }
 
-    private func seek(at x: CGFloat, width: CGFloat) {
-        guard width > 0 else { return }
+    private func seekTime(at x: CGFloat, width: CGFloat) -> TimeInterval {
+        guard width > 0 else { return 0 }
         let ratio = min(max(x / width, 0), 1)
-        onSeek(duration * Double(ratio))
+        return duration * Double(ratio)
     }
 }
 

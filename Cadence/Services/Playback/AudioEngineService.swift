@@ -1,20 +1,24 @@
 import AVFoundation
 import Foundation
-import os.log
-
-private let logger = Logger(subsystem: "dev.personal.cadence", category: "AudioEngine")
 
 @MainActor
 final class AudioEngineService {
     private let engine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()
     private let eqNode = AVAudioUnitEQ(numberOfBands: 10)
-    private var audioFile: AVAudioFile?
     private var progressTimer: Timer?
     private var currentFileURL: URL?
+
+    private var pcmChunks: [AVAudioPCMBuffer] = []
+    private var processingFormat: AVAudioFormat?
+    private var chunkDurationFrames: AVAudioFrameCount = 0
+    private var totalFrameCount: AVAudioFramePosition = 0
     private var segmentStartFrame: AVAudioFramePosition = 0
+    private var segmentOffsetInFirstChunk: AVAudioFrameCount = 0
+    private var scheduledUpToIndex = 0
     private var scheduleGeneration = 0
 
+    private let prefetchChunkCount = 4
     private let eqFrequencies: [Float] = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
     var onProgress: ((TimeInterval, TimeInterval) -> Void)?
@@ -46,35 +50,31 @@ final class AudioEngineService {
         currentFileURL = url
 
         let file = try AVAudioFile(forReading: url)
-        audioFile = file
+        let format = file.processingFormat
+        processingFormat = format
+        totalFrameCount = file.length
+        chunkDurationFrames = AVAudioFrameCount(format.sampleRate)
+        pcmChunks = try decodeChunks(from: file, chunkFrames: chunkDurationFrames)
         segmentStartFrame = 0
+        segmentOffsetInFirstChunk = 0
+        scheduledUpToIndex = 0
 
         engine.disconnectNodeOutput(playerNode)
         engine.disconnectNodeOutput(eqNode)
-        engine.connect(playerNode, to: eqNode, format: file.processingFormat)
-        engine.connect(eqNode, to: engine.mainMixerNode, format: file.processingFormat)
+        engine.connect(playerNode, to: eqNode, format: format)
+        engine.connect(eqNode, to: engine.mainMixerNode, format: format)
 
         if !engine.isRunning {
             try engine.start()
         }
     }
 
-    func loadRemote(url: URL) async throws {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 30
-        let (localURL, response) = try await URLSession.shared.download(for: request)
-        let ext = (response as? HTTPURLResponse)
-            .flatMap { $0.value(forHTTPHeaderField: "Content-Type") }
-            .flatMap { Self.ext(forContentType: $0) }
-            ?? "mp3"
-        let destURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension(ext)
-        try FileManager.default.moveItem(at: localURL, to: destURL)
-        try load(url: destURL)
+    func loadRemote(url: URL, trackID: UUID) async throws {
+        let localURL = try await AudioCache.shared.localURL(for: url, trackID: trackID)
+        try load(url: localURL)
     }
 
-    static func ext(forContentType contentType: String) -> String? {
+    nonisolated static func ext(forContentType contentType: String) -> String? {
         let type = contentType.split(separator: ";").first.map(String.init) ?? contentType
         switch type.trimmingCharacters(in: .whitespaces) {
         case "audio/flac": return "flac"
@@ -88,7 +88,7 @@ final class AudioEngineService {
     }
 
     func play() {
-        guard let file = audioFile else { return }
+        guard !pcmChunks.isEmpty else { return }
 
         if !engine.isRunning {
             try? engine.start()
@@ -98,7 +98,7 @@ final class AudioEngineService {
             return
         }
 
-        scheduleFromCurrentPosition(file: file)
+        scheduleFromCurrentPosition()
         playerNode.play()
         startProgressTimer()
     }
@@ -113,21 +113,25 @@ final class AudioEngineService {
     }
 
     func seek(to time: TimeInterval) {
-        guard let file = audioFile else { return }
-        let sampleRate = file.processingFormat.sampleRate
+        guard let format = processingFormat, !pcmChunks.isEmpty else { return }
+        let sampleRate = format.sampleRate
         let frame = AVAudioFramePosition(time * sampleRate)
-        segmentStartFrame = min(max(frame, 0), file.length)
+        segmentStartFrame = min(max(frame, 0), totalFrameCount)
+        segmentOffsetInFirstChunk = AVAudioFrameCount(segmentStartFrame % Int64(chunkDurationFrames))
+        scheduledUpToIndex = Int(segmentStartFrame / Int64(chunkDurationFrames))
+
         playerNode.stop()
-        scheduleFromCurrentPosition(file: file)
+        scheduleFromCurrentPosition()
         if engine.isRunning {
             playerNode.play()
+            startProgressTimer()
         }
         emitProgress()
     }
 
     func currentTime() -> TimeInterval {
-        guard let file = audioFile else { return 0 }
-        let sampleRate = file.processingFormat.sampleRate
+        guard let format = processingFormat else { return 0 }
+        let sampleRate = format.sampleRate
         guard sampleRate > 0 else { return 0 }
         let nodeTime = playerNode.lastRenderTime
         let playerTime = playerNode.playerTime(forNodeTime: nodeTime ?? AVAudioTime(sampleTime: 0, atRate: sampleRate))
@@ -136,10 +140,10 @@ final class AudioEngineService {
     }
 
     func duration() -> TimeInterval {
-        guard let file = audioFile else { return 0 }
-        let sampleRate = file.processingFormat.sampleRate
+        guard let format = processingFormat else { return 0 }
+        let sampleRate = format.sampleRate
         guard sampleRate > 0 else { return 0 }
-        return Double(file.length) / sampleRate
+        return Double(totalFrameCount) / sampleRate
     }
 
     var isPlaying: Bool {
@@ -155,33 +159,132 @@ final class AudioEngineService {
         eqNode.bypass = !enabled
     }
 
-    private func scheduleFromCurrentPosition(file: AVAudioFile) {
+    private func decodeChunks(from file: AVAudioFile, chunkFrames: AVAudioFrameCount) throws -> [AVAudioPCMBuffer] {
+        let format = file.processingFormat
+        var chunks: [AVAudioPCMBuffer] = []
+        file.framePosition = 0
+
+        while file.framePosition < file.length {
+            let remaining = AVAudioFrameCount(file.length - file.framePosition)
+            let framesToRead = min(chunkFrames, remaining)
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: framesToRead) else {
+                throw NSError(domain: "AudioEngine", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: "Failed to allocate PCM buffer",
+                ])
+            }
+            try file.read(into: buffer, frameCount: framesToRead)
+            buffer.frameLength = framesToRead
+            chunks.append(buffer)
+        }
+
+        return chunks
+    }
+
+    private func scheduleFromCurrentPosition() {
         scheduleGeneration += 1
         let generation = scheduleGeneration
-        let frameCount = file.length - segmentStartFrame
-        guard frameCount > 0 else {
+
+        guard !pcmChunks.isEmpty else { return }
+
+        let remainingFrames = totalFrameCount - segmentStartFrame
+        guard remainingFrames > 0 else {
             onTrackFinished?()
             return
         }
 
-        playerNode.scheduleSegment(
-            file,
-            startingFrame: segmentStartFrame,
-            frameCount: AVAudioFrameCount(frameCount),
-            at: nil
-        ) { [weak self] in
+        scheduledUpToIndex = min(scheduledUpToIndex, pcmChunks.count)
+        scheduleInitialChunks(generation: generation)
+    }
+
+    private func scheduleInitialChunks(generation: Int) {
+        var chunkIndex = scheduledUpToIndex
+        var useOffset = segmentOffsetInFirstChunk > 0
+        var scheduled = 0
+
+        while scheduled < prefetchChunkCount, chunkIndex < pcmChunks.count {
+            scheduleChunk(at: chunkIndex, generation: generation, useOffset: useOffset)
+            useOffset = false
+            chunkIndex += 1
+            scheduled += 1
+        }
+
+        scheduledUpToIndex = chunkIndex
+    }
+
+    private func scheduleChunk(at chunkIndex: Int, generation: Int, useOffset: Bool) {
+        let sourceChunk = pcmChunks[chunkIndex]
+        let buffer: AVAudioPCMBuffer
+        if useOffset {
+            buffer = subBuffer(from: sourceChunk, startingAt: segmentOffsetInFirstChunk) ?? sourceChunk
+        } else {
+            buffer = sourceChunk
+        }
+
+        playerNode.scheduleBuffer(buffer, at: nil) { [weak self] in
             Task { @MainActor in
                 guard let self, generation == self.scheduleGeneration else { return }
-                self.stopProgressTimer()
-                self.onTrackFinished?()
+
+                if chunkIndex >= self.pcmChunks.count - 1 {
+                    self.stopProgressTimer()
+                    self.onTrackFinished?()
+                    return
+                }
+
+                if self.scheduledUpToIndex < self.pcmChunks.count {
+                    self.scheduleChunk(at: self.scheduledUpToIndex, generation: generation, useOffset: false)
+                    self.scheduledUpToIndex += 1
+                }
             }
         }
+    }
+
+    private func subBuffer(from chunk: AVAudioPCMBuffer, startingAt frameOffset: AVAudioFrameCount) -> AVAudioPCMBuffer? {
+        let remainingFrames = chunk.frameLength - frameOffset
+        guard remainingFrames > 0,
+              let partial = AVAudioPCMBuffer(pcmFormat: chunk.format, frameCapacity: remainingFrames)
+        else { return nil }
+
+        partial.frameLength = remainingFrames
+        let channelCount = Int(chunk.format.channelCount)
+
+        switch chunk.format.commonFormat {
+        case .pcmFormatFloat32:
+            guard let sourceChannels = chunk.floatChannelData,
+                  let destinationChannels = partial.floatChannelData else { return nil }
+            for channel in 0..<channelCount {
+                memcpy(
+                    destinationChannels[channel],
+                    sourceChannels[channel].advanced(by: Int(frameOffset)),
+                    Int(remainingFrames) * MemoryLayout<Float>.size
+                )
+            }
+        case .pcmFormatInt16:
+            guard let sourceChannels = chunk.int16ChannelData,
+                  let destinationChannels = partial.int16ChannelData else { return nil }
+            for channel in 0..<channelCount {
+                memcpy(
+                    destinationChannels[channel],
+                    sourceChannels[channel].advanced(by: Int(frameOffset)),
+                    Int(remainingFrames) * MemoryLayout<Int16>.size
+                )
+            }
+        default:
+            return nil
+        }
+
+        return partial
     }
 
     private func stopInternal(resetProgress: Bool) {
         scheduleGeneration += 1
         playerNode.stop()
         stopProgressTimer()
+        pcmChunks.removeAll(keepingCapacity: false)
+        processingFormat = nil
+        totalFrameCount = 0
+        chunkDurationFrames = 0
+        scheduledUpToIndex = 0
+        segmentOffsetInFirstChunk = 0
         if resetProgress {
             segmentStartFrame = 0
         }

@@ -12,6 +12,8 @@ struct NowPlayingBarView: View {
     @State private var isPlayHovered = false
     @State private var isVolumeHovered = false
     @State private var isStripHovered = false
+    @State private var isScrubbing = false
+    @State private var scrubPosition: TimeInterval = 0
 
     private var collapsed: Bool {
         uiState.activeSidebarItem == .nowPlaying
@@ -91,7 +93,12 @@ struct NowPlayingBarView: View {
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
-                            seekProgress(at: value.location.x, width: geometry.size.width)
+                            isScrubbing = true
+                            scrubPosition = scrubTime(at: value.location.x, width: geometry.size.width)
+                        }
+                        .onEnded { _ in
+                            playbackController.seek(to: scrubPosition)
+                            isScrubbing = false
                         }
                 )
             }
@@ -285,7 +292,12 @@ struct NowPlayingBarView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        seekProgress(at: value.location.x, width: geometry.size.width)
+                        isScrubbing = true
+                        scrubPosition = scrubTime(at: value.location.x, width: geometry.size.width)
+                    }
+                    .onEnded { _ in
+                        playbackController.seek(to: scrubPosition)
+                        isScrubbing = false
                     }
             )
             .animation(.easeOut(duration: 0.12), value: isProgressHovered)
@@ -361,15 +373,19 @@ struct NowPlayingBarView: View {
 
     // MARK: - Helpers
 
-    private var progressRatio: CGFloat {
-        guard duration > 0 else { return 0 }
-        return CGFloat(min(1, playbackController.progress / duration))
+    private var displayedProgress: TimeInterval {
+        isScrubbing ? scrubPosition : playbackController.progress
     }
 
-    private func seekProgress(at x: CGFloat, width: CGFloat) {
-        guard width > 0 else { return }
+    private var progressRatio: CGFloat {
+        guard duration > 0 else { return 0 }
+        return CGFloat(min(1, displayedProgress / duration))
+    }
+
+    private func scrubTime(at x: CGFloat, width: CGFloat) -> TimeInterval {
+        guard width > 0 else { return 0 }
         let ratio = min(max(x / width, 0), 1)
-        playbackController.seek(to: duration * Double(ratio))
+        return duration * Double(ratio)
     }
 
     private var heightAnimation: Animation? {

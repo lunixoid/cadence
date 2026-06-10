@@ -104,7 +104,7 @@ final class PlaybackController {
         volume = snapshot.volume
         progress = snapshot.progress
 
-        loadCurrentTrack(seekTo: snapshot.progress, shouldPlay: snapshot.isPlaying)
+        loadCurrentTrack(seekTo: snapshot.progress, shouldPlay: false)
     }
 
     func play(tracks: [Track], startAt index: Int = 0, source: AutoplaySource = .adHoc, originalTracks: [Track]? = nil) {
@@ -116,6 +116,9 @@ final class PlaybackController {
             source: source,
             originalTracks: originalTracks
         )
+        if shuffleOn {
+            playbackQueue.shuffleRemainingAutoplay()
+        }
         loadAndPlayCurrentTrack()
         persistState()
     }
@@ -123,9 +126,9 @@ final class PlaybackController {
     func playAlbum(_ album: Album, shuffled: Bool) {
         let tracks = libraryStore.tracks(for: album)
         guard !tracks.isEmpty else { return }
-        shuffleOn = shuffled
-        let orderedTracks = shuffled ? tracks.shuffled() : tracks
-        play(tracks: orderedTracks, startAt: 0, source: .album(album.id), originalTracks: tracks)
+        if shuffled { shuffleOn = true }
+        let startAt = shuffled ? Int.random(in: 0..<tracks.count) : 0
+        play(tracks: tracks, startAt: startAt, source: .album(album.id), originalTracks: tracks)
     }
 
     func playTrack(_ track: Track) {

@@ -95,7 +95,8 @@ final class AudioEngineService {
         }
 
         if playerNode.isPlaying {
-            return
+            playerNode.stop()
+            scheduleGeneration += 1
         }
 
         scheduleFromCurrentPosition()

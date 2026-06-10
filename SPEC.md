@@ -16,7 +16,7 @@
 | UI | SwiftUI |
 | Аудио-движок | AVFoundation + Core Audio (AVAudioEngine) |
 | Сеть | URLSession / async-await |
-| Persistence | SwiftData или UserDefaults + FileManager |
+| Persistence | UserDefaults + JSON в Application Support + FileManager (Caches/Temp) |
 | Минимальная macOS | 14.0 (Sonoma) |
 | Внешние зависимости | Минимум. Jellyfin API — собственный клиент поверх REST API |
 
@@ -24,25 +24,28 @@
 
 ## 3. Источники аудио
 
-### 3.1 Jellyfin (основной)
+### 3.1 Jellyfin
 
-Полная интеграция с Jellyfin-сервером через REST API:
+Фактическая реализация:
 
-- **Аутентификация**: логин/пароль или API key, поддержка нескольких серверов с переключением, сохранение токенов в Keychain
-- **Навигация по библиотеке**: артисты, альбомы, треки, плейлисты
-- **Стриминг**: прямой стриминг (direct play) предпочтительнее транскодинга; поддержка транскодинга как fallback
-- **Плейлисты**: чтение, создание, редактирование, удаление плейлистов на сервере
-- **Scrobbling**: отправка позиции воспроизведения на сервер (PlayState API), чтобы продолжить с того же места на другом устройстве
-- **Избранное**: пометка треков/альбомов/артистов как избранных, синхронизация с сервером
-- **Рейтинги**: установка и отображение рейтингов треков
+- **Аутентификация**: логин/пароль или API key; токены сохраняются в Keychain; список серверов в UserDefaults; активный сервер один
+- **Библиотека**: загрузка всех аудио-объектов через REST API, группировка по альбомам, формирование списка артистов; кеш библиотеки хранится на диске (Application Support)
+- **Стриминг**: используется `/Audio/{id}/universal`; перед воспроизведением трек целиком скачивается в `AudioCache`, затем читается через `AVAudioFile` (сетевой чанкинг не используется)
+- **Избранное**: локальное хранение; для Jellyfin-треков выполняется синхронизация mark/unmark + первичная загрузка избранных треков с сервера
 
-### 3.2 Локальные файлы (вспомогательный)
+Не реализовано:
 
-- Открытие через File → Open, drag-and-drop файлов и папок на окно приложения
-- Поддерживаемые форматы: FLAC, ALAC, MP3, AAC, OGG Vorbis, WAV, AIFF, Opus
-- Чтение метаданных из тегов файлов (ID3, Vorbis Comment, и т.д.)
-- Локальные файлы добавляются в очередь воспроизведения, но не в библиотеку Jellyfin
-- Security-scoped bookmarks для сохранения доступа к файлам между сессиями
+- Плейлисты Jellyfin (CRUD) и рейтинги
+- Scrobbling (методы есть в `JellyfinClient`, но не вызываются)
+- Явный контроль транскодинга — используется универсальный endpoint Jellyfin
+
+### 3.2 Локальные файлы
+
+- Добавление через File → Open Music Folder… (⌘O)
+- Сканирование выбранной папки и подпапок; треки попадают в общую библиотеку
+- Поддерживаемые форматы: FLAC, ALAC, MP3, AAC, M4A, OGG, WAV, AIFF/AIF, Opus
+- Чтение метаданных из тегов файлов через AVFoundation
+- Security-scoped bookmarks для восстановления доступа между сессиями
 
 ---
 
@@ -50,27 +53,32 @@
 
 ### 4.1 Аудио-движок
 
-Построен на **AVAudioEngine** для гибкости аудио-графа (эквалайзер, gapless).
+Построен на **AVAudioEngine**.
 
-Цепочка: `AVAudioPlayerNode` → `AVAudioUnitEQ` → `AVAudioEngine.mainMixerNode` → `output`
+Цепочка: `AVAudioPlayerNode` → `AVAudioUnitEQ` → `AVAudioEngine.mainMixerNode` → `output`.
+
+Факт реализации:
+
+- Трек декодируется в PCM-чанки (~1 сек по sampleRate) в памяти и планируется в плеере батчами
+- Для удалённых треков файл сначала скачивается в `AudioCache`, затем декодируется через `AVAudioFile`
 
 ### 4.2 Управление воспроизведением
 
-- Play / Pause / Stop
+- Play / Pause
 - Next / Previous трек
 - Seek (перемотка) с отображением позиции
 - Регулировка громкости (независимая от системной)
-- Очередь воспроизведения (play queue): добавление, удаление, перетаскивание треков
-- «Играть следующим» / «Добавить в очередь»
+- Очередь воспроизведения: добавление, удаление, перетаскивание в up next
+- «Играть следующим» / «Добавить в очередь» доступны из контекстного меню трека
 
 ### 4.3 Режимы воспроизведения
 
 - **Repeat**: выключен / повтор очереди / повтор одного трека
-- **Shuffle**: выключен / включён (Fisher-Yates, без повторов до полного цикла)
+- **Shuffle**: выключен / включён (перемешивание оставшихся треков через `shuffle()`)
 
 ### 4.4 Gapless playback
 
-Желательно для первой версии. Реализация через предзагрузку следующего трека в `AVAudioPlayerNode` с scheduling ahead. Если для стриминга из Jellyfin gapless даёт нестабильность — допустимо оставить только для локальных файлов в v1, докрутить для стриминга позже.
+Не реализовано. Переход происходит после завершения трека, prefetch используется только для загрузки файла следующего трека.
 
 ---
 
@@ -82,11 +90,13 @@
 
 Реализация через `AVAudioUnitEQ` с 10 `AVAudioUnitEQFilterParameters` (параметрический тип `.parametric`, но UI представлен как графический — пользователь двигает слайдеры gain для каждой полосы).
 
+Диапазон gain в UI: от -12 dB до +12 dB.
+
 ### 5.2 Пресеты
 
 Встроенные пресеты: Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass Boost, Vocal Boost.
 
-Пользовательские пресеты: создание, сохранение, переименование, удаление.
+Пользовательские пресеты не реализованы (есть только ручная настройка с сохранением текущих gain в состоянии).
 
 ### 5.3 UI эквалайзера
 
@@ -94,7 +104,7 @@
 - 10 вертикальных слайдеров с подписями частот
 - Выпадающий список пресетов
 - Кнопка вкл/выкл эквалайзера (bypass)
-- Визуальная кривая частотного отклика (опционально, nice-to-have)
+- Визуальная кривая частотного отклика не реализована
 
 ---
 
@@ -110,39 +120,34 @@
 
 - В панели «Сейчас играет» — крупная обложка
 - В списках треков/альбомов — миниатюры
-- Плавный crossfade при смене трека (анимация)
 - Плейсхолдер для треков без обложки (нотная иконка или градиент)
 
 ### 6.3 Кеширование
 
 - Обложки из Jellyfin кешируются на диск (`~/Library/Caches/Cadence/artwork/`)
-- LRU-кеш в памяти для отображаемых обложек
+- В памяти используется `NSCache` (countLimit = 200)
 - Размеры: запрашиваем подходящий размер у Jellyfin API, не грузим оригинал
 
 ---
 
-## 7. Офлайн-режим и кеширование
+## 7. Кеширование аудио и офлайн
 
-### 7.1 Авто-кеш
+### 7.1 AudioCache (удалённые треки Jellyfin)
 
-- Прослушанные треки кешируются автоматически на диск
-- Лимит кеша настраивается в Preferences (по умолчанию 5 ГБ)
-- LRU-вытеснение при превышении лимита
-- Путь: `~/Library/Caches/Cadence/audio/`
+- При воспроизведении удалённого трека файл полностью скачивается через `URLSession.download`
+- Диск: `~/Library/Caches/dev.personal.cadence/audio/`
+- Лимит кеша: 2 ГБ по умолчанию (UI-настройка пока не применяется к `AudioCache`)
+- Вытеснение LRU по дате доступа при каждом новом скачивании
 
-### 7.2 Явное скачивание
+### 7.2 Prefetch следующего трека
 
-- Кнопка «Скачать для офлайн» у альбома, плейлиста, артиста
-- Отображение статуса загрузки (прогресс, очередь)
-- Явно скачанные файлы не подлежат LRU-вытеснению
-- Управление скачанным контентом в Preferences (список, возможность удалить)
+- После старта трека `PlaybackController` пытается скачать следующий удалённый трек
+- Prefetch сохраняется как локальный файл и используется при следующем переходе
 
-### 7.3 Поведение офлайн
+### 7.3 Офлайн-режим
 
-- При отсутствии связи с сервером — автоматический переход в офлайн-режим
-- Доступны только кешированные/скачанные треки
-- Индикатор офлайн-статуса в UI
-- При восстановлении связи — синхронизация play state (scrobbling) накопленного за офлайн
+- Отдельного офлайн-режима и явных офлайн-загрузок нет
+- Раздел «Скачанное» показывает локальные файлы пользователя, а не удалённые загрузки
 
 ---
 
@@ -151,48 +156,48 @@
 ### 8.1 Общая структура окна
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  Toolbar: навигация назад/вперёд, поиск, настройки   │
-├───────────┬──────────────────────────────────────────┤
-│           │                                          │
-│  Sidebar  │           Content Area                   │
-│           │                                          │
-│  - Сейчас │  (список треков / альбомов / артистов /  │
-│    играет │   плейлистов — зависит от выбора в       │
-│  - Библ.  │   сайдбаре)                              │
-│    - Все  │                                          │
-│    - Альб.│                                          │
-│    - Арт. │                                          │
-│  - Плейл. │                                          │
-│    - ...  │                                          │
-│  - Избр.  │                                          │
-│           │                                          │
-├───────────┴──────────────────────────────────────────┤
-│  Now Playing Bar: обложка, трек/артист, controls,    │
-│  прогресс, громкость, shuffle, repeat, queue, EQ     │
-└──────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  Toolbar: навигация назад/вперёд, поиск                         │
+├───────────┬──────────────────────────────┬──────────────────────┤
+│           │                              │                      │
+│  Sidebar  │           Content Area       │     Queue Panel      │
+│           │   (альбомы/артисты/треки/    │     (опционально)    │
+│  - Сейчас │    плейлисты/избранное/      │                      │
+│    играет │    недавнее/скачанное)       │                      │
+│  - Библ.  │                              │                      │
+│  - Плейл. │                              │                      │
+│  - Избр.  │                              │                      │
+│           │                              │                      │
+├───────────┴──────────────────────────────┴──────────────────────┤
+│  Now Playing Bar: обложка, трек/артист, controls, прогресс,     │
+│  громкость, shuffle, repeat, queue, EQ                          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 8.2 Навигация в Sidebar
 
-- **Сейчас играет** — переход к детальному виду текущего трека
-- **Библиотека** (раскрываемая секция):
+- **Сейчас играет** — детальный Now Playing
+- **Библиотека**:
   - Все треки
   - Альбомы
   - Артисты
-- **Плейлисты** (раскрываемая секция):
-  - Список плейлистов с сервера
+- **Плейлисты**:
+  - Локальные плейлисты (создаются в приложении)
   - «Создать плейлист»
 - **Избранное**
-- **Недавно прослушанное**
-- **Скачанное** (для офлайн-контента)
+- **Недавнее**
+- **Скачанное** (локальные файлы пользователя)
 
 ### 8.3 Content Area
 
-- **Список треков**: таблица с колонками (#, название, артист, альбом, длительность). Сортировка по колонкам. Контекстное меню (play, add to queue, add to playlist, favorite, rate)
-- **Сетка альбомов**: grid обложек с названием и артистом. Клик → страница альбома с треклистом
-- **Страница артиста**: альбомы артиста, top tracks
+- **Список треков**: колонки (#, название, альбом, длительность), контекстное меню (play, play next, add to queue, add to playlist, favorite, показать в Finder)
+- **Сетка альбомов**: обложки с названием и артистом → страница альбома
+- **Сетка артистов**: переход к артисту
 - **Страница альбома**: обложка, метаданные, треклист
+- **Плейлист**: список треков из локального плейлиста
+- **Избранное / Недавнее / Скачанное**: списки треков
+
+Сортировка по колонкам и рейтинги не реализованы.
 
 ### 8.4 Now Playing Bar (нижняя панель)
 
@@ -205,21 +210,21 @@
 - Кнопки: shuffle, repeat (с индикацией текущего режима)
 - Кнопка очереди (открывает панель очереди справа или popup)
 - Кнопка EQ (открывает окно эквалайзера)
+- Кнопка избранного для текущего трека
 
 ### 8.5 Мини-плеер
 
-Не входит в MVP. Запланирован на следующую версию. Компактное окно поверх других приложений с базовыми контролами.
+Не реализован.
 
 ### 8.6 Тёмная и светлая тема
 
-- Полная поддержка обеих тем через system appearance
-- Обложки адаптируют фон (dominant color extraction — nice-to-have)
+- Полная поддержка system / light / dark
+- Выбор темы хранится только в памяти (без персистентного сохранения)
 
 ### 8.7 Поиск
 
-- Глобальный поиск по библиотеке: треки, альбомы, артисты
-- Поиск через Jellyfin API (серверный поиск)
-- Поле поиска в тулбаре, результаты в dropdown или в content area
+- Фильтрация локальной библиотеки по трекам/альбомам/артистам
+- Серверный поиск Jellyfin не реализован
 
 ---
 
@@ -227,18 +232,18 @@
 
 ### 9.1 Media Keys и Now Playing
 
-- Перехват media keys (play/pause, next, previous) через `MPRemoteCommandCenter`
-- Отображение в системном Now Playing (Control Center, Touch Bar на старых Mac): обложка, название, артист, кнопки управления
-- `MPNowPlayingInfoCenter` обновляется при смене трека
+- Перехват media keys (play/pause, next, previous) через `MPRemoteCommandCenter` + локальный монитор событий `NSEvent`
+- `MPNowPlayingInfoCenter` публикует название, артиста, альбом, длительность и позицию
+- Обложка в системном Now Playing не задаётся
 
 ### 9.2 Меню приложения
 
 Полноценное macOS-меню:
 
 - **Cadence**: About, Preferences (⌘,), Quit (⌘Q)
-- **File**: Open (⌘O), Open URL (⌘U — для подключения к серверу)
-- **Playback**: Play/Pause (Space), Next (⌘→), Previous (⌘←), Volume Up/Down, Shuffle, Repeat
-- **View**: Toggle Sidebar, Toggle Queue, Show Equalizer
+- **File**: Open Music Folder… (⌘O)
+- **Playback**: Play/Pause (Space), Next Track, Previous Track
+- **View**: Toggle Sidebar (⌘B), Toggle Queue (⌘L), Show Equalizer (⌘E)
 - **Window**: стандартные macOS window commands
 
 ### 9.3 Горячие клавиши
@@ -246,38 +251,32 @@
 | Действие | Клавиша |
 |---|---|
 | Play / Pause | Space |
-| Next | ⌘→ |
-| Previous | ⌘← |
-| Volume Up | ⌘↑ |
-| Volume Down | ⌘↓ |
-| Mute | ⌘M (при фокусе на плеере) |
-| Search | ⌘F |
 | Preferences | ⌘, |
-| Open File | ⌘O |
+| Open Music Folder | ⌘O |
+| Toggle Sidebar | ⌘B |
+| Toggle Queue | ⌘L |
 | Equalizer | ⌘E |
-| Toggle Queue | ⌘Q+Shift |
 
 ### 9.4 Dock
 
-- Иконка приложения
-- Dock menu: Play/Pause, Next, Previous, текущий трек
+Dock menu не реализован (используется стандартное поведение).
 
 ### 9.5 Drag & Drop
 
-- Перетаскивание аудиофайлов и папок из Finder → добавление в очередь
-- Перетаскивание треков внутри очереди для изменения порядка
-- Перетаскивание треков в плейлисты в сайдбаре
+- Drag & Drop из Finder не реализован
+- В очереди реализовано перетаскивание элементов для изменения порядка
 
 ---
 
-## 10. Настройки (Preferences)
+## 10. Настройки
 
-- **Сервер**: список серверов Jellyfin, добавление/удаление, текущий активный
-- **Воспроизведение**: выходное устройство, громкость по умолчанию, gapless вкл/выкл
-- **Кеш**: лимит авто-кеша (ГБ), очистка кеша, управление скачанным контентом
-- **Эквалайзер**: управление пресетами
-- **Внешний вид**: следовать системной теме / тёмная / светлая (если нужно override)
-- **Горячие клавиши**: настройка (nice-to-have, можно не в v1)
+Фактические вкладки:
+
+- **Серверы**: список Jellyfin-серверов, добавление/удаление, выбор активного; кнопка «Проверить связь» без логики
+- **Воспроизведение**: UI для выхода, громкости по умолчанию, gapless и crossfade — значения пока не применяются к движку
+- **Кеш**: показывает суммарный размер (artwork + audio + library cache), слайдер максимального размера не влияет на `AudioCache`, есть очистка кеша
+- **Скачанное**: информационный блок без управления загрузками
+- **Внешний вид**: system / light / dark (состояние хранится в памяти)
 
 ---
 
@@ -290,111 +289,197 @@
 - Режимы shuffle / repeat
 - Настройки эквалайзера
 - Громкость
-- Состояние окна (размер, позиция, состояние сайдбара)
 - Активный сервер Jellyfin
 
-Persistence через SwiftData или Codable + FileManager (решение — на этапе реализации).
+Фактическое хранение:
+
+- `UserDefaults`: playback state, избранное, недавние треки, список серверов, bookmarks папок
+- `Application Support/Cadence`: `playlists.json`, кеш библиотеки Jellyfin
+- `~/Library/Caches`: artwork, audio cache
 
 ---
 
 ## 12. Обработка ошибок
 
-- **Нет сети / сервер недоступен**: переход в офлайн-режим, уведомление пользователю
-- **Неподдерживаемый формат**: пропуск трека с уведомлением, переход к следующему
-- **Ошибка стриминга**: retry (3 попытки с backoff), затем пропуск + уведомление
-- **Ошибка аутентификации**: предложение перелогиниться
-- **Файл удалён / перемещён**: удаление из очереди, уведомление
-- Все ошибки логируются в `os_log` для диагностики
+Фактическая обработка:
+
+- Ошибки загрузки библиотек/сканирования логируются через `os_log`
+- Ошибка загрузки трека: лог + переход к следующему треку
+- Ошибка восстановления playback state: сброс состояния очереди
+- UI-уведомления, retry и офлайн-режим не реализованы
 
 ---
 
 ## 13. Accessibility
 
-- VoiceOver: все элементы управления имеют accessibility labels и hints
-- Полная клавиатурная навигация
-- Dynamic Type: не критично для macOS, но respecting system font size
-- High Contrast: поддержка режима повышенной контрастности
-- Reduce Motion: отключение анимаций при системной настройке
+Явных доработок accessibility нет. Используются стандартные возможности SwiftUI.
+Частично учитывается `Reduce Motion` для анимаций Now Playing и боковых панелей.
 
 ---
 
-## 14. Архитектура (верхнеуровневая)
+## 14. Архитектура
 
+### 14.1 Основные модули
+
+- **SwiftUI Views**: `MainWindowView`, `SidebarView`, `ContentAreaView`, `NowPlayingBarView`, `NowPlayingDetailView`, `QueuePanelView`, `EQWindowView`, `PreferencesWindowView`
+- **State/Stores**: `AppUIState`, `LibraryStore`, `PlaylistStore`, `FavoritesStore`, `RecentStore`, `PlaybackStateStore`
+- **Playback**: `PlaybackController` → `AudioEngineService` + `AudioCache`
+- **Jellyfin**: `JellyfinClient`, `JellyfinLibraryLoader`, `JellyfinFavoritesSync`
+- **Caches**: `ArtworkCache`, `JellyfinLibraryCache`
+- **System**: `MediaRemoteService`, `PlaybackKeyboardMonitorService`
+
+### 14.2 Потоки данных
+
+- UI получает доступ к состоянию через `@Environment` и реагирует на изменения Observable-объектов
+- `PlaybackController` является единой точкой управления аудио, очередью, repeat/shuffle и сохранением состояния
+- `LibraryStore` объединяет локальную библиотеку и Jellyfin, делая один список для UI
+
+### 14.3 Диаграммы последовательностей
+
+**Удалённый трек: скачивание и воспроизведение (факт)**
+
+```mermaid
+sequenceDiagram
+    participant UI as SwiftUI UI
+    participant PC as PlaybackController
+    participant AE as AudioEngineService
+    participant AC as AudioCache
+    participant URLS as URLSession
+    participant Disk as Caches/dev.personal.cadence/audio
+
+    UI->>PC: playTrack()
+    PC->>AE: loadRemote(url, trackID)
+    AE->>AC: localURL(remoteURL, trackID)
+    AC->>URLS: download(remoteURL)
+    URLS-->>AC: temp file
+    AC->>Disk: move -> cached file
+    AC-->>AE: cached file URL
+    AE->>AE: decode AVAudioFile -> PCM chunks (in-memory)
+    AE-->>PC: ready
+    PC->>AE: play()
 ```
-┌─────────────────────────────────────────────────┐
-│                   SwiftUI Views                  │
-│  (MainWindow, Sidebar, ContentArea, NowPlaying,  │
-│   EQWindow, Preferences, SearchView)             │
-├─────────────────────────────────────────────────┤
-│                  ViewModels / State              │
-│  (PlayerViewModel, LibraryViewModel,             │
-│   QueueViewModel, EQViewModel, SearchViewModel)  │
-├─────────────────────────────────────────────────┤
-│                    Services                      │
-│  ┌──────────┐ ┌──────────┐ ┌─────────────────┐  │
-│  │  Audio   │ │ Jellyfin │ │   Cache/Store   │  │
-│  │  Engine  │ │  Client  │ │   Manager       │  │
-│  └──────────┘ └──────────┘ └─────────────────┘  │
-├─────────────────────────────────────────────────┤
-│               Platform / System                  │
-│  (AVAudioEngine, URLSession, FileManager,        │
-│   MPNowPlayingInfoCenter, Keychain)              │
-└─────────────────────────────────────────────────┘
+
+**Prefetch следующего удалённого трека**
+
+```mermaid
+sequenceDiagram
+    participant PC as PlaybackController
+    participant AC as AudioCache
+    participant URLS as URLSession
+    participant Disk as Caches/dev.personal.cadence/audio
+
+    PC->>AC: localURL(nextRemoteURL, nextTrackID)
+    AC->>URLS: download(nextRemoteURL)
+    URLS-->>AC: temp file
+    AC->>Disk: move -> cached file
+    AC-->>PC: prefetched local URL
 ```
 
-**Принципы:**
-- Однонаправленный поток данных (state → view)
-- Services — синглтоны или DI через Environment
-- Jellyfin Client — отдельный модуль, абстрагированный от UI
-- Audio Engine — отдельный модуль, не знает об источнике треков (Jellyfin vs local)
+### 14.4 Диаграмма компонентов и хранилищ
+
+```mermaid
+flowchart LR
+    subgraph UI["UI"]
+        Views[SwiftUI Views]
+    end
+
+    subgraph State["State / Stores"]
+        AppUI[AppUIState]
+        Library[LibraryStore]
+        Playlists[PlaylistStore]
+        Favorites[FavoritesStore]
+        Recent[RecentStore]
+        PlaybackState[PlaybackStateStore]
+    end
+
+    subgraph Playback["Playback"]
+        PC[PlaybackController]
+        AE[AudioEngineService]
+        AC[AudioCache]
+    end
+
+    subgraph Jellyfin["Jellyfin"]
+        JC[JellyfinClient]
+        JL[JellyfinLibraryLoader]
+        JFS[JellyfinFavoritesSync]
+    end
+
+    subgraph Cache["Caches"]
+        Artwork[ArtworkCache]
+        LibraryCache[JellyfinLibraryCache]
+    end
+
+    subgraph Memory["In-memory"]
+        Queue[PlaybackQueue]
+        PCM[PCM chunks]
+        NSC[NSCache artwork]
+    end
+
+    subgraph Disk["Disk / Keychain"]
+        UD[UserDefaults]
+        KC[Keychain]
+        AS[Application Support/Cadence\n- playlists.json\n- jellyfin cache]
+        Caches[~/Library/Caches\n- audio\n- artwork]
+        Temp[TemporaryDirectory/CadenceCovers]
+    end
+
+    Views --> AppUI
+    Views --> Library
+    Views --> PC
+    Views --> Playlists
+    Views --> Favorites
+    Views --> Recent
+
+    PC --> AE
+    PC --> Queue
+    AE --> PCM
+    PC --> PlaybackState
+    PC --> AC
+
+    AppUI --> UD
+    Favorites --> UD
+    Recent --> UD
+    PlaybackState --> UD
+    Library --> UD
+    Playlists --> AS
+    LibraryCache --> AS
+
+    JC --> KC
+    Artwork --> NSC
+    Artwork --> Caches
+    AC --> Caches
+    Library --> Temp
+```
 
 ---
 
-## 15. Фазы реализации
+## 15. Статус реализации
 
-### Фаза 1: Ядро (MVP)
+Реализовано:
 
-1. Скелет приложения (SwiftUI, окно, сайдбар, content area, now playing bar)
-2. Аудио-движок на AVAudioEngine с базовыми контролами
-3. Подключение к Jellyfin (аутентификация, навигация по библиотеке, стриминг)
-4. Очередь воспроизведения (play queue) с shuffle / repeat
-5. Отображение обложек
-6. Media keys и Now Playing интеграция
-7. Базовый эквалайзер (10 полос + встроенные пресеты)
-8. Сохранение состояния между сессиями
+1. SwiftUI shell: окно, сайдбар, контент, Now Playing bar
+2. Подключение к Jellyfin (логин/пароль, API key), кеш библиотеки
+3. Локальная библиотека из папок с security-scoped bookmarks
+4. Очередь воспроизведения, shuffle / repeat
+5. Эквалайзер 10 полос + встроенные пресеты
+6. Избранное (локально + синхронизация треков с Jellyfin)
+7. Локальные плейлисты
+8. Media keys + `MPNowPlayingInfoCenter`
 
-### Фаза 2: Полнота
+Не реализовано:
 
-9. Плейлисты (CRUD, синхронизация с Jellyfin)
-10. Избранное и рейтинги
-11. Scrobbling / play position sync
-12. Поддержка локальных файлов (open, drag-and-drop)
-13. Офлайн-кеш (авто + явное скачивание)
-14. Поиск
-15. Пользовательские EQ-пресеты
-
-### Фаза 3: Полировка
-
-16. Gapless playback
-17. Мини-плеер
-18. Accessibility аудит и доработка
-19. Настройка горячих клавиш
-20. Визуальная кривая EQ
-21. Dominant color extraction для обложек
+- Jellyfin-плейлисты, рейтинги, scrobbling
+- Офлайн-режим и явные загрузки
+- Gapless / crossfade
+- Серверный поиск
+- Мини-плеер
+- Пользовательские EQ-пресеты и кривая EQ
+- Drag & Drop из Finder и Dock menu
 
 ---
 
-## 16. Риски и открытые вопросы
+## 16. Ограничения и заметки
 
-| Риск | Митигация |
-|---|---|
-| Jellyfin API нестабилен / плохо документирован | Изучить API по OpenAPI-спеке Jellyfin, ориентироваться на Finamp (open-source клиент) как reference |
-| Gapless при стриминге — сложно | Начать с локальных файлов, для стриминга — v2 |
-| Транскодинг на сервере загружает CPU | Предпочитать direct play, транскодинг только как fallback |
-| Большая библиотека — медленная навигация | Пагинация, ленивая загрузка, кеширование списков |
-| Security-scoped bookmarks — сложная работа с файлами | Реализовать в фазе 2, для MVP — drag-and-drop без сохранения доступа |
-
-**Решённые вопросы:**
-- Поддержка нескольких серверов Jellyfin — да, можно переключаться между серверами
-- Аутентификация Jellyfin через API key — да, поддерживается (логин/пароль + API key)
-- Формат хранения скачанного контента — оригинал (без конвертации)
+- Лимит `AudioCache` задаётся в коде (2 ГБ); слайдер в Preferences пока не влияет
+- Метаданные аудио (битрейт/частота/каналы) в Now Playing UI не вычисляются
+- Темы и часть настроек не персистятся (кроме перечисленного в разделе 11)

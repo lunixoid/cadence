@@ -4,23 +4,7 @@ struct OverlayTrafficLights: View {
     var onClose: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
-            TrafficLightButton(color: Color(red: 1, green: 0.373, blue: 0.341), action: onClose)
-            Circle()
-                .fill(Color(red: 0.996, green: 0.737, blue: 0.18))
-                .frame(width: 11, height: 11)
-                .overlay {
-                    Circle()
-                        .stroke(Color.black.opacity(0.1), lineWidth: 0.5)
-                }
-            Circle()
-                .fill(Color(red: 0.157, green: 0.784, blue: 0.251))
-                .frame(width: 11, height: 11)
-                .overlay {
-                    Circle()
-                        .stroke(Color.black.opacity(0.1), lineWidth: 0.5)
-                }
-        }
+        TrafficLightButton(color: Color(red: 1, green: 0.373, blue: 0.341), action: onClose)
     }
 }
 
@@ -31,18 +15,24 @@ private struct TrafficLightButton: View {
     @State private var isHovered = false
 
     var body: some View {
-        Button(action: action) {
-            Circle()
-                .fill(color)
-                .frame(width: 11, height: 11)
-                .overlay {
-                    Circle()
-                        .stroke(Color.black.opacity(0.1), lineWidth: 0.5)
+        Circle()
+            .fill(color)
+            .frame(width: 11, height: 11)
+            .overlay {
+                Circle()
+                    .stroke(Color.black.opacity(0.1), lineWidth: 0.5)
+            }
+            .overlay {
+                if isHovered {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(Color.black.opacity(0.5))
                 }
-                .scaleEffect(isHovered ? 1.05 : 1)
-        }
-        .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
+            }
+            .scaleEffect(isHovered ? 1.05 : 1)
+            .contentShape(Circle())
+            .onTapGesture(perform: action)
+            .onHover { isHovered = $0 }
     }
 }
 
@@ -61,7 +51,7 @@ struct OverlayTitleBar: View {
                 .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
                 .frame(maxWidth: .infinity)
             Color.clear
-                .frame(width: 11 * 3 + 6 * 2)
+                .frame(width: 11)
         }
         .padding(.horizontal, 14)
         .frame(height: height)

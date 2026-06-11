@@ -91,17 +91,17 @@ struct MainWindowView: View {
                     }
             }
 
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    EQWindowView(
-                        isOpen: uiState.isEQOpen,
-                        onClose: { uiState.isEQOpen = false }
-                    )
-                    .padding(.trailing, CadenceTheme.eqWindowRightOffset)
-                    .padding(.bottom, CadenceTheme.eqWindowBottomOffset)
-                }
+            if uiState.isEQOpen {
+                Color.clear
+                    .allowsHitTesting(false)
+                    .overlay(alignment: .bottomTrailing) {
+                        EQWindowView(
+                            isOpen: true,
+                            onClose: { uiState.isEQOpen = false }
+                        )
+                        .padding(.trailing, CadenceTheme.eqWindowRightOffset)
+                        .padding(.bottom, CadenceTheme.eqWindowBottomOffset)
+                    }
             }
 
             if uiState.isPrefsOpen {

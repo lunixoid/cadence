@@ -11,23 +11,21 @@ struct PlayerButton<Label: View>: View {
     @State private var isHovered = false
 
     var body: some View {
-        Button(action: action) {
-            ZStack(alignment: .bottom) {
-                label()
-                    .foregroundStyle(foregroundColor)
-                    .scaleEffect(isHovered ? 1.08 : 1)
+        ZStack(alignment: .bottom) {
+            label()
+                .foregroundStyle(foregroundColor)
+                .scaleEffect(isHovered ? 1.08 : 1)
 
-                if isActive {
-                    Circle()
-                        .fill(CadenceTheme.accent(for: colorScheme))
-                        .frame(width: 4, height: 4)
-                        .offset(y: 6)
-                }
+            if isActive {
+                Circle()
+                    .fill(CadenceTheme.accent(for: colorScheme))
+                    .frame(width: 4, height: 4)
+                    .offset(y: 6)
             }
-            .frame(width: size, height: size)
-            .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .frame(width: size, height: size)
+        .contentShape(Circle())
+        .onTapGesture(perform: action)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: 0.12), value: isHovered)
     }

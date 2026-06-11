@@ -13,38 +13,41 @@ struct SidebarItemView: View {
     @State private var isHovered = false
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 15))
-                    .foregroundStyle(resolvedIconColor)
-                    .frame(width: 15, height: 15)
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 15))
+                .foregroundStyle(resolvedIconColor)
+                .frame(width: 15, height: 15)
 
-                Text(label)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                    .tracking(-0.01 * 13)
-                    .foregroundStyle(textColor)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            Text(label)
+                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .tracking(-0.01 * 13)
+                .foregroundStyle(textColor)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                if let badge {
-                    Text(badge)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .background(CadenceTheme.accent(for: colorScheme))
-                        .clipShape(Capsule())
-                }
+            if let badge {
+                Text(badge)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(CadenceTheme.accent(for: colorScheme))
+                    .clipShape(Capsule())
             }
-            .padding(.horizontal, CadenceTheme.sidebarItemHorizontalPadding)
-            .frame(height: CadenceTheme.sidebarItemHeight)
-            .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
-            .padding(.horizontal, CadenceTheme.sidebarItemMargin)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, CadenceTheme.sidebarItemHorizontalPadding)
+        .frame(height: CadenceTheme.sidebarItemHeight)
+        .background(backgroundColor)
+        .clipShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
+        .padding(.horizontal, CadenceTheme.sidebarItemMargin)
+        .contentShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
+        .onTapGesture(perform: handleTap)
         .onHover { isHovered = $0 }
+    }
+
+    private func handleTap() {
+        action()
     }
 
     private var backgroundColor: Color {

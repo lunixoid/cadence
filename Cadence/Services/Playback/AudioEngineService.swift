@@ -45,33 +45,20 @@ final class AudioEngineService {
         volume = 72
     }
 
-    func load(url: URL) throws {
+    func load(url: URL) async throws {
         stopInternal(resetProgress: true)
         currentFileURL = url
 
-        let file = try AVAudioFile(forReading: url)
-        let format = file.processingFormat
-        processingFormat = format
-        totalFrameCount = file.length
-        chunkDurationFrames = AVAudioFrameCount(format.sampleRate)
-        pcmChunks = try decodeChunks(from: file, chunkFrames: chunkDurationFrames)
-        segmentStartFrame = 0
-        segmentOffsetInFirstChunk = 0
-        scheduledUpToIndex = 0
+        let prepared = try await Task.detached(priority: .userInitiated) {
+            try Self.prepareLoad(url: url)
+        }.value
 
-        engine.disconnectNodeOutput(playerNode)
-        engine.disconnectNodeOutput(eqNode)
-        engine.connect(playerNode, to: eqNode, format: format)
-        engine.connect(eqNode, to: engine.mainMixerNode, format: format)
-
-        if !engine.isRunning {
-            try engine.start()
-        }
+        try applyPreparedLoad(prepared)
     }
 
     func loadRemote(url: URL, trackID: UUID) async throws {
         let localURL = try await AudioCache.shared.localURL(for: url, trackID: trackID)
-        try load(url: localURL)
+        try await load(url: localURL)
     }
 
     nonisolated static func ext(forContentType contentType: String) -> String? {
@@ -110,6 +97,12 @@ final class AudioEngineService {
     }
 
     func stop() {
+        scheduleGeneration += 1
+        playerNode.stop()
+        stopProgressTimer()
+        if engine.isRunning {
+            engine.stop()
+        }
         stopInternal(resetProgress: true)
     }
 
@@ -160,7 +153,51 @@ final class AudioEngineService {
         eqNode.bypass = !enabled
     }
 
-    private func decodeChunks(from file: AVAudioFile, chunkFrames: AVAudioFrameCount) throws -> [AVAudioPCMBuffer] {
+    private struct PreparedAudioLoad: @unchecked Sendable {
+        let chunks: [AVAudioPCMBuffer]
+        let format: AVAudioFormat
+        let totalFrameCount: AVAudioFramePosition
+        let chunkDurationFrames: AVAudioFrameCount
+    }
+
+    private nonisolated static func prepareLoad(url: URL) throws -> PreparedAudioLoad {
+        let file = try AVAudioFile(forReading: url)
+        let format = file.processingFormat
+        let chunkDurationFrames = AVAudioFrameCount(format.sampleRate)
+        let chunks = try decodeChunks(from: file, chunkFrames: chunkDurationFrames)
+        return PreparedAudioLoad(
+            chunks: chunks,
+            format: format,
+            totalFrameCount: file.length,
+            chunkDurationFrames: chunkDurationFrames
+        )
+    }
+
+    private func applyPreparedLoad(_ prepared: PreparedAudioLoad) throws {
+        scheduleGeneration += 1
+        playerNode.stop()
+        stopProgressTimer()
+        if engine.isRunning {
+            engine.stop()
+        }
+
+        processingFormat = prepared.format
+        totalFrameCount = prepared.totalFrameCount
+        chunkDurationFrames = prepared.chunkDurationFrames
+        pcmChunks = prepared.chunks
+        segmentStartFrame = 0
+        segmentOffsetInFirstChunk = 0
+        scheduledUpToIndex = 0
+
+        engine.disconnectNodeOutput(playerNode)
+        engine.disconnectNodeOutput(eqNode)
+        engine.connect(playerNode, to: eqNode, format: prepared.format)
+        engine.connect(eqNode, to: engine.mainMixerNode, format: prepared.format)
+
+        try engine.start()
+    }
+
+    private nonisolated static func decodeChunks(from file: AVAudioFile, chunkFrames: AVAudioFrameCount) throws -> [AVAudioPCMBuffer] {
         let format = file.processingFormat
         var chunks: [AVAudioPCMBuffer] = []
         file.framePosition = 0

@@ -178,20 +178,19 @@ private struct EQToggle: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule()
-                    .fill(isOn ? CadenceTheme.accent(for: colorScheme) : CadenceTheme.trackBackground(for: colorScheme))
-                    .frame(width: 38, height: 22)
+        ZStack(alignment: isOn ? .trailing : .leading) {
+            Capsule()
+                .fill(isOn ? CadenceTheme.accent(for: colorScheme) : CadenceTheme.trackBackground(for: colorScheme))
+                .frame(width: 38, height: 22)
 
-                Circle()
-                    .fill(.white)
-                    .frame(width: 16, height: 16)
-                    .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-                    .padding(3)
-            }
+            Circle()
+                .fill(.white)
+                .frame(width: 16, height: 16)
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+                .padding(3)
         }
-        .buttonStyle(.plain)
+        .contentShape(Capsule())
+        .onTapGesture(perform: action)
         .animation(.easeOut(duration: 0.18), value: isOn)
     }
 }

@@ -80,7 +80,7 @@ struct QueuePanelView: View {
                                     album: playbackController.album(forCurrentTrack: track),
                                     showDragHandle: true,
                                     isDragOver: dragOverIndex == index && dragSourceIndex != index,
-                                    onRemove: { playbackController.removeFromUpNext(at: index) }
+                                    removable: true
                                 )
                                 .onDrag {
                                     dragSourceIndex = index
@@ -133,15 +133,16 @@ struct QueuePanelView: View {
 
             Spacer()
 
-            Button(action: { uiState.isQueueOpen = false }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(CadenceTheme.iconColor(for: colorScheme))
-                    .frame(width: 22, height: 22)
-                    .background(CadenceTheme.secondaryButtonBackground(for: colorScheme))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(CadenceTheme.iconColor(for: colorScheme))
+                .frame(width: 22, height: 22)
+                .background(CadenceTheme.secondaryButtonBackground(for: colorScheme))
+                .clipShape(Circle())
+                .contentShape(Circle())
+                .onTapGesture {
+                    uiState.isQueueOpen = false
+                }
         }
         .padding(.horizontal, 16)
         .padding(.trailing, 4)
@@ -190,12 +191,11 @@ private struct QueueSectionHeader: View {
             Spacer()
 
             if let actionTitle, let onAction {
-                Button(action: onAction) {
-                    Text(actionTitle)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(CadenceTheme.accent(for: colorScheme))
-                }
-                .buttonStyle(.plain)
+                Text(actionTitle)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(CadenceTheme.accent(for: colorScheme))
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: onAction)
             }
         }
         .padding(.horizontal, 16)
@@ -205,6 +205,7 @@ private struct QueueSectionHeader: View {
 }
 
 private struct QueueTrackRowView: View {
+    @Environment(PlaybackController.self) private var playbackController
     @Environment(\.colorScheme) private var colorScheme
 
     let track: Track
@@ -213,7 +214,7 @@ private struct QueueTrackRowView: View {
     var showDragHandle = false
     var dimmed = false
     var isDragOver = false
-    var onRemove: (() -> Void)?
+    var removable = false
 
     @State private var isHovered = false
 
@@ -244,19 +245,18 @@ private struct QueueTrackRowView: View {
             }
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
 
-            if let onRemove {
-                Button(action: onRemove) {
-                    Text("×")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
-                        .frame(width: 18, height: 18)
-                        .background(CadenceTheme.secondaryButtonBackground(for: colorScheme))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .opacity(isHovered ? 1 : 0)
-            }
+            Text("×")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
+                .frame(width: 18, height: 18)
+                .background(CadenceTheme.secondaryButtonBackground(for: colorScheme))
+                .clipShape(Circle())
+                .contentShape(Circle())
+                .opacity(removable && isHovered ? 1 : 0)
+                .allowsHitTesting(removable && isHovered)
+                .onTapGesture(perform: removeFromQueue)
         }
+        .id(track.id)
         .padding(.vertical, isNowPlaying ? 6 : 4)
         .padding(.leading, showDragHandle ? 8 : 12)
         .padding(.trailing, 12)
@@ -273,6 +273,10 @@ private struct QueueTrackRowView: View {
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: 0.12), value: isHovered)
         .animation(.easeOut(duration: 0.12), value: isDragOver)
+    }
+
+    private func removeFromQueue() {
+        playbackController.removeFromUpNext(trackID: track.id)
     }
 
     private var dragHandle: some View {

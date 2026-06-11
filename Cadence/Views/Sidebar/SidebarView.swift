@@ -130,32 +130,30 @@ struct SidebarView: View {
     @State private var isSettingsHovered = false
 
     private var settingsButton: some View {
-        Button(action: { uiState.openPreferences() }) {
-            HStack(spacing: 8) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 14))
-                Text("Настройки")
-                    .font(.system(size: 12))
-            }
-            .foregroundStyle(
-                isSettingsHovered
-                    ? CadenceTheme.secondaryText(for: colorScheme)
-                    : CadenceTheme.mutedText(for: colorScheme)
-            )
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, CadenceTheme.sidebarItemMargin)
-            .frame(height: CadenceTheme.sidebarItemHeight)
-            .background(
-                isSettingsHovered
-                    ? CadenceTheme.sidebarHoverBackground(for: colorScheme)
-                    : .clear
-            )
-            .clipShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
+        HStack(spacing: 8) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 14))
+            Text("Настройки")
+                .font(.system(size: 12))
         }
-        .buttonStyle(.plain)
+        .foregroundStyle(
+            isSettingsHovered
+                ? CadenceTheme.secondaryText(for: colorScheme)
+                : CadenceTheme.mutedText(for: colorScheme)
+        )
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, CadenceTheme.sidebarItemMargin)
+        .frame(height: CadenceTheme.sidebarItemHeight)
+        .background(
+            isSettingsHovered
+                ? CadenceTheme.sidebarHoverBackground(for: colorScheme)
+                : .clear
+        )
+        .clipShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: CadenceTheme.sidebarItemRadius, style: .continuous))
+        .onTapGesture { uiState.openPreferences() }
         .onHover { isSettingsHovered = $0 }
         .animation(.easeOut(duration: 0.12), value: isSettingsHovered)
         .padding(.horizontal, 0)
@@ -169,19 +167,18 @@ struct SidebarView: View {
     }
 
     private var createPlaylistButton: some View {
-        Button(action: { showCreatePlaylistAlert = true }) {
-            HStack(spacing: 6) {
-                Image(systemName: "plus")
-                    .font(.system(size: 13))
-                Text("Создать плейлист")
-                    .font(.system(size: 12))
-            }
-            .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.4) : Color.black.opacity(0.35))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, CadenceTheme.sidebarItemMargin)
+        HStack(spacing: 6) {
+            Image(systemName: "plus")
+                .font(.system(size: 13))
+            Text("Создать плейлист")
+                .font(.system(size: 12))
         }
-        .buttonStyle(.plain)
+        .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.4) : Color.black.opacity(0.35))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, CadenceTheme.sidebarItemMargin)
+        .contentShape(Rectangle())
+        .onTapGesture { showCreatePlaylistAlert = true }
     }
 }

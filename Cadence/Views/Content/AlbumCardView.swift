@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct AlbumCardView: View {
+    @Environment(PlaybackController.self) private var playbackController
     @Environment(\.colorScheme) private var colorScheme
 
     let album: Album
     var onTap: () -> Void
-    var onPlay: () -> Void = {}
 
     @State private var isHovered = false
 
@@ -18,23 +18,21 @@ struct AlbumCardView: View {
                     cornerRadius: CadenceTheme.albumCardRadius
                 )
 
-                if isHovered {
-                    Button(action: onPlay) {
-                        Circle()
-                            .fill(Color.black.opacity(0.55))
-                            .background(.ultraThinMaterial, in: Circle())
-                            .frame(width: CadenceTheme.playOverlaySize, height: CadenceTheme.playOverlaySize)
-                            .overlay {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(.white)
-                            }
+                Circle()
+                    .fill(Color.black.opacity(0.55))
+                    .background(.ultraThinMaterial, in: Circle())
+                    .frame(width: CadenceTheme.playOverlaySize, height: CadenceTheme.playOverlaySize)
+                    .overlay {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.white)
                     }
-                    .buttonStyle(.plain)
-                    .focusable(false)
                     .padding(8)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                }
+                    .opacity(isHovered ? 1 : 0)
+                    .scaleEffect(isHovered ? 1 : 0.92)
+                    .allowsHitTesting(isHovered)
+                    .contentShape(Circle())
+                    .onTapGesture(perform: handlePlay)
             }
 
             if !album.title.isEmpty {
@@ -55,6 +53,7 @@ struct AlbumCardView: View {
                 .padding(.horizontal, 2)
             }
         }
+        .id(album.id)
         .frame(width: CadenceTheme.albumCardWidth)
         .padding(6)
         .background(
@@ -69,5 +68,9 @@ struct AlbumCardView: View {
         .onTapGesture { onTap() }
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: 0.15), value: isHovered)
+    }
+
+    private func handlePlay() {
+        playbackController.playAlbum(album, shuffled: false)
     }
 }

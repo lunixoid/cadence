@@ -93,6 +93,11 @@ struct PlaybackQueue: Equatable {
         upNext.remove(at: index)
     }
 
+    mutating func removeFromUpNext(trackID: UUID) {
+        guard let index = upNext.firstIndex(where: { $0.id == trackID }) else { return }
+        upNext.remove(at: index)
+    }
+
     mutating func moveUpNextItem(from source: Int, to destination: Int) {
         guard source != destination,
               source >= 0, source < upNext.count,

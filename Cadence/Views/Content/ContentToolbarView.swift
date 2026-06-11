@@ -19,43 +19,41 @@ struct ContentToolbarView: View {
         HStack(spacing: 12) {
             if showsNavigationArrows {
                 HStack(spacing: 4) {
-                    Button(action: { uiState.navigateBack() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
-                            .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
-                            .background(
-                                RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
-                                    .fill(
-                                        canGoBack && isBackHovered
-                                            ? CadenceTheme.navBackground(for: colorScheme, active: true)
-                                            : CadenceTheme.navBackground(for: colorScheme)
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!canGoBack)
-                    .opacity(canGoBack ? 1 : 0.4)
-                    .onHover { isBackHovered = canGoBack && $0 }
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
+                        .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
+                        .background(
+                            RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
+                                .fill(
+                                    canGoBack && isBackHovered
+                                        ? CadenceTheme.navBackground(for: colorScheme, active: true)
+                                        : CadenceTheme.navBackground(for: colorScheme)
+                                )
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous))
+                        .opacity(canGoBack ? 1 : 0.4)
+                        .allowsHitTesting(canGoBack)
+                        .onTapGesture(perform: navigateBack)
+                        .onHover { isBackHovered = canGoBack && $0 }
 
-                    Button(action: { uiState.navigateForward() }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
-                            .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
-                            .background(
-                                RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
-                                    .fill(
-                                        canGoForward && isForwardHovered
-                                            ? CadenceTheme.navBackground(for: colorScheme, active: true)
-                                            : CadenceTheme.navBackground(for: colorScheme)
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!canGoForward)
-                    .opacity(canGoForward ? 1 : 0.4)
-                    .onHover { isForwardHovered = canGoForward && $0 }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
+                        .frame(width: CadenceTheme.navButtonSize, height: CadenceTheme.navButtonSize)
+                        .background(
+                            RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous)
+                                .fill(
+                                    canGoForward && isForwardHovered
+                                        ? CadenceTheme.navBackground(for: colorScheme, active: true)
+                                        : CadenceTheme.navBackground(for: colorScheme)
+                                )
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: CadenceTheme.navButtonRadius, style: .continuous))
+                        .opacity(canGoForward ? 1 : 0.4)
+                        .allowsHitTesting(canGoForward)
+                        .onTapGesture(perform: navigateForward)
+                        .onHover { isForwardHovered = canGoForward && $0 }
                 }
             }
 
@@ -114,6 +112,14 @@ struct ContentToolbarView: View {
         }
         .animation(.easeOut(duration: 0.15), value: isSearchFocused)
         .background(SearchFieldFocusGuard(isActive: isSearchFocused))
+    }
+
+    private func navigateBack() {
+        uiState.navigateBack()
+    }
+
+    private func navigateForward() {
+        uiState.navigateForward()
     }
 
     private func resignSearchFieldFocus() {

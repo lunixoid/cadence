@@ -128,6 +128,31 @@ function EQSlider({ value, bandLabel, onChange, dark, accent, enabled }) {
   );
 }
 
+function OverlayCloseButton({ onClose }) {
+  const [hovered, setHovered] = React.useState(false);
+
+  return (
+    <div
+      onClick={onClose}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 12, height: 12, borderRadius: '50%',
+        background: '#FF5F57', cursor: 'pointer',
+        border: '0.5px solid rgba(0,0,0,0.12)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      {hovered && (
+        <svg width="6" height="6" viewBox="0 0 6 6" fill="none" style={{ pointerEvents: 'none' }}>
+          <path d="M1 1l4 4M5 1L1 5" stroke="rgba(0,0,0,0.55)" strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+      )}
+    </div>
+  );
+}
+
 function EQWindow({ dark, isOpen, onClose }) {
   const [enabled,  setEnabled]  = React.useState(true);
   const [preset,   setPreset]   = React.useState('Rock');
@@ -184,19 +209,12 @@ function EQWindow({ dark, isOpen, onClose }) {
         background: headerBg,
         borderBottom: `0.5px solid ${borderColor}`,
       }}>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <div
-            onClick={onClose}
-            style={{ width: 11, height: 11, borderRadius: '50%', background: '#FF5F57', cursor: 'pointer', border: '0.5px solid rgba(0,0,0,0.1)' }}
-          ></div>
-          <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#FEBC2E', border: '0.5px solid rgba(0,0,0,0.1)' }}></div>
-          <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28C840', border: '0.5px solid rgba(0,0,0,0.1)' }}></div>
-        </div>
+        <OverlayCloseButton onClose={onClose} />
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.015em', color: textColor }}>Эквалайзер</span>
         </div>
         {/* Balance spacer */}
-        <div style={{ width: 11 * 3 + 6 * 2, flexShrink: 0 }}></div>
+        <div style={{ width: 12, flexShrink: 0 }}></div>
       </div>
 
       {/* Controls row */}
@@ -319,4 +337,4 @@ function EQWindow({ dark, isOpen, onClose }) {
   );
 }
 
-Object.assign(window, { EQWindow, EQSlider, EQ_BANDS, EQ_PRESETS });
+Object.assign(window, { EQWindow, EQSlider, OverlayCloseButton, EQ_BANDS, EQ_PRESETS });

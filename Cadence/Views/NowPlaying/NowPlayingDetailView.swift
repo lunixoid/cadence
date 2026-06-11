@@ -8,6 +8,8 @@ struct NowPlayingDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @State private var isPlayHovered = false
+
     private var track: Track? { playbackController.currentTrack }
     private var album: Album? { playbackController.album() }
 
@@ -95,7 +97,7 @@ struct NowPlayingDetailView: View {
 
                 transportControls
 
-                actionRow(track: track, album: album)
+                actionRow
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, isWide ? 48 : 24)
@@ -139,92 +141,105 @@ struct NowPlayingDetailView: View {
     }
 
     private var transportControls: some View {
-        let pc = playbackController
-
-        return HStack(spacing: 2) {
-            PlayerButton(size: 44, isActive: pc.shuffleOn) {
-                pc.toggleShuffle()
+        HStack(spacing: 2) {
+            PlayerButton(size: 44, isActive: playbackController.shuffleOn) {
+                playbackController.toggleShuffle()
             } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 22))
             }
 
             transportButton(icon: "backward.fill", size: 48) {
-                pc.previous()
+                playbackController.previous()
             }
 
-            playPauseButton(pc: pc)
+            playPauseButton
 
             transportButton(icon: "forward.fill", size: 48) {
-                pc.next()
+                playbackController.next()
             }
 
-            PlayerButton(size: 44, isActive: pc.repeatMode != .off) {
-                pc.toggleRepeat()
+            PlayerButton(size: 44, isActive: playbackController.repeatMode != .off) {
+                playbackController.toggleRepeat()
             } label: {
-                Image(systemName: pc.repeatMode.iconName)
+                Image(systemName: playbackController.repeatMode.iconName)
                     .font(.system(size: 22))
             }
         }
     }
 
-    private func playPauseButton(pc: PlaybackController) -> some View {
-        Button(action: {
-            pc.togglePlayPause()
-        }) {
-            Image(systemName: pc.isPlaying ? "pause.fill" : "play.fill")
-                .font(.system(size: 26))
-                .foregroundStyle(colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : .white)
-                .frame(width: 72, height: 72)
-                .background(CadenceTheme.primaryText(for: colorScheme))
-                .clipShape(Circle())
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.52 : 0.16), radius: 11, y: 4)
-        }
-        .buttonStyle(NowPlayingScaleButtonStyle())
+    private var playPauseButton: some View {
+        Image(systemName: playbackController.isPlaying ? "pause.fill" : "play.fill")
+            .font(.system(size: 26))
+            .foregroundStyle(colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : .white)
+            .frame(width: 72, height: 72)
+            .background(CadenceTheme.primaryText(for: colorScheme))
+            .clipShape(Circle())
+            .scaleEffect(isPlayHovered ? 1.06 : 1)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.52 : 0.16), radius: 11, y: 4)
+            .contentShape(Circle())
+            .onTapGesture {
+                playbackController.togglePlayPause()
+            }
+            .onHover { isPlayHovered = $0 }
+            .animation(.easeOut(duration: 0.1), value: isPlayHovered)
     }
 
-    private func transportButton(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+    private func transportButton(
+        icon: String,
+        size: CGFloat,
+        action: @escaping () -> Void
+    ) -> some View {
         PlayerButton(size: size, action: action) {
             Image(systemName: icon)
                 .font(.system(size: 26))
         }
     }
 
-    private func actionRow(track: Track, album: Album) -> some View {
-        let ui = uiState
-        let favorites = favoritesStore
-        let favoritesSync = jellyfinFavoritesSync
-
-        return HStack(spacing: 10) {
-            Button(action: {
-                favoritesSync.toggle(track: track, client: ui.activeJellyfinClient)
-            }) {
-                Image(systemName: favorites.isFavorite(track: track) ? "heart.fill" : "heart")
+    private var actionRow: some View {
+        HStack(spacing: 10) {
+            PlayerButton(
+                size: 36,
+                isActive: isCurrentTrackFavorite
+            ) {
+                guard let track = playbackController.currentTrack else { return }
+                jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+            } label: {
+                Image(systemName: isCurrentTrackFavorite ? "heart.fill" : "heart")
                     .font(.system(size: 22))
                     .foregroundStyle(
-                        favorites.isFavorite(track: track)
+                        isCurrentTrackFavorite
                             ? Color(red: 1, green: 0.216, blue: 0.373)
                             : CadenceTheme.mutedText(for: colorScheme)
                     )
-                    .frame(width: 36, height: 36)
-                    .contentShape(Circle())
             }
-            .buttonStyle(NowPlayingScaleButtonStyle(scale: 1.18))
 
             NowPlayingActionPill(
                 icon: "square.stack",
                 label: "К альбому",
                 colorScheme: colorScheme,
-                action: { ui.openAlbum(album) }
+                action: {
+                    guard let album = playbackController.album() else { return }
+                    uiState.openAlbum(album)
+                }
             )
 
             NowPlayingActionPill(
                 icon: "person",
                 label: "К артисту",
                 colorScheme: colorScheme,
-                action: { ui.openArtist(track.artist) }
+                action: {
+                    guard let artist = playbackController.currentTrack?.artist else { return }
+                    uiState.openArtist(artist)
+                }
             )
         }
+        .id(track?.id)
+    }
+
+    private var isCurrentTrackFavorite: Bool {
+        guard let track = playbackController.currentTrack else { return false }
+        return favoritesStore.isFavorite(track: track)
     }
 
     private func rightPanel(track: Track, album: Album, limit: Int) -> some View {
@@ -627,28 +642,27 @@ private struct NowPlayingActionPill: View {
     @State private var isHovered = false
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.system(size: 12))
-                Text(label)
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
-            .padding(.horizontal, 13)
-            .padding(.vertical, 5)
-            .background(
-                isHovered
-                    ? CadenceTheme.sidebarHoverBackground(for: colorScheme)
-                    : CadenceTheme.secondaryButtonBackground(for: colorScheme)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(CadenceTheme.borderColor(for: colorScheme), lineWidth: 0.5)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+            Text(label)
+                .font(.system(size: 12, weight: .medium))
         }
-        .buttonStyle(.plain)
+        .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
+        .padding(.horizontal, 13)
+        .padding(.vertical, 5)
+        .background(
+            isHovered
+                ? CadenceTheme.sidebarHoverBackground(for: colorScheme)
+                : CadenceTheme.secondaryButtonBackground(for: colorScheme)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .strokeBorder(CadenceTheme.borderColor(for: colorScheme), lineWidth: 0.5)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .onTapGesture(perform: action)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: 0.12), value: isHovered)
     }
@@ -711,14 +725,3 @@ private struct NowPlayingUpNextRow: View {
     }
 }
 
-// MARK: - Button Style
-
-private struct NowPlayingScaleButtonStyle: ButtonStyle {
-    var scale: CGFloat = 1.06
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? scale : 1)
-            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
-    }
-}

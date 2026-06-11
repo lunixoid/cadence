@@ -86,8 +86,6 @@ struct ArtistDetailView: View {
                         ForEach(albums) { album in
                             AlbumCardView(album: album) {
                                 uiState.openAlbum(album)
-                            } onPlay: {
-                                playbackController.playAlbum(album, shuffled: false)
                             }
                         }
                     }

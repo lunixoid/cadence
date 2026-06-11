@@ -36,9 +36,7 @@ struct AlbumPageView: View {
                         ForEach(tracks) { track in
                             TrackRowView(
                                 track: track,
-                                isActive: playbackController.playingTrackID == track.id,
-                                isPlaying: playbackController.isPlaying,
-                                onPlay: { playbackController.playTrack(track) }
+                                isActive: playbackController.playingTrackID == track.id
                             )
                         }
                     }
@@ -82,33 +80,33 @@ struct AlbumPageView: View {
                 .padding(.bottom, 16)
 
                 HStack(spacing: 8) {
-                    Button(action: { playbackController.playAlbum(album, shuffled: false) }) {
-                        Label("Воспроизвести", systemImage: "play.fill")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 7)
-                            .background(CadenceTheme.accent(for: colorScheme))
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(tracks.isEmpty)
+                    Label("Воспроизвести", systemImage: "play.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 7)
+                        .background(CadenceTheme.accent(for: colorScheme))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .onTapGesture(perform: playAlbum)
+                        .opacity(tracks.isEmpty ? 0.45 : 1)
+                        .allowsHitTesting(!tracks.isEmpty)
 
-                    Button(action: { playbackController.playAlbum(album, shuffled: true) }) {
-                        Label("Перемешать", systemImage: "shuffle")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background(CadenceTheme.secondaryButtonBackground(for: colorScheme))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .stroke(CadenceTheme.borderColor(for: colorScheme), lineWidth: 0.5)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(tracks.isEmpty)
+                    Label("Перемешать", systemImage: "shuffle")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(CadenceTheme.secondaryButtonBackground(for: colorScheme))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(CadenceTheme.borderColor(for: colorScheme), lineWidth: 0.5)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .onTapGesture(perform: shuffleAlbum)
+                        .opacity(tracks.isEmpty ? 0.45 : 1)
+                        .allowsHitTesting(!tracks.isEmpty)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -163,5 +161,13 @@ struct AlbumPageView: View {
         Text("·")
             .font(.system(size: 12))
             .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme).opacity(0.4))
+    }
+
+    private func playAlbum() {
+        playbackController.playAlbum(album, shuffled: false)
+    }
+
+    private func shuffleAlbum() {
+        playbackController.playAlbum(album, shuffled: true)
     }
 }

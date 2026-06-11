@@ -14,6 +14,8 @@ final class PlaybackController {
 
     private var playbackQueue = PlaybackQueue()
     private var loadTask: Task<Void, Never>?
+    private var loadSerialTask: Task<Void, Never>?
+    private var pendingLoadTrack: Track?
     private var prefetchTask: Task<Void, Never>?
     private var prefetchedCache: (trackID: UUID, fileURL: URL)?
     private var activeLoadGeneration = 0
@@ -154,6 +156,10 @@ final class PlaybackController {
             return
         }
 
+        if isLoading {
+            return
+        }
+
         if isPlaying {
             audioEngine.pause()
             isPlaying = false
@@ -174,8 +180,7 @@ final class PlaybackController {
             return
         }
 
-        playLoadedTrack(track)
-        persistState()
+        scheduleLoadedTrack(track)
     }
 
     func previous() {
@@ -191,8 +196,25 @@ final class PlaybackController {
             return
         }
 
-        playLoadedTrack(track)
-        persistState()
+        scheduleLoadedTrack(track)
+    }
+
+    private func scheduleLoadedTrack(_ track: Track) {
+        pendingLoadTrack = track
+
+        if loadSerialTask != nil {
+            _ = beginLoadSession()
+            return
+        }
+
+        loadSerialTask = Task { @MainActor in
+            defer { loadSerialTask = nil }
+            while let track = pendingLoadTrack {
+                pendingLoadTrack = nil
+                await performOneLoad(track)
+                persistState()
+            }
+        }
     }
 
     func seek(to time: TimeInterval) {
@@ -245,6 +267,11 @@ final class PlaybackController {
         persistState()
     }
 
+    func removeFromUpNext(trackID: UUID) {
+        playbackQueue.removeFromUpNext(trackID: trackID)
+        persistState()
+    }
+
     func moveUpNextItem(from source: Int, to destination: Int) {
         playbackQueue.moveUpNextItem(from: source, to: destination)
         persistState()
@@ -258,8 +285,7 @@ final class PlaybackController {
     func playUpNext(at index: Int) {
         guard playbackQueue.hasActiveSession else { return }
         guard let track = playbackQueue.jumpToUpNext(at: index) else { return }
-        playLoadedTrack(track)
-        persistState()
+        scheduleLoadedTrack(track)
     }
 
     func autoplayPreviewTracks(limit: Int = 7) -> [Track] {
@@ -293,18 +319,18 @@ final class PlaybackController {
 
     private func loadAndPlayCurrentTrack() {
         guard let track = currentTrack else { return }
-        playLoadedTrack(track)
+        scheduleLoadedTrack(track)
     }
 
     /// Cancels in-flight loads, stops audio, and returns a generation token for the new load.
     @discardableResult
     private func beginLoadSession() -> Int {
         loadTask?.cancel()
+        loadTask = nil
         prefetchTask?.cancel()
         prefetchTask = nil
         activeLoadGeneration += 1
         audioEngine.stop()
-        isPlaying = false
         return activeLoadGeneration
     }
 
@@ -324,30 +350,37 @@ final class PlaybackController {
         return try await AudioCache.shared.localURL(for: track.fileURL, trackID: track.id)
     }
 
-    private func playLoadedTrack(_ track: Track) {
+    private func performOneLoad(_ track: Track) async {
         let generation = beginLoadSession()
+        isPlaying = false
         isLoading = true
 
-        loadTask = Task {
-            do {
-                let localURL = try await resolveLocalURL(for: track)
-                guard isLoadGenerationCurrent(generation) else { return }
-                try audioEngine.load(url: localURL)
-                guard isLoadGenerationCurrent(generation) else { return }
-                duration = audioEngine.duration()
-                progress = 0
-                audioEngine.play()
-                isPlaying = true
+        do {
+            let localURL = try await resolveLocalURL(for: track)
+            guard isLoadGenerationCurrent(generation) else {
                 isLoading = false
-                recentStore.record(track: track)
-                mediaRemote.publishNowPlayingInfo()
-                schedulePrefetch()
-            } catch {
-                guard isLoadGenerationCurrent(generation) else { return }
-                logger.error("Failed to load track: \(error.localizedDescription)")
-                isLoading = false
-                next()
+                return
             }
+            try await audioEngine.load(url: localURL)
+            guard isLoadGenerationCurrent(generation) else {
+                isLoading = false
+                return
+            }
+            duration = audioEngine.duration()
+            progress = 0
+            audioEngine.play()
+            isPlaying = true
+            isLoading = false
+            recentStore.record(track: track)
+            mediaRemote.publishNowPlayingInfo()
+            schedulePrefetch()
+        } catch is CancellationError {
+            isLoading = false
+        } catch {
+            guard isLoadGenerationCurrent(generation) else { return }
+            logger.error("Failed to load track: \(error.localizedDescription)")
+            isLoading = false
+            next()
         }
     }
 
@@ -383,7 +416,7 @@ final class PlaybackController {
                 let localURL = try await resolveLocalURL(for: track)
                 guard isLoadGenerationCurrent(generation) else { return }
 
-                try audioEngine.load(url: localURL)
+                try await audioEngine.load(url: localURL)
                 guard isLoadGenerationCurrent(generation) else { return }
 
                 duration = audioEngine.duration()

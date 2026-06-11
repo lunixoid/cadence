@@ -139,99 +139,94 @@ struct NowPlayingBarView: View {
     // MARK: - Full Bar Sections
 
     private var leftSection: some View {
-        let ui = uiState
-        let favorites = favoritesStore
-        let favoritesSync = jellyfinFavoritesSync
+        HStack(spacing: 12) {
+            HStack(spacing: 12) {
+                AlbumCoverView(
+                    album: currentAlbum,
+                    size: CadenceTheme.miniCoverSize,
+                    cornerRadius: CadenceTheme.miniCoverRadius
+                )
+                .shadow(color: .black.opacity(0.22), radius: 7, y: 4)
 
-        return HStack(spacing: 12) {
-            Button(action: {
-                ui.selectSidebarItem(.nowPlaying)
-            }) {
-                HStack(spacing: 12) {
-                    AlbumCoverView(
-                        album: currentAlbum,
-                        size: CadenceTheme.miniCoverSize,
-                        cornerRadius: CadenceTheme.miniCoverRadius
-                    )
-                    .shadow(color: .black.opacity(0.22), radius: 7, y: 4)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(currentTrack?.title ?? "—")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
+                        .lineLimit(1)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(currentTrack?.title ?? "—")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
-                            .lineLimit(1)
-
-                        Text(currentTrack?.artist ?? "—")
-                            .font(.system(size: 12))
-                            .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
-                            .lineLimit(1)
-                    }
-                    .frame(minWidth: 0)
+                    Text(currentTrack?.artist ?? "—")
+                        .font(.system(size: 12))
+                        .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
+                        .lineLimit(1)
                 }
+                .frame(minWidth: 0)
             }
-            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: openNowPlaying)
 
-            if let track = currentTrack {
-                PlayerButton(
-                    size: 36,
-                    isActive: favorites.isFavorite(track: track)
-                ) {
-                    favoritesSync.toggle(track: track, client: ui.activeJellyfinClient)
-                } label: {
-                    Image(systemName: favorites.isFavorite(track: track) ? "heart.fill" : "heart")
-                        .font(.system(size: 17))
-                }
-            }
+            favoriteButton
         }
         .frame(width: 230, alignment: .leading)
+        .id(currentTrack?.id)
+    }
+
+    private var favoriteButton: some View {
+        let track = currentTrack
+        return PlayerButton(
+            size: 36,
+            isActive: track.map { favoritesStore.isFavorite(track: $0) } ?? false,
+        ) {
+            guard let track = playbackController.currentTrack else { return }
+            jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+        } label: {
+            Image(systemName: track.map { favoritesStore.isFavorite(track: $0) } == true ? "heart.fill" : "heart")
+                .font(.system(size: 17))
+        }
+        .opacity(track != nil ? 1 : 0)
+        .allowsHitTesting(track != nil)
     }
 
     private var centerSection: some View {
-        let pc = playbackController
-
-        return VStack(spacing: 8) {
+        VStack(spacing: 8) {
             HStack(spacing: 4) {
                 PlayerButton(
                     size: CadenceTheme.playerIconButtonSize,
-                    isActive: pc.shuffleOn
+                    isActive: playbackController.shuffleOn,
                 ) {
-                    pc.toggleShuffle()
+                    playbackController.toggleShuffle()
                 } label: {
                     Image(systemName: "shuffle")
                         .font(.system(size: 20))
                 }
 
                 transportButton(icon: "backward.fill") {
-                    pc.previous()
+                    playbackController.previous()
                 }
 
-                Button(action: {
-                    pc.togglePlayPause()
-                }) {
-                    Image(systemName: pc.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : .white)
-                        .frame(width: CadenceTheme.playButtonSize, height: CadenceTheme.playButtonSize)
-                        .background(CadenceTheme.primaryText(for: colorScheme))
-                        .clipShape(Circle())
-                        .scaleEffect(isPlayHovered ? 1.06 : 1)
-                        .shadow(color: .black.opacity(colorScheme == .dark ? 0.45 : 0.16), radius: 8, y: 3)
-                }
-                .buttonStyle(.plain)
-                .onHover { isPlayHovered = $0 }
-                .animation(.easeOut(duration: 0.1), value: isPlayHovered)
+                Image(systemName: playbackController.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : .white)
+                    .frame(width: CadenceTheme.playButtonSize, height: CadenceTheme.playButtonSize)
+                    .background(CadenceTheme.primaryText(for: colorScheme))
+                    .clipShape(Circle())
+                    .scaleEffect(isPlayHovered ? 1.06 : 1)
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.45 : 0.16), radius: 8, y: 3)
+                    .contentShape(Circle())
+                    .onTapGesture(perform: togglePlayPause)
+                    .onHover { isPlayHovered = $0 }
+                    .animation(.easeOut(duration: 0.1), value: isPlayHovered)
 
                 transportButton(icon: "forward.fill") {
-                    pc.next()
+                    playbackController.next()
                 }
 
                 PlayerButton(
                     size: CadenceTheme.playerIconButtonSize,
-                    isActive: pc.repeatMode != .off
+                    isActive: playbackController.repeatMode != .off,
                 ) {
-                    pc.toggleRepeat()
+                    playbackController.toggleRepeat()
                 } label: {
-                    Image(systemName: pc.repeatMode.iconName)
+                    Image(systemName: playbackController.repeatMode.iconName)
                         .font(.system(size: 20))
                 }
             }
@@ -254,6 +249,14 @@ struct NowPlayingBarView: View {
             .frame(maxWidth: 440)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func openNowPlaying() {
+        uiState.selectSidebarItem(.nowPlaying)
+    }
+
+    private func togglePlayPause() {
+        playbackController.togglePlayPause()
     }
 
     private func transportButton(icon: String, action: @escaping () -> Void) -> some View {

@@ -23,9 +23,7 @@ struct FavoritesView: View {
                                 TrackRowView(
                                     track: track,
                                     isActive: playbackController.playingTrackID == track.id,
-                                    isPlaying: playbackController.isPlaying,
-                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
-                                    onPlay: { playbackController.playTrack(track) }
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track)
                                 )
                             }
                             Color.clear.frame(height: 24)
@@ -59,9 +57,7 @@ struct RecentView: View {
                                 TrackRowView(
                                     track: track,
                                     isActive: playbackController.playingTrackID == track.id,
-                                    isPlaying: playbackController.isPlaying,
-                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
-                                    onPlay: { playbackController.playTrack(track) }
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track)
                                 )
                             }
                             Color.clear.frame(height: 24)
@@ -94,9 +90,7 @@ struct DownloadedView: View {
                                 TrackRowView(
                                     track: track,
                                     isActive: playbackController.playingTrackID == track.id,
-                                    isPlaying: playbackController.isPlaying,
-                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
-                                    onPlay: { playbackController.playTrack(track) }
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track)
                                 )
                             }
                             Color.clear.frame(height: 24)

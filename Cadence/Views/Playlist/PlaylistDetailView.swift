@@ -31,9 +31,7 @@ struct PlaylistDetailView: View {
                             ForEach(tracks) { track in
                                 TrackRowView(
                                     track: track,
-                                    isActive: playbackController.playingTrackID == track.id,
-                                    isPlaying: playbackController.isPlaying,
-                                    onPlay: { playbackController.playTrack(track) }
+                                    isActive: playbackController.playingTrackID == track.id
                                 )
                             }
                             Color.clear.frame(height: 24)

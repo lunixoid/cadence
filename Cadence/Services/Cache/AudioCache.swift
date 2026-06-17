@@ -7,12 +7,16 @@ actor AudioCache {
     static let shared = AudioCache()
 
     private var maxCacheBytes: Int64 = 2 * 1_073_741_824
-    private var inFlightDownloads: [UUID: Task<URL, Error>] = [:]
+    private var activeSessions: [UUID: ProgressiveDownloadSession] = [:]
 
     private init() {}
 
     func setMaxCacheBytes(_ bytes: Int64) {
         maxCacheBytes = max(bytes, 0)
+    }
+
+    func hasCachedFile(trackID: UUID) -> Bool {
+        Self.cachedFileURL(trackID: trackID) != nil
     }
 
     func localURL(for remoteURL: URL, trackID: UUID) async throws -> URL {
@@ -21,20 +25,19 @@ actor AudioCache {
             return cached
         }
 
-        if let existingTask = inFlightDownloads[trackID] {
-            return try await existingTask.value
-        }
-
-        let task = Task<URL, Error> {
-            try await Self.download(remoteURL: remoteURL, trackID: trackID)
-        }
-        inFlightDownloads[trackID] = task
-
-        defer { inFlightDownloads[trackID] = nil }
-
-        let localURL = try await task.value
+        let session = try await downloadSession(for: remoteURL, trackID: trackID)
+        let url = try await session.waitForCompletion()
         enforceCacheLimit()
-        return localURL
+        return url
+    }
+
+    func progressiveAsset(for remoteURL: URL, trackID: UUID) async throws -> ProgressiveAudioAsset {
+        let session = try await downloadSession(for: remoteURL, trackID: trackID)
+        return ProgressiveAudioAsset(session: session)
+    }
+
+    func existingSession(for trackID: UUID) -> ProgressiveDownloadSession? {
+        activeSessions[trackID]
     }
 
     func diskUsageBytes() -> Int64 {
@@ -42,6 +45,10 @@ actor AudioCache {
     }
 
     func clearAll() {
+        for session in activeSessions.values {
+            Task { await session.cancelAndDeletePartial() }
+        }
+        activeSessions.removeAll()
         try? FileManager.default.removeItem(at: Self.audioDirectory)
     }
 
@@ -49,27 +56,29 @@ actor AudioCache {
         directorySize(at: audioDirectory)
     }
 
-    private static func download(remoteURL: URL, trackID: UUID) async throws -> URL {
-        var request = URLRequest(url: remoteURL)
-        request.timeoutInterval = 60
+    private func downloadSession(for remoteURL: URL, trackID: UUID) async throws -> ProgressiveDownloadSession {
+        if let existing = activeSessions[trackID] {
+            return existing
+        }
 
-        let (temporaryURL, response) = try await URLSession.shared.download(for: request)
-        let ext = (response as? HTTPURLResponse)
-            .flatMap { $0.value(forHTTPHeaderField: "Content-Type") }
-            .flatMap { AudioEngineService.ext(forContentType: $0) }
-            ?? "mp3"
-
-        let directory = audioDirectory
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
-        let destinationURL = directory
-            .appendingPathComponent(trackID.uuidString)
+        let ext = "partial"
+        let partialURL = Self.audioDirectory
+            .appendingPathComponent("\(trackID.uuidString).partial")
             .appendingPathExtension(ext)
 
-        try? FileManager.default.removeItem(at: destinationURL)
-        try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
-        touch(destinationURL)
-        return destinationURL
+        let session = try ProgressiveDownloadSession(
+            trackID: trackID,
+            remoteURL: remoteURL,
+            partialURL: partialURL
+        )
+        activeSessions[trackID] = session
+        await session.start()
+        return session
+    }
+
+    func sessionDidComplete(trackID: UUID) {
+        activeSessions[trackID] = nil
+        enforceCacheLimit()
     }
 
     private func enforceCacheLimit() {
@@ -86,6 +95,9 @@ actor AudioCache {
         var totalSize: Int64 = 0
 
         for fileURL in files {
+            let name = fileURL.deletingPathExtension().lastPathComponent
+            if name.hasSuffix(".partial") { continue }
+
             let values = try? fileURL.resourceValues(forKeys: [.contentAccessDateKey, .fileSizeKey])
             let size = Int64(values?.fileSize ?? 0)
             let accessDate = values?.contentAccessDate ?? .distantPast
@@ -114,7 +126,10 @@ actor AudioCache {
         ) else { return nil }
 
         let prefix = trackID.uuidString
-        return files.first { $0.deletingPathExtension().lastPathComponent == prefix }
+        return files.first { url in
+            let name = url.deletingPathExtension().lastPathComponent
+            return name == prefix && !name.hasSuffix(".partial")
+        }
     }
 
     nonisolated static var audioDirectory: URL {

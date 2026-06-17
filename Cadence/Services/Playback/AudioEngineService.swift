@@ -9,7 +9,18 @@ final class AudioEngineService {
     private var progressTimer: Timer?
     private var currentFileURL: URL?
 
-    private var pcmChunks: [AVAudioPCMBuffer] = []
+    private var chunkSource: LazyChunkSource?
+    private var decodePipeline: ChunkDecodePipeline?
+    private var progressiveAsset: ProgressiveAudioAsset?
+    private var knownDuration: TimeInterval?
+    private var progressiveMonitorTask: Task<Void, Never>?
+
+    // Serial scheduler
+    private var schedulerTask: Task<Void, Never>?
+    private var bufferConsumedContinuation: CheckedContinuation<Void, Never>?
+    private var buffersInFlight = 0
+    private var schedulerFinishedAllChunks = false
+
     private var processingFormat: AVAudioFormat?
     private var chunkDurationFrames: AVAudioFrameCount = 0
     private var totalFrameCount: AVAudioFramePosition = 0
@@ -17,12 +28,15 @@ final class AudioEngineService {
     private var segmentOffsetInFirstChunk: AVAudioFrameCount = 0
     private var scheduledUpToIndex = 0
     private var scheduleGeneration = 0
+    private var isProgressiveLoad = false
 
-    private let prefetchChunkCount = 4
+    private let maxBuffersInFlight = 8
+    private let prefetchAheadCount = 10
     private let eqFrequencies: [Float] = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
     var onProgress: ((TimeInterval, TimeInterval) -> Void)?
     var onTrackFinished: (() -> Void)?
+    var onBuffering: ((Bool) -> Void)?
 
     var volume: Double {
         get { Double(engine.mainMixerNode.outputVolume) * 100 }
@@ -48,12 +62,32 @@ final class AudioEngineService {
     func load(url: URL) async throws {
         stopInternal(resetProgress: true)
         currentFileURL = url
+        isProgressiveLoad = false
+        progressiveAsset = nil
 
-        let prepared = try await Task.detached(priority: .userInitiated) {
-            try Self.prepareLoad(url: url)
+        let source = try await Task.detached(priority: .userInitiated) {
+            try LazyChunkSource(url: url, isProgressive: false)
         }.value
 
-        try applyPreparedLoad(prepared)
+        try applyChunkSource(source)
+    }
+
+    func loadProgressive(asset: ProgressiveAudioAsset, expectedDuration: TimeInterval?) async throws {
+        stopInternal(resetProgress: true)
+        isProgressiveLoad = true
+        progressiveAsset = asset
+        knownDuration = expectedDuration
+        currentFileURL = asset.partialURL
+
+        try await asset.waitUntilBuffered()
+        let downloaded = await asset.bytesDownloaded()
+        let total = await asset.expectedBytes()
+        let source = try await Task.detached(priority: .userInitiated) {
+            try LazyChunkSource(url: asset.partialURL, isProgressive: true)
+        }.value
+        source.updateDownloadProgress(downloaded: downloaded, total: total)
+
+        try applyChunkSource(source)
     }
 
     func loadRemote(url: URL, trackID: UUID) async throws {
@@ -75,7 +109,7 @@ final class AudioEngineService {
     }
 
     func play() {
-        guard !pcmChunks.isEmpty else { return }
+        guard chunkSource != nil else { return }
 
         if !engine.isRunning {
             try? engine.start()
@@ -83,12 +117,14 @@ final class AudioEngineService {
 
         if playerNode.isPlaying {
             playerNode.stop()
-            scheduleGeneration += 1
         }
 
         scheduleFromCurrentPosition()
         playerNode.play()
         startProgressTimer()
+        if isProgressiveLoad, progressiveMonitorTask == nil {
+            startProgressiveMonitoring()
+        }
     }
 
     func pause() {
@@ -97,9 +133,6 @@ final class AudioEngineService {
     }
 
     func stop() {
-        scheduleGeneration += 1
-        playerNode.stop()
-        stopProgressTimer()
         if engine.isRunning {
             engine.stop()
         }
@@ -107,20 +140,8 @@ final class AudioEngineService {
     }
 
     func seek(to time: TimeInterval) {
-        guard let format = processingFormat, !pcmChunks.isEmpty else { return }
-        let sampleRate = format.sampleRate
-        let frame = AVAudioFramePosition(time * sampleRate)
-        segmentStartFrame = min(max(frame, 0), totalFrameCount)
-        segmentOffsetInFirstChunk = AVAudioFrameCount(segmentStartFrame % Int64(chunkDurationFrames))
-        scheduledUpToIndex = Int(segmentStartFrame / Int64(chunkDurationFrames))
-
-        playerNode.stop()
-        scheduleFromCurrentPosition()
-        if engine.isRunning {
-            playerNode.play()
-            startProgressTimer()
-        }
-        emitProgress()
+        guard let format = processingFormat, chunkSource != nil else { return }
+        applySeek(to: time, format: format)
     }
 
     func currentTime() -> TimeInterval {
@@ -134,6 +155,9 @@ final class AudioEngineService {
     }
 
     func duration() -> TimeInterval {
+        if let knownDuration, knownDuration > 0 {
+            return knownDuration
+        }
         guard let format = processingFormat else { return 0 }
         let sampleRate = format.sampleRate
         guard sampleRate > 0 else { return 0 }
@@ -153,27 +177,10 @@ final class AudioEngineService {
         eqNode.bypass = !enabled
     }
 
-    private struct PreparedAudioLoad: @unchecked Sendable {
-        let chunks: [AVAudioPCMBuffer]
-        let format: AVAudioFormat
-        let totalFrameCount: AVAudioFramePosition
-        let chunkDurationFrames: AVAudioFrameCount
-    }
+    // MARK: - Internal setup
 
-    private nonisolated static func prepareLoad(url: URL) throws -> PreparedAudioLoad {
-        let file = try AVAudioFile(forReading: url)
-        let format = file.processingFormat
-        let chunkDurationFrames = AVAudioFrameCount(format.sampleRate)
-        let chunks = try decodeChunks(from: file, chunkFrames: chunkDurationFrames)
-        return PreparedAudioLoad(
-            chunks: chunks,
-            format: format,
-            totalFrameCount: file.length,
-            chunkDurationFrames: chunkDurationFrames
-        )
-    }
-
-    private func applyPreparedLoad(_ prepared: PreparedAudioLoad) throws {
+    private func applyChunkSource(_ source: LazyChunkSource) throws {
+        cancelScheduler()
         scheduleGeneration += 1
         playerNode.stop()
         stopProgressTimer()
@@ -181,99 +188,298 @@ final class AudioEngineService {
             engine.stop()
         }
 
-        processingFormat = prepared.format
-        totalFrameCount = prepared.totalFrameCount
-        chunkDurationFrames = prepared.chunkDurationFrames
-        pcmChunks = prepared.chunks
+        chunkSource = source
+        decodePipeline = ChunkDecodePipeline(source: source)
+        processingFormat = source.format
+        totalFrameCount = source.totalFrameCount
+        chunkDurationFrames = source.chunkDurationFrames
         segmentStartFrame = 0
         segmentOffsetInFirstChunk = 0
         scheduledUpToIndex = 0
 
         engine.disconnectNodeOutput(playerNode)
         engine.disconnectNodeOutput(eqNode)
-        engine.connect(playerNode, to: eqNode, format: prepared.format)
-        engine.connect(eqNode, to: engine.mainMixerNode, format: prepared.format)
+        engine.connect(playerNode, to: eqNode, format: source.format)
+        engine.connect(eqNode, to: engine.mainMixerNode, format: source.format)
 
         try engine.start()
     }
 
-    private nonisolated static func decodeChunks(from file: AVAudioFile, chunkFrames: AVAudioFrameCount) throws -> [AVAudioPCMBuffer] {
-        let format = file.processingFormat
-        var chunks: [AVAudioPCMBuffer] = []
-        file.framePosition = 0
+    private func applySeek(to time: TimeInterval, format: AVAudioFormat) {
+        let sampleRate = format.sampleRate
+        let frame = AVAudioFramePosition(time * sampleRate)
+        segmentStartFrame = min(max(frame, 0), playbackEndFrame())
+        segmentOffsetInFirstChunk = AVAudioFrameCount(segmentStartFrame % Int64(chunkDurationFrames))
+        scheduledUpToIndex = Int(segmentStartFrame / Int64(chunkDurationFrames))
 
-        while file.framePosition < file.length {
-            let remaining = AVAudioFrameCount(file.length - file.framePosition)
-            let framesToRead = min(chunkFrames, remaining)
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: framesToRead) else {
-                throw NSError(domain: "AudioEngine", code: 1, userInfo: [
-                    NSLocalizedDescriptionKey: "Failed to allocate PCM buffer",
-                ])
-            }
-            try file.read(into: buffer, frameCount: framesToRead)
-            buffer.frameLength = framesToRead
-            chunks.append(buffer)
+        decodePipeline?.reset()
+        playerNode.stop()
+        scheduleFromCurrentPosition()
+        if engine.isRunning {
+            playerNode.play()
+            startProgressTimer()
         }
-
-        return chunks
+        emitProgress()
     }
 
+    // MARK: - Serial scheduler
+
     private func scheduleFromCurrentPosition() {
+        cancelScheduler()
         scheduleGeneration += 1
         let generation = scheduleGeneration
 
-        guard !pcmChunks.isEmpty else { return }
+        guard chunkSource != nil else { return }
 
-        let remainingFrames = totalFrameCount - segmentStartFrame
+        let remainingFrames = playbackEndFrame() - segmentStartFrame
         guard remainingFrames > 0 else {
+            stopProgressTimer()
             onTrackFinished?()
             return
         }
 
-        scheduledUpToIndex = min(scheduledUpToIndex, pcmChunks.count)
-        scheduleInitialChunks(generation: generation)
+        startScheduler(generation: generation)
     }
 
-    private func scheduleInitialChunks(generation: Int) {
-        var chunkIndex = scheduledUpToIndex
-        var useOffset = segmentOffsetInFirstChunk > 0
-        var scheduled = 0
+    /// Single serial loop that feeds buffers to AVAudioPlayerNode in strict index order.
+    /// Parallel decode is handled by ChunkDecodePipeline.prefetch; this loop only awaits
+    /// each index sequentially so scheduleBuffer is always called 0,1,2,3…
+    private func startScheduler(generation: Int) {
+        schedulerTask = Task { [weak self] in
+            guard let self else { return }
 
-        while scheduled < prefetchChunkCount, chunkIndex < pcmChunks.count {
-            scheduleChunk(at: chunkIndex, generation: generation, useOffset: useOffset)
-            useOffset = false
-            chunkIndex += 1
-            scheduled += 1
+            var index = self.scheduledUpToIndex
+            let firstIndex = index  // seek offset applies only to the first chunk
+
+            while !Task.isCancelled, generation == self.scheduleGeneration {
+
+                // ── Backpressure: cap buffered data ──────────────────────────────
+                if self.buffersInFlight >= self.maxBuffersInFlight {
+                    await self.waitForBufferConsumed()
+                    guard !Task.isCancelled, generation == self.scheduleGeneration else { return }
+                }
+
+                // ── Wait for enough downloaded data for this chunk ───────────────
+                var available = self.availableChunkCount()
+                if index >= available {
+                    if self.isProgressiveLoad {
+                        self.onBuffering?(true)
+                        let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
+                        self.onBuffering?(false)
+                        guard ok else { return }
+                        available = self.availableChunkCount()
+                    } else {
+                        break  // non-progressive: all chunks consumed
+                    }
+                }
+
+                // ── Kick off parallel decode ahead, then await THIS index ────────
+                self.decodePipeline?.prefetch(from: index, to: min(available, index + self.prefetchAheadCount))
+
+                guard let pipeline = self.decodePipeline else { return }
+                let sourceChunk: AVAudioPCMBuffer
+                do {
+                    sourceChunk = try await pipeline.buffer(for: index)
+                } catch {
+                    if self.isProgressiveLoad {
+                        self.onBuffering?(true)
+                        let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
+                        self.onBuffering?(false)
+                        guard ok else { return }
+                        continue  // retry same index
+                    } else {
+                        break
+                    }
+                }
+                guard !Task.isCancelled, generation == self.scheduleGeneration else { return }
+
+                // ── Apply seek offset to the first chunk only ────────────────────
+                let buffer: AVAudioPCMBuffer
+                if index == firstIndex, self.segmentOffsetInFirstChunk > 0 {
+                    buffer = self.subBuffer(from: sourceChunk, startingAt: self.segmentOffsetInFirstChunk) ?? sourceChunk
+                } else {
+                    buffer = sourceChunk
+                }
+
+                // ── Schedule IN ORDER ────────────────────────────────────────────
+                self.buffersInFlight += 1
+                self.scheduledUpToIndex = index + 1
+
+                self.playerNode.scheduleBuffer(buffer, at: nil, completionCallbackType: .dataConsumed) { [weak self] _ in
+                    Task { @MainActor in
+                        guard let self, generation == self.scheduleGeneration else { return }
+                        self.buffersInFlight -= 1
+                        self.signalBufferConsumed()
+                        if self.buffersInFlight == 0, self.schedulerFinishedAllChunks {
+                            self.stopProgressTimer()
+                            self.onTrackFinished?()
+                        }
+                    }
+                }
+
+                index += 1
+            }
+
+            // Loop exited naturally: all chunks scheduled (or non-progressive EOF)
+            guard generation == self.scheduleGeneration, !Task.isCancelled else { return }
+            self.schedulerFinishedAllChunks = true
+            if self.buffersInFlight == 0 {
+                self.stopProgressTimer()
+                self.onTrackFinished?()
+            }
+        }
+    }
+
+    /// Waits for more bytes to arrive so that chunk at `index` becomes readable.
+    private func awaitMoreBytes(fromIndex index: Int, generation: Int) async -> Bool {
+        guard let asset = progressiveAsset else { return false }
+        var lastDownloaded = await asset.bytesDownloaded()
+
+        while !Task.isCancelled, generation == scheduleGeneration {
+            if await asset.isComplete() {
+                try? await refreshProgressiveSourceIfNeeded()
+                return generation == scheduleGeneration && !Task.isCancelled
+            }
+
+            let targetBytes = lastDownloaded + ProgressivePlayback.continueWaitByteIncrement
+            try? await asset.waitUntilBytes(targetBytes)
+            guard !Task.isCancelled, generation == scheduleGeneration else { return false }
+            lastDownloaded = await asset.bytesDownloaded()
+            try? await refreshProgressiveSourceIfNeeded()
+            guard !Task.isCancelled, generation == scheduleGeneration else { return false }
+
+            if availableChunkCount() > index {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func waitForBufferConsumed() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            bufferConsumedContinuation = continuation
+        }
+    }
+
+    private func signalBufferConsumed() {
+        let c = bufferConsumedContinuation
+        bufferConsumedContinuation = nil
+        c?.resume()
+    }
+
+    private func cancelScheduler() {
+        schedulerTask?.cancel()
+        schedulerTask = nil
+        let c = bufferConsumedContinuation
+        bufferConsumedContinuation = nil
+        c?.resume()
+        buffersInFlight = 0
+        schedulerFinishedAllChunks = false
+    }
+
+    // MARK: - Progressive support
+
+    private func estimatedBytesForFrame(_ frame: AVAudioFramePosition) async -> Int64 {
+        guard let asset = progressiveAsset else {
+            return ProgressivePlayback.initialBufferBytes
         }
 
-        scheduledUpToIndex = chunkIndex
+        if await asset.isComplete() {
+            return await asset.bytesDownloaded()
+        }
+
+        if let expected = await asset.expectedBytes(), totalFrameCount > 0 {
+            let ratio = Double(frame) / Double(totalFrameCount)
+            let estimated = Int64(Double(expected) * ratio * 1.15)
+            return max(estimated, ProgressivePlayback.initialBufferBytes)
+        }
+
+        let downloaded = await asset.bytesDownloaded()
+        if totalFrameCount > 0, downloaded > 0 {
+            let ratio = Double(frame) / Double(totalFrameCount)
+            return max(Int64(Double(downloaded) * ratio * 1.2), ProgressivePlayback.initialBufferBytes)
+        }
+
+        return max(downloaded, ProgressivePlayback.initialBufferBytes)
     }
 
-    private func scheduleChunk(at chunkIndex: Int, generation: Int, useOffset: Bool) {
-        let sourceChunk = pcmChunks[chunkIndex]
-        let buffer: AVAudioPCMBuffer
-        if useOffset {
-            buffer = subBuffer(from: sourceChunk, startingAt: segmentOffsetInFirstChunk) ?? sourceChunk
+    private func playbackEndFrame() -> AVAudioFramePosition {
+        if isProgressiveLoad {
+            return totalFrameCount
+        }
+        if let knownDuration, let format = processingFormat, format.sampleRate > 0 {
+            return AVAudioFramePosition(knownDuration * format.sampleRate)
+        }
+        return totalFrameCount
+    }
+
+    private func refreshProgressiveSourceIfNeeded() async throws {
+        let capturedGeneration = scheduleGeneration
+        guard let asset = progressiveAsset, let source = chunkSource else { return }
+        let downloaded = await asset.bytesDownloaded()
+        let total = await asset.expectedBytes()
+        let isComplete = await asset.isComplete()
+
+        guard scheduleGeneration == capturedGeneration, !Task.isCancelled else { return }
+
+        source.updateDownloadProgress(downloaded: downloaded, total: total)
+
+        try await Task.detached {
+            try source.refreshFromDisk(isDownloadComplete: isComplete)
+        }.value
+
+        guard scheduleGeneration == capturedGeneration, !Task.isCancelled else { return }
+
+        if isComplete, let finalURL = try? await asset.waitUntilComplete() {
+            currentFileURL = finalURL
+            isProgressiveLoad = false
+            totalFrameCount = source.totalFrameCount
         } else {
-            buffer = sourceChunk
+            totalFrameCount = source.totalFrameCount
         }
+    }
 
-        playerNode.scheduleBuffer(buffer, at: nil) { [weak self] in
-            Task { @MainActor in
-                guard let self, generation == self.scheduleGeneration else { return }
+    private func startProgressiveMonitoring() {
+        progressiveMonitorTask?.cancel()
+        progressiveMonitorTask = Task { [weak self] in
+            guard let self else { return }
+            var lastDownloaded: Int64 = 0
 
-                if chunkIndex >= self.pcmChunks.count - 1 {
-                    self.stopProgressTimer()
-                    self.onTrackFinished?()
+            while !Task.isCancelled {
+                guard let asset = self.progressiveAsset else { return }
+                let downloaded = await asset.bytesDownloaded()
+                if downloaded > lastDownloaded {
+                    lastDownloaded = downloaded
+                    do {
+                        try await self.refreshProgressiveSourceIfNeeded()
+                    } catch {
+                        continue
+                    }
+                }
+
+                if await asset.isComplete() {
+                    try? await self.refreshProgressiveSourceIfNeeded()
                     return
                 }
 
-                if self.scheduledUpToIndex < self.pcmChunks.count {
-                    self.scheduleChunk(at: self.scheduledUpToIndex, generation: generation, useOffset: false)
-                    self.scheduledUpToIndex += 1
-                }
+                try? await Task.sleep(for: .milliseconds(250))
             }
         }
+    }
+
+    // MARK: - Helpers
+
+    private func availableChunkCount() -> Int {
+        guard let source = chunkSource else { return 0 }
+        let safeFrames = source.safeReadableFrameCount(isDownloadComplete: !isProgressiveLoad)
+        guard chunkDurationFrames > 0 else { return 0 }
+        return Int((safeFrames + AVAudioFramePosition(chunkDurationFrames) - 1) / AVAudioFramePosition(chunkDurationFrames))
+    }
+
+    private func lastChunkIndex() -> Int {
+        guard chunkDurationFrames > 0 else { return 0 }
+        let endFrame = playbackEndFrame()
+        return max(0, Int((endFrame + AVAudioFramePosition(chunkDurationFrames) - 1) / AVAudioFramePosition(chunkDurationFrames)) - 1)
     }
 
     private func subBuffer(from chunk: AVAudioPCMBuffer, startingAt frameOffset: AVAudioFrameCount) -> AVAudioPCMBuffer? {
@@ -314,10 +520,17 @@ final class AudioEngineService {
     }
 
     private func stopInternal(resetProgress: Bool) {
+        cancelScheduler()
         scheduleGeneration += 1
         playerNode.stop()
         stopProgressTimer()
-        pcmChunks.removeAll(keepingCapacity: false)
+        progressiveMonitorTask?.cancel()
+        progressiveMonitorTask = nil
+        chunkSource = nil
+        decodePipeline = nil
+        progressiveAsset = nil
+        knownDuration = nil
+        isProgressiveLoad = false
         processingFormat = nil
         totalFrameCount = 0
         chunkDurationFrames = 0
@@ -344,5 +557,240 @@ final class AudioEngineService {
 
     private func emitProgress() {
         onProgress?(currentTime(), duration())
+    }
+}
+
+// MARK: - Decode pipeline
+
+private final class ChunkDecodePipeline: @unchecked Sendable {
+    private let source: LazyChunkSource
+    private let lock = NSLock()
+    private var ready: [Int: AVAudioPCMBuffer] = [:]
+    private var inFlight: Set<Int> = []
+    private var waiters: [Int: [CheckedContinuation<AVAudioPCMBuffer, Error>]] = [:]
+
+    init(source: LazyChunkSource) {
+        self.source = source
+    }
+
+    func reset() {
+        lock.lock()
+        ready.removeAll(keepingCapacity: true)
+        inFlight.removeAll()
+        let pending = waiters
+        waiters.removeAll()
+        lock.unlock()
+
+        for continuations in pending.values {
+            for continuation in continuations {
+                continuation.resume(throwing: CancellationError())
+            }
+        }
+    }
+
+    func prefetch(from startIndex: Int, to endIndex: Int) {
+        guard endIndex > startIndex else { return }
+        for index in startIndex..<endIndex {
+            startDecodeIfNeeded(index: index)
+        }
+    }
+
+    func buffer(for index: Int) async throws -> AVAudioPCMBuffer {
+        lock.lock()
+        if let cached = ready[index] {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
+
+        startDecodeIfNeeded(index: index)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            lock.lock()
+            if let cached = ready[index] {
+                lock.unlock()
+                continuation.resume(returning: cached)
+                return
+            }
+            waiters[index, default: []].append(continuation)
+            lock.unlock()
+        }
+    }
+
+    private func startDecodeIfNeeded(index: Int) {
+        lock.lock()
+        if ready[index] != nil || inFlight.contains(index) {
+            lock.unlock()
+            return
+        }
+        inFlight.insert(index)
+        lock.unlock()
+
+        Task.detached(priority: .userInitiated) { [source] in
+            do {
+                let buffer = try source.decodeChunk(at: index)
+                self.completeDecode(index: index, result: .success(buffer))
+            } catch {
+                self.completeDecode(index: index, result: .failure(error))
+            }
+        }
+    }
+
+    private func completeDecode(index: Int, result: Result<AVAudioPCMBuffer, Error>) {
+        lock.lock()
+        inFlight.remove(index)
+
+        switch result {
+        case .success(let buffer):
+            ready[index] = buffer
+            let continuations = waiters.removeValue(forKey: index) ?? []
+            lock.unlock()
+            for continuation in continuations {
+                continuation.resume(returning: buffer)
+            }
+        case .failure(let error):
+            let continuations = waiters.removeValue(forKey: index) ?? []
+            lock.unlock()
+            for continuation in continuations {
+                continuation.resume(throwing: error)
+            }
+        }
+    }
+}
+
+// MARK: - Lazy chunk decoder
+
+private final class LazyChunkSource: @unchecked Sendable {
+    enum Error: Swift.Error {
+        case readBeyondBoundary
+        case allocationFailed
+    }
+
+    let format: AVAudioFormat
+    private(set) var totalFrameCount: AVAudioFramePosition
+    let chunkDurationFrames: AVAudioFrameCount
+
+    private let lock = NSLock()
+    private var fileURL: URL
+    private var audioFile: AVAudioFile?
+    private var chunkCache: [Int: AVAudioPCMBuffer] = [:]
+    private let maxCachedChunks = 16
+    private let isProgressive: Bool
+    private var downloadedBytes: Int64 = 0
+    private var expectedTotalBytes: Int64?
+
+    init(url: URL, isProgressive: Bool) throws {
+        self.fileURL = url
+        self.isProgressive = isProgressive
+        self.audioFile = try AVAudioFile(forReading: url)
+        guard let audioFile else { throw Error.allocationFailed }
+        self.format = audioFile.processingFormat
+        self.chunkDurationFrames = AVAudioFrameCount(format.sampleRate)
+        self.totalFrameCount = audioFile.length
+    }
+
+    func updateDownloadProgress(downloaded: Int64, total: Int64?) {
+        lock.lock()
+        defer { lock.unlock() }
+        downloadedBytes = downloaded
+        if let total { expectedTotalBytes = total }
+    }
+
+    // Must be called while holding lock.
+    private func computeSafeLimit(fileLength: AVAudioFramePosition, isDownloadComplete: Bool) -> AVAudioFramePosition {
+        if !isProgressive || isDownloadComplete { return fileLength }
+        if let total = expectedTotalBytes, total > 0, fileLength > 0 {
+            let ratio = min(1.0, Double(downloadedBytes) / Double(total))
+            let estimated = AVAudioFramePosition(Double(fileLength) * ratio)
+            return max(0, estimated - ProgressivePlayback.safetyMarginFrames)
+        }
+        return max(0, fileLength - ProgressivePlayback.safetyMarginFrames)
+    }
+
+    func refreshFromDisk(isDownloadComplete: Bool) throws {
+        lock.lock()
+        defer { lock.unlock() }
+
+        audioFile = try AVAudioFile(forReading: fileURL)
+        guard let audioFile else { throw Error.allocationFailed }
+        totalFrameCount = audioFile.length
+
+        let safeFrames = computeSafeLimit(fileLength: totalFrameCount, isDownloadComplete: isDownloadComplete)
+        guard chunkDurationFrames > 0 else { return }
+        let safeChunkLimit = Int(safeFrames / AVAudioFramePosition(chunkDurationFrames))
+
+        chunkCache = chunkCache.filter { key, _ in
+            key < max(0, safeChunkLimit - 1)
+        }
+    }
+
+    func safeReadableFrameCount(isDownloadComplete: Bool) -> AVAudioFramePosition {
+        lock.lock()
+        defer { lock.unlock() }
+        return computeSafeLimit(fileLength: totalFrameCount, isDownloadComplete: isDownloadComplete)
+    }
+
+    func decodeChunk(at index: Int) throws -> AVAudioPCMBuffer {
+        lock.lock()
+        if let cached = chunkCache[index] {
+            lock.unlock()
+            return cached
+        }
+
+        if audioFile == nil {
+            do {
+                audioFile = try AVAudioFile(forReading: fileURL)
+            } catch {
+                lock.unlock()
+                throw error
+            }
+        }
+        guard let file = audioFile else {
+            lock.unlock()
+            throw Error.allocationFailed
+        }
+
+        let startFrame = AVAudioFramePosition(index) * AVAudioFramePosition(chunkDurationFrames)
+        let safeLimit = computeSafeLimit(fileLength: file.length, isDownloadComplete: !isProgressive)
+        if startFrame >= safeLimit {
+            lock.unlock()
+            throw Error.readBeyondBoundary
+        }
+
+        file.framePosition = startFrame
+        let remaining = AVAudioFrameCount(min(
+            AVAudioFramePosition(chunkDurationFrames),
+            safeLimit - startFrame
+        ))
+        guard remaining > 0 else {
+            lock.unlock()
+            throw Error.readBeyondBoundary
+        }
+
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: remaining) else {
+            lock.unlock()
+            throw Error.allocationFailed
+        }
+
+        do {
+            try file.read(into: buffer, frameCount: remaining)
+            buffer.frameLength = remaining
+        } catch {
+            lock.unlock()
+            if isProgressive {
+                throw Error.readBeyondBoundary
+            }
+            throw error
+        }
+
+        chunkCache[index] = buffer
+        if chunkCache.count > maxCachedChunks {
+            let keysToRemove = chunkCache.keys.sorted().prefix(chunkCache.count - maxCachedChunks)
+            for key in keysToRemove {
+                chunkCache.removeValue(forKey: key)
+            }
+        }
+        lock.unlock()
+        return buffer
     }
 }

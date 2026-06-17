@@ -46,7 +46,7 @@ final class PlaybackController {
         }
     }
 
-    var eqGains: [Double] = EQPreset.rock.gains
+    var eqGains: [Double] = EQPreset.signature.gains
 
     var currentTrack: Track? {
         playbackQueue.current
@@ -65,6 +65,7 @@ final class PlaybackController {
         for (i, gain) in eqGains.enumerated() {
             audioEngine.setBandGain(at: i, gain: Float(gain))
         }
+        applyGlobalGain()
 
         audioEngine.onProgress = { [weak self] current, total in
             Task { @MainActor in
@@ -96,7 +97,16 @@ final class PlaybackController {
         guard index < eqGains.count else { return }
         eqGains[index] = gain
         audioEngine.setBandGain(at: index, gain: Float(gain))
+        applyGlobalGain()
         persistState()
+    }
+
+    /// Lowers the EQ pre-amp by the largest positive band boost (plus 1 dB safety
+    /// headroom) so boosted bands never push the signal past 0 dBFS and clip.
+    /// Recomputed on every gain change, so it also protects manual "Custom" curves.
+    private func applyGlobalGain() {
+        let maxBoost = max(0, eqGains.max() ?? 0)
+        audioEngine.setGlobalGain(maxBoost > 0 ? Float(-maxBoost - 1.0) : 0)
     }
 
     func restoreSavedState() {
@@ -111,6 +121,7 @@ final class PlaybackController {
             for (i, gain) in savedGains.enumerated() {
                 audioEngine.setBandGain(at: i, gain: Float(gain))
             }
+            applyGlobalGain()
         }
 
         guard let queue = stateStore.restoreQueue(from: snapshot, library: libraryStore) else {

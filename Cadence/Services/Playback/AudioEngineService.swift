@@ -29,6 +29,7 @@ final class AudioEngineService {
     private var scheduledUpToIndex = 0
     private var scheduleGeneration = 0
     private var isProgressiveLoad = false
+    private var isPaused = false
 
     private let maxBuffersInFlight = 8
     private let prefetchAheadCount = 10
@@ -57,6 +58,16 @@ final class AudioEngineService {
         }
 
         volume = 72
+
+        NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: nil
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.handleEngineConfigurationChange()
+            }
+        }
     }
 
     func load(url: URL) async throws {
@@ -116,10 +127,15 @@ final class AudioEngineService {
         }
 
         if playerNode.isPlaying {
-            playerNode.stop()
+            return  // Already playing — no-op
         }
 
-        scheduleFromCurrentPosition()
+        if !isPaused {
+            scheduleFromCurrentPosition()  // first play or after stop
+        }
+        // If paused: buffers already queued on playerNode, just resume
+
+        isPaused = false
         playerNode.play()
         startProgressTimer()
         if isProgressiveLoad, progressiveMonitorTask == nil {
@@ -130,6 +146,7 @@ final class AudioEngineService {
     func pause() {
         playerNode.pause()
         stopProgressTimer()
+        isPaused = true
     }
 
     func stop() {
@@ -177,6 +194,30 @@ final class AudioEngineService {
         eqNode.bypass = !enabled
     }
 
+    /// Pre-amp (overall gain) compensation. Boosting bands without lowering the
+    /// global gain pushes the signal past 0 dBFS and clips → audible rattle.
+    /// We set this to the negative of the largest positive band boost so there is
+    /// always enough headroom for a clean signal.
+    func setGlobalGain(_ gain: Float) {
+        eqNode.globalGain = max(-24, min(24, gain))
+    }
+
+    // MARK: - Engine configuration change
+
+    private func handleEngineConfigurationChange() {
+        guard let format = processingFormat, chunkSource != nil, schedulerTask != nil else { return }
+        let resumeTime = currentTime()
+        // Don't touch the graph — modifying nodes fires another AVAudioEngineConfigurationChange,
+        // causing an infinite restart loop. The engine preserves player→eq→mixer connections;
+        // restarting without reconnecting works for the common case (same-sample-rate device switch).
+        do {
+            try engine.start()
+            applySeek(to: resumeTime, format: format)
+        } catch {
+            // Engine can't restart with new hardware config — stay silent
+        }
+    }
+
     // MARK: - Internal setup
 
     private func applyChunkSource(_ source: LazyChunkSource) throws {
@@ -208,14 +249,16 @@ final class AudioEngineService {
     private func applySeek(to time: TimeInterval, format: AVAudioFormat) {
         let sampleRate = format.sampleRate
         let frame = AVAudioFramePosition(time * sampleRate)
-        segmentStartFrame = min(max(frame, 0), playbackEndFrame())
+        let endFrame = playbackEndFrame()
+        segmentStartFrame = min(max(frame, 0), max(endFrame - 1, 0))
         segmentOffsetInFirstChunk = AVAudioFrameCount(segmentStartFrame % Int64(chunkDurationFrames))
         scheduledUpToIndex = Int(segmentStartFrame / Int64(chunkDurationFrames))
 
+        isPaused = false
         decodePipeline?.reset()
         playerNode.stop()
         scheduleFromCurrentPosition()
-        if engine.isRunning {
+        if engine.isRunning, segmentStartFrame < playbackEndFrame() {
             playerNode.play()
             startProgressTimer()
         }
@@ -267,7 +310,9 @@ final class AudioEngineService {
                         let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
                         self.onBuffering?(false)
                         guard ok else { return }
-                        available = self.availableChunkCount()
+                        let newAvailable = self.availableChunkCount()
+                        if newAvailable <= available { break }  // download complete, nothing new — treat as EOF
+                        available = newAvailable
                     } else {
                         break  // non-progressive: all chunks consumed
                     }
@@ -322,10 +367,13 @@ final class AudioEngineService {
 
             // Loop exited naturally: all chunks scheduled (or non-progressive EOF)
             guard generation == self.scheduleGeneration, !Task.isCancelled else { return }
-            self.schedulerFinishedAllChunks = true
-            if self.buffersInFlight == 0 {
-                self.stopProgressTimer()
-                self.onTrackFinished?()
+            Task { @MainActor [weak self] in
+                guard let self, generation == self.scheduleGeneration else { return }
+                self.schedulerFinishedAllChunks = true
+                if self.buffersInFlight == 0 {
+                    self.stopProgressTimer()
+                    self.onTrackFinished?()
+                }
             }
         }
     }
@@ -407,10 +455,13 @@ final class AudioEngineService {
         if isProgressiveLoad {
             return totalFrameCount
         }
+        if totalFrameCount > 0 {
+            return totalFrameCount
+        }
         if let knownDuration, let format = processingFormat, format.sampleRate > 0 {
             return AVAudioFramePosition(knownDuration * format.sampleRate)
         }
-        return totalFrameCount
+        return 0
     }
 
     private func refreshProgressiveSourceIfNeeded() async throws {
@@ -512,7 +563,19 @@ final class AudioEngineService {
                     Int(remainingFrames) * MemoryLayout<Int16>.size
                 )
             }
+        case .pcmFormatInt32:
+            guard let sourceChannels = chunk.int32ChannelData,
+                  let destinationChannels = partial.int32ChannelData else { return nil }
+            for channel in 0..<channelCount {
+                memcpy(
+                    destinationChannels[channel],
+                    sourceChannels[channel].advanced(by: Int(frameOffset)),
+                    Int(remainingFrames) * MemoryLayout<Int32>.size
+                )
+            }
         default:
+            // pcmFormatFloat64 and other formats: AVAudioPCMBuffer has no typed channel
+            // accessor for them, so fall back to the full chunk (seek offset is lost).
             return nil
         }
 
@@ -520,6 +583,7 @@ final class AudioEngineService {
     }
 
     private func stopInternal(resetProgress: Bool) {
+        isPaused = false
         cancelScheduler()
         scheduleGeneration += 1
         playerNode.stop()

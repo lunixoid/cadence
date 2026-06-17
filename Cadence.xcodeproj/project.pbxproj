@@ -72,6 +72,8 @@
 		A10000010000000000000020 /* NavigationStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000020 /* NavigationStateStore.swift */; };
 		E10000010000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10000010000000000000001 /* Assets.xcassets */; };
 		T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000004 /* JellyfinFavoritesTests.swift */; };
+		T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000020 /* AudioEngineTestHelpers.swift */; };
+		T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000021 /* AudioEngineServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -143,6 +145,8 @@
 	D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 	T10000010000000000000003 /* CadenceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CadenceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 	T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
+	T10000010000000000000020 /* AudioEngineTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTestHelpers.swift; sourceTree = "<group>"; };
+	T10000010000000000000021 /* AudioEngineServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -457,6 +461,8 @@
 		isa = PBXGroup;
 		children = (
 			T10000010000000000000004 /* JellyfinFavoritesTests.swift */,
+			T10000010000000000000020 /* AudioEngineTestHelpers.swift */,
+			T10000010000000000000021 /* AudioEngineServiceTests.swift */,
 		);
 		path = CadenceTests;
 		sourceTree = "<group>";
@@ -641,6 +647,8 @@
 		buildActionMask = 2147483647;
 		files = (
 			T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */,
+			T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */,
+			T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};

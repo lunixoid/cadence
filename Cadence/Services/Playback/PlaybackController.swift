@@ -17,8 +17,14 @@ final class PlaybackController {
     private var loadSerialTask: Task<Void, Never>?
     private var pendingLoadTrack: Track?
     private var prefetchTask: Task<Void, Never>?
+    private var prefetchTrackID: UUID?
     private var prefetchedCache: (trackID: UUID, fileURL: URL)?
     private var activeLoadGeneration = 0
+
+    private enum TrackLoadSource {
+        case local(URL)
+        case progressive(ProgressiveAudioAsset)
+    }
 
     var isPlaying = false
     var isLoading = false
@@ -71,6 +77,17 @@ final class PlaybackController {
         audioEngine.onTrackFinished = { [weak self] in
             Task { @MainActor in
                 self?.handleTrackFinished()
+            }
+        }
+
+        audioEngine.onBuffering = { [weak self] isBuffering in
+            Task { @MainActor in
+                guard let self else { return }
+                if isBuffering {
+                    self.isLoading = true
+                } else if self.isPlaying {
+                    self.isLoading = false
+                }
             }
         }
     }
@@ -203,7 +220,7 @@ final class PlaybackController {
         pendingLoadTrack = track
 
         if loadSerialTask != nil {
-            _ = beginLoadSession()
+            _ = beginLoadSession(keepPrefetchFor: prefetchTrackIDsToKeep(for: track))
             return
         }
 
@@ -324,11 +341,16 @@ final class PlaybackController {
 
     /// Cancels in-flight loads, stops audio, and returns a generation token for the new load.
     @discardableResult
-    private func beginLoadSession() -> Int {
+    private func beginLoadSession(keepPrefetchFor trackIDs: Set<UUID> = []) -> Int {
         loadTask?.cancel()
         loadTask = nil
-        prefetchTask?.cancel()
-        prefetchTask = nil
+
+        if let prefetchTrackID, !trackIDs.contains(prefetchTrackID) {
+            prefetchTask?.cancel()
+            prefetchTask = nil
+            self.prefetchTrackID = nil
+        }
+
         activeLoadGeneration += 1
         audioEngine.stop()
         return activeLoadGeneration
@@ -338,30 +360,65 @@ final class PlaybackController {
         generation == activeLoadGeneration && !Task.isCancelled
     }
 
-    private func resolveLocalURL(for track: Track) async throws -> URL {
+    private func resolveLoadSource(for track: Track) async throws -> TrackLoadSource {
         if track.fileURL.isFileURL {
-            return track.fileURL
+            return .local(track.fileURL)
         }
+
         if let cached = prefetchedCache, cached.trackID == track.id {
             prefetchedCache = nil
-            return cached.fileURL
+            if await AudioCache.shared.hasCachedFile(trackID: track.id) {
+                return .local(cached.fileURL)
+            }
+        } else {
+            prefetchedCache = nil
         }
-        prefetchedCache = nil
-        return try await AudioCache.shared.localURL(for: track.fileURL, trackID: track.id)
+
+        if await AudioCache.shared.hasCachedFile(trackID: track.id),
+           let cachedURL = AudioCache.cachedFileURL(trackID: track.id) {
+            AudioCache.touch(cachedURL)
+            return .local(cachedURL)
+        }
+
+        let asset = try await AudioCache.shared.progressiveAsset(for: track.fileURL, trackID: track.id)
+        if await asset.isComplete(), let cachedURL = AudioCache.cachedFileURL(trackID: track.id) {
+            return .local(cachedURL)
+        }
+        return .progressive(asset)
+    }
+
+    private func loadTrackIntoEngine(_ source: TrackLoadSource, track: Track) async throws {
+        switch source {
+        case .local(let url):
+            try await audioEngine.load(url: url)
+        case .progressive(let asset):
+            try await audioEngine.loadProgressive(asset: asset, expectedDuration: track.duration)
+        }
+    }
+
+    private func prefetchTrackIDsToKeep(for track: Track) -> Set<UUID> {
+        var ids: Set<UUID> = [track.id]
+        if let nextID = playbackQueue.peekNext(repeatMode: repeatMode)?.id {
+            ids.insert(nextID)
+        }
+        if let prefetchTrackID {
+            ids.insert(prefetchTrackID)
+        }
+        return ids
     }
 
     private func performOneLoad(_ track: Track) async {
-        let generation = beginLoadSession()
+        let generation = beginLoadSession(keepPrefetchFor: prefetchTrackIDsToKeep(for: track))
         isPlaying = false
         isLoading = true
 
         do {
-            let localURL = try await resolveLocalURL(for: track)
+            let source = try await resolveLoadSource(for: track)
             guard isLoadGenerationCurrent(generation) else {
                 isLoading = false
                 return
             }
-            try await audioEngine.load(url: localURL)
+            try await loadTrackIntoEngine(source, track: track)
             guard isLoadGenerationCurrent(generation) else {
                 isLoading = false
                 return
@@ -385,10 +442,16 @@ final class PlaybackController {
     }
 
     private func schedulePrefetch() {
-        prefetchTask?.cancel()
         guard let next = playbackQueue.peekNext(repeatMode: repeatMode),
               !next.fileURL.isFileURL,
               prefetchedCache?.trackID != next.id else { return }
+
+        if prefetchTrackID == next.id, prefetchTask != nil {
+            return
+        }
+
+        prefetchTask?.cancel()
+        prefetchTrackID = next.id
 
         let url = next.fileURL
         let trackID = next.id
@@ -399,8 +462,13 @@ final class PlaybackController {
                 let localURL = try await AudioCache.shared.localURL(for: url, trackID: trackID)
                 guard !Task.isCancelled else { return }
                 self.prefetchedCache = (trackID: trackID, fileURL: localURL)
+                if self.prefetchTrackID == trackID {
+                    self.prefetchTrackID = nil
+                }
             } catch {
-                // Prefetch failed — next transition will download normally.
+                if self.prefetchTrackID == trackID {
+                    self.prefetchTrackID = nil
+                }
             }
         }
     }
@@ -408,15 +476,15 @@ final class PlaybackController {
     private func loadCurrentTrack(seekTo time: TimeInterval, shouldPlay: Bool) {
         guard let track = currentTrack else { return }
 
-        let generation = beginLoadSession()
+        let generation = beginLoadSession(keepPrefetchFor: prefetchTrackIDsToKeep(for: track))
         isLoading = true
 
         loadTask = Task {
             do {
-                let localURL = try await resolveLocalURL(for: track)
+                let source = try await resolveLoadSource(for: track)
                 guard isLoadGenerationCurrent(generation) else { return }
 
-                try await audioEngine.load(url: localURL)
+                try await loadTrackIntoEngine(source, track: track)
                 guard isLoadGenerationCurrent(generation) else { return }
 
                 duration = audioEngine.duration()

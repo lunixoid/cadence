@@ -15,34 +15,46 @@ enum EQBand: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+// Пресеты заточены под Sony WH-1000XM5 (V-образная АЧХ с завышенным басом
+// и просевшей серединой). Принцип: саб-рамбл оставляем, бубнящий бас 125–250 Hz
+// поджимаем, просевшую середину заполняем, presence/воздух добавляем аккуратно.
+// Максимальный буст ограничен +5 dB — остальное добирается срезами и преампом
+// (AudioEngineService.globalGain), поэтому сигнал не клиппует и не дребезжит.
+// Бэнды: 32 · 64 · 125 · 250 · 500 · 1K · 2K · 4K · 8K · 16K
 enum EQPreset: String, CaseIterable, Identifiable {
     case flat = "Flat"
-    case rock = "Rock"
-    case pop = "Pop"
+    case signature = "Signature"
+    case bass = "Bass"
+    case heavyMetal = "Heavy Metal"
+    case alternative = "Alternative / Rock"
+    case animeOST = "Anime OST"
     case jazz = "Jazz"
+    case pop = "Pop"
     case classical = "Classical"
     case electronic = "Electronic"
     case hipHop = "Hip-Hop"
     case acoustic = "Acoustic"
-    case bassBoost = "Bass Boost"
-    case vocalBoost = "Vocal Boost"
+    case vocal = "Vocal"
     case custom = "Custom"
 
     var id: String { rawValue }
 
     var gains: [Double] {
         switch self {
-        case .flat: return Array(repeating: 0, count: 10)
-        case .rock: return [6, 5, 3, 0, -2, -3, -2, 1, 4, 5]
-        case .pop: return [-1, 0, 2, 3, 2, 0, -1, -1, 0, 0]
-        case .jazz: return [3, 2, 1, 2, -2, -2, 0, 1, 2, 3]
-        case .classical: return [4, 3, 2, 1, -2, -2, 0, 2, 3, 4]
-        case .electronic: return [5, 4, 1, 0, -3, -4, -2, 1, 4, 5]
-        case .hipHop: return [5, 4, 1, 1, -2, -2, -1, 1, 2, 1]
-        case .acoustic: return [3, 2, 2, 1, 1, 0, 0, 1, 1, 2]
-        case .bassBoost: return [6, 5, 4, 2, 0, -1, -1, 0, 0, 0]
-        case .vocalBoost: return [-2, -1, 0, 2, 4, 4, 3, 1, 0, -1]
-        case .custom: return Array(repeating: 0, count: 10)
+        case .flat:        return Array(repeating: 0, count: 10)
+        case .signature:   return [3, 4, 0, -1, 0, 1, 2, 2, 3, 3]
+        case .bass:        return [5, 5, 2, -1, -1, 0, 0, 1, 2, 2]
+        case .heavyMetal:  return [4, 4, 1, 0, 1, 1, 3, 3, 4, 2]
+        case .alternative: return [3, 3, 1, 0, 0, 1, 2, 2, 3, 3]
+        case .animeOST:    return [2, 3, 0, 0, 1, 2, 3, 2, 3, 4]
+        case .jazz:        return [3, 3, 1, 0, 1, 1, 0, 1, 2, 2]
+        case .pop:         return [2, 2, 1, 0, 1, 1, 1, 1, 2, 2]
+        case .classical:   return [2, 2, 1, 0, 0, 0, 0, 1, 2, 2]
+        case .electronic:  return [5, 4, 2, 0, -1, 0, 1, 2, 3, 4]
+        case .hipHop:      return [5, 5, 2, 0, -1, 0, 0, 1, 1, 1]
+        case .acoustic:    return [2, 2, 1, 1, 1, 1, 1, 1, 2, 2]
+        case .vocal:       return [-1, 0, 0, 1, 2, 3, 3, 2, 1, 0]
+        case .custom:      return Array(repeating: 0, count: 10)
         }
     }
 

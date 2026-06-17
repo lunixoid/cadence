@@ -1,92 +1,92 @@
-# Cadence — инструкции для агентов
+# Cadence — Agent Instructions
 
-## Документы
+## Documents
 
-- Спецификация: [`SPEC.md`](SPEC.md)
-- Дизайн: [`ux/`](ux/)
+- Specification / README: [`README.md`](README.md)
+- Design: [`ux/`](ux/)
 
-## Версионирование (SemVer)
+## Versioning (SemVer)
 
-Проект использует [Semantic Versioning 2.0.0](https://semver.org/lang/ru/): `MAJOR.MINOR.PATCH` (`X.Y.Z`).
+The project uses [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MINOR.PATCH` (`X.Y.Z`).
 
-### Где хранится версия
+### Where the version lives
 
-- **SemVer** — в `MARKETING_VERSION` в [`Cadence.xcodeproj/project.pbxproj`](Cadence.xcodeproj/project.pbxproj) (попадает в `CFBundleShortVersionString`). **Единственный источник правды** — прочитать все вхождения перед bump, не опираться на число в этом файле.
-- **Build number** — в `CURRENT_PROJECT_VERSION` (целое число, `CFBundleVersion`); увеличивать при каждой сборке/релизе, не смешивать с semver.
+- **SemVer** — in `MARKETING_VERSION` in [`Cadence.xcodeproj/project.pbxproj`](Cadence.xcodeproj/project.pbxproj) (maps to `CFBundleShortVersionString`). **Single source of truth** — read all occurrences before bumping; do not rely on the number in this file.
+- **Build number** — in `CURRENT_PROJECT_VERSION` (integer, `CFBundleVersion`); increment on every build/release, do not mix with semver.
 
-Справочно (сверить с pbxproj): **1.2.0**.
+Reference (verify against pbxproj): **1.2.0**.
 
-### Когда версию не менять
+### When not to change the version
 
-**Не трогать `MARKETING_VERSION`**, если в чате менялись только:
+**Do not touch `MARKETING_VERSION`** if only the following changed in the session:
 
-- документы: `SPEC.md`, `AGENTS.md`, `ux/`, README и прочий markdown;
-- обсуждение, план, review без правок кода приложения.
+- documents: `README.md`, `AGENTS.md`, `ux/`, or other markdown;
+- discussion, planning, review without any app code changes.
 
-Код приложения — Swift, `project.pbxproj` (исходники/ресурсы/targets), entitlements, ассеты с логикой сборки и т.п.
+App code means Swift, `project.pbxproj` (sources/resources/targets), entitlements, assets with build logic, etc.
 
-### Алгоритм выбора bump
+### Bump selection algorithm
 
-При **первой правке кода приложения** в новом чате:
+On the **first app code change** in a new session:
 
-1. Прочитать текущий `MARKETING_VERSION` в `project.pbxproj`.
-2. **До первого edit кода** написать одну строку (пример):
+1. Read the current `MARKETING_VERSION` in `project.pbxproj`.
+2. **Before the first code edit**, write one line (example):
 
-   `SemVer bump: MINOR (1.2.0 → 1.3.0) — причина: …`
+   `SemVer bump: MINOR (1.2.0 → 1.3.0) — reason: …`
 
-3. Пройти по схеме ниже и обновить все вхождения `MARKETING_VERSION` (Cadence и CadenceTests, Debug и Release).
-4. В конце кратко повторить версию и обоснование.
+3. Update all `MARKETING_VERSION` occurrences (Cadence and CadenceTests, Debug and Release).
+4. At the end, briefly repeat the version and rationale.
 
 ```mermaid
 flowchart TD
-    start[Первая правка в чате] --> q0{Менялся код приложения?}
-    q0 -->|нет: только docs, план, обсуждение| noBump[Версию не менять]
-    q0 -->|да| q1{Внутренний рефакторинг без эффекта для пользователя?}
-    q1 -->|да| patchRefactor[PATCH X.Y.Z+1]
-    q1 -->|нет| q2{Breaking change?}
-    q2 -->|да| major[MAJOR X+1.0.0]
-    q2 -->|нет| q3{Новый или изменённый UX или поведение?}
-    q3 -->|да| minor[MINOR X.Y+1.0]
-    q3 -->|нет| q4{Регрессия или краш: работало и сломалось?}
-    q4 -->|да| patch[PATCH X.Y.Z+1]
-    q4 -->|нет| minor
+    start[First edit in session] --> q0{Was app code changed?}
+    q0 -->|no: only docs, plan, discussion| noBump[Do not bump version]
+    q0 -->|yes| q1{Internal refactor with no user-visible effect?}
+    q1 -->|yes| patchRefactor[PATCH X.Y.Z+1]
+    q1 -->|no| q2{Breaking change?}
+    q2 -->|yes| major[MAJOR X+1.0.0]
+    q2 -->|no| q3{New or changed UX or behavior?}
+    q3 -->|yes| minor[MINOR X.Y+1.0]
+    q3 -->|no| q4{Regression or crash: worked before and broke?}
+    q4 -->|yes| patch[PATCH X.Y.Z+1]
+    q4 -->|no| minor
 ```
 
-### Компоненты X.Y.Z
+### X.Y.Z components
 
-| Компонент | Когда увеличивать | Пример |
-|-----------|-------------------|--------|
-| **X (MAJOR)** | Нарушена обратная совместимость: удалены или изменены публичные API, форматы данных, поведение, от которого могли зависеть пользователи | `1.4.2` → `2.0.0` |
-| **Y (MINOR)** | Новый функционал, доработка **отсутствующей** логики, изменение пользовательского поведения (в т.ч. по явному запросу) | `1.2.0` → `1.3.0` |
-| **Z (PATCH)** | Регрессия или краш (раньше работало → перестало), восстановление без смены задуманного UX; чистый рефакторинг без эффекта для пользователя | `1.3.0` → `1.3.1` |
+| Component | When to increment | Example |
+|-----------|-------------------|---------|
+| **X (MAJOR)** | Backward compatibility broken: public APIs, data formats, or user-facing behavior removed or changed in a way users may depend on | `1.4.2` → `2.0.0` |
+| **Y (MINOR)** | New functionality, implementation of previously missing logic, changed user-visible behavior (including explicit user requests) | `1.2.0` → `1.3.0` |
+| **Z (PATCH)** | Regression or crash (worked before → stopped working), restoration without changing intended UX; pure refactor with no user-visible effect | `1.3.0` → `1.3.1` |
 
-### Правила Cadence
+### Cadence rules
 
-- **MINOR по умолчанию**, если пользователь что-то увидит или почувствует иначе.
-- **«Не работает» ≠ PATCH.** Отсутствующая или непродуманная логика (shuffle при новой сессии, persistence избранного и т.п.) — **MINOR**, не багфикс.
-- **PATCH** — только регрессия/краш, рефакторинг без смены UX, отладочная инструментация без смены UX.
-- **Не опираться на формулировку задачи** («fix», «баг», «исправить») — классифицировать по **фактическому эффекту** для пользователя.
+- **MINOR by default** when the user will see or feel something different.
+- **"Doesn't work" ≠ PATCH.** Missing or poorly thought-out logic (shuffle in a new session, favorites persistence, etc.) is **MINOR**, not a bug fix.
+- **PATCH** — only regressions/crashes, refactors with no UX change, debug instrumentation with no UX change.
+- **Do not rely on task wording** ("fix", "bug", "correct") — classify by the **actual user-facing effect**.
 
-### Анти-паттерны
+### Anti-patterns
 
-| Ошибка | Правильно |
-|--------|-----------|
-| Задача названа «fix» / «баг» → автоматически PATCH | Оценить эффект: новое/изменённое поведение → MINOR |
-| «Исправление нежелательного автозапуска» → PATCH | Изменение поведения при запуске → MINOR |
-| Shuffle «не применялся» → PATCH как баг | Логика не была реализована → MINOR |
-| Правки только `SPEC.md` / `AGENTS.md` → PATCH | Код не менялся → **версию не менять** |
+| Mistake | Correct |
+|---------|---------|
+| Task named "fix" / "bug" → automatically PATCH | Assess the effect: new or changed behavior → MINOR |
+| "Fix unwanted auto-play" → PATCH | Behavior change on launch → MINOR |
+| Shuffle "wasn't applied" → PATCH as a bug | Logic was never implemented → MINOR |
+| Only `README.md` / `AGENTS.md` changes → PATCH | No code changed → **do not bump** |
 
-### Примеры
+### Examples
 
-| Изменение | Bump |
-|-----------|------|
-| Только `SPEC.md` / `AGENTS.md` / `ux/` | **не менять** |
-| Shuffle не применялся при новом альбоме (логика не была реализована) | MINOR |
-| Отключение автовоспроизведения при запуске | MINOR |
-| Jellyfin favorites не сохранялись (недоделанная persistence) | MINOR |
-| Новый экран, новая интеграция | MINOR |
-| Краш при `next()` в конце плейлиста | PATCH |
-| Рефакторинг без изменения поведения | PATCH |
-| Удаление поддержки старого формата плейлистов | MAJOR |
+| Change | Bump |
+|--------|------|
+| Only `README.md` / `AGENTS.md` / `ux/` | **no bump** |
+| Shuffle not applied on new album (logic was never implemented) | MINOR |
+| Disable auto-play on launch | MINOR |
+| Jellyfin favorites not saved (incomplete persistence) | MINOR |
+| New screen, new integration | MINOR |
+| Crash at `next()` at end of playlist | PATCH |
+| Refactor with no behavior change | PATCH |
+| Remove support for old playlist format | MAJOR |
 
-При сомнении между MINOR и PATCH — **MINOR**, если меняется или добавляется пользовательский функционал; **PATCH** — только если восстанавливается ранее работавшее без изменения задуманного UX.
+When in doubt between MINOR and PATCH — **MINOR** if user functionality changes or is added; **PATCH** only if previously working behavior is restored without changing the intended UX.

@@ -66,6 +66,7 @@
 	C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000011 /* JellyfinLibraryCache.swift */; };
 	C30000010000000000000002 /* ArtworkCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000012 /* ArtworkCache.swift */; };
 	C30000010000000000000003 /* AudioCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000013 /* AudioCache.swift */; };
+	C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000014 /* ProgressiveAudioDownload.swift */; };
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 		A10000010000000000000020 /* NavigationStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000020 /* NavigationStateStore.swift */; };
@@ -138,6 +139,7 @@
 	C30000010000000000000011 /* JellyfinLibraryCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryCache.swift; sourceTree = "<group>"; };
 	C30000010000000000000012 /* ArtworkCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkCache.swift; sourceTree = "<group>"; };
 	C30000010000000000000013 /* AudioCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCache.swift; sourceTree = "<group>"; };
+	C30000010000000000000014 /* ProgressiveAudioDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveAudioDownload.swift; sourceTree = "<group>"; };
 	D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 	T10000010000000000000003 /* CadenceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CadenceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 	T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 			C30000010000000000000011 /* JellyfinLibraryCache.swift */,
 			C30000010000000000000012 /* ArtworkCache.swift */,
 			C30000010000000000000013 /* AudioCache.swift */,
+			C30000010000000000000014 /* ProgressiveAudioDownload.swift */,
 		);
 		path = Cache;
 		sourceTree = "<group>";
@@ -629,6 +632,7 @@
 			C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */,
 			C30000010000000000000002 /* ArtworkCache.swift in Sources */,
 			C30000010000000000000003 /* AudioCache.swift in Sources */,
+			C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -708,7 +712,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.3.9;
+			MARKETING_VERSION = 1.4.1;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -738,7 +742,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.3.9;
+			MARKETING_VERSION = 1.4.1;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -760,7 +764,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.3.9;
+			MARKETING_VERSION = 1.4.1;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;
@@ -781,7 +785,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.3.9;
+			MARKETING_VERSION = 1.4.1;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;

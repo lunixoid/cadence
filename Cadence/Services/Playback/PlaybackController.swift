@@ -34,6 +34,8 @@ final class PlaybackController {
     var duration: TimeInterval = 0
     var volume: Double = 72 {
         didSet {
+            let vol = Int(volume)
+            logger.info("Action: volume → \(vol)%")
             audioEngine.volume = volume
             persistState()
         }
@@ -84,6 +86,7 @@ final class PlaybackController {
         audioEngine.onBuffering = { [weak self] isBuffering in
             Task { @MainActor in
                 guard let self else { return }
+                logger.info("Buffering: \(isBuffering ? "start" : "end")")
                 if isBuffering {
                     self.isLoading = true
                 } else if self.isPlaying {
@@ -139,6 +142,7 @@ final class PlaybackController {
 
     func play(tracks: [Track], startAt index: Int = 0, source: AutoplaySource = .adHoc, originalTracks: [Track]? = nil) {
         guard !tracks.isEmpty else { return }
+        logger.info("Action: play \(tracks.count) track(s) startAt=\(index)")
         _ = beginLoadSession()
         playbackQueue.beginSession(
             tracks: tracks,
@@ -156,12 +160,14 @@ final class PlaybackController {
     func playAlbum(_ album: Album, shuffled: Bool) {
         let tracks = libraryStore.tracks(for: album)
         guard !tracks.isEmpty else { return }
+        logger.info("Action: playAlbum \(tracks.count) tracks shuffled=\(shuffled)")
         if shuffled { shuffleOn = true }
         let startAt = shuffled ? Int.random(in: 0..<tracks.count) : 0
         play(tracks: tracks, startAt: startAt, source: .album(album.id), originalTracks: tracks)
     }
 
     func playTrack(_ track: Track) {
+        logger.info("Action: playTrack '\(track.title)'")
         if let albumTracks = libraryStore.tracks(forAlbumID: track.albumID).nilIfEmpty,
            let index = albumTracks.firstIndex(of: track) {
             play(tracks: albumTracks, startAt: index, source: .album(track.albumID))
@@ -171,6 +177,7 @@ final class PlaybackController {
     }
 
     func playTrack(_ track: Track, in tracks: [Track], source: AutoplaySource) {
+        logger.info("Action: playTrack '\(track.title)' in context (\(tracks.count) tracks)")
         guard let index = tracks.firstIndex(of: track) else {
             playTrack(track)
             return
@@ -189,9 +196,11 @@ final class PlaybackController {
         }
 
         if isPlaying {
+            logger.info("Action: togglePlayPause → pause")
             audioEngine.pause()
             isPlaying = false
         } else if currentTrack != nil {
+            logger.info("Action: togglePlayPause → play")
             audioEngine.play()
             isPlaying = true
         }
@@ -203,17 +212,21 @@ final class PlaybackController {
         guard playbackQueue.hasActiveSession else { return }
 
         guard let track = playbackQueue.consumeNext(repeatMode: repeatMode) else {
+            logger.info("Action: next → end of queue, stopping")
             stopPlayback()
             persistState()
             return
         }
 
+        logger.info("Action: next → '\(track.title)'")
         scheduleLoadedTrack(track)
     }
 
     func previous() {
         guard playbackQueue.hasActiveSession else { return }
 
+        let prevProgress = progress
+        logger.info("Action: previous (progress=\(String(format: "%.1f", prevProgress))s)")
         if progress > 3 {
             seek(to: 0)
             return
@@ -246,6 +259,8 @@ final class PlaybackController {
     }
 
     func seek(to time: TimeInterval) {
+        let fromTime = progress
+        logger.info("Action: seek \(String(format: "%.2f", fromTime))s → \(String(format: "%.2f", time))s")
         progress = time
         audioEngine.seek(to: time)
         persistState()
@@ -253,6 +268,7 @@ final class PlaybackController {
 
     func toggleShuffle() {
         shuffleOn.toggle()
+        logger.info("Action: shuffle → \(self.shuffleOn)")
         if shuffleOn {
             playbackQueue.shuffleRemainingAutoplay()
         } else {
@@ -263,10 +279,12 @@ final class PlaybackController {
 
     func toggleRepeat() {
         repeatMode.cycle()
+        logger.info("Action: repeat → \(String(describing: self.repeatMode))")
         persistState()
     }
 
     func playNext(_ track: Track) {
+        logger.info("Action: playNext '\(track.title)'")
         guard playbackQueue.hasActiveSession else {
             playTrack(track)
             return
@@ -277,6 +295,7 @@ final class PlaybackController {
     }
 
     func addToQueue(_ track: Track) {
+        logger.info("Action: addToQueue '\(track.title)'")
         guard playbackQueue.hasActiveSession else {
             playTrack(track)
             return
@@ -306,6 +325,7 @@ final class PlaybackController {
     }
 
     func clearUpNext() {
+        logger.info("Action: clearUpNext")
         playbackQueue.clearUpNext()
         persistState()
     }
@@ -373,12 +393,14 @@ final class PlaybackController {
 
     private func resolveLoadSource(for track: Track) async throws -> TrackLoadSource {
         if track.fileURL.isFileURL {
+            logger.info("Load source: local '\(track.title)'")
             return .local(track.fileURL)
         }
 
         if let cached = prefetchedCache, cached.trackID == track.id {
             prefetchedCache = nil
             if await AudioCache.shared.hasCachedFile(trackID: track.id) {
+                logger.info("Load source: prefetch-hit '\(track.title)'")
                 return .local(cached.fileURL)
             }
         } else {
@@ -388,13 +410,16 @@ final class PlaybackController {
         if await AudioCache.shared.hasCachedFile(trackID: track.id),
            let cachedURL = AudioCache.cachedFileURL(trackID: track.id) {
             AudioCache.touch(cachedURL)
+            logger.info("Load source: cache-hit '\(track.title)'")
             return .local(cachedURL)
         }
 
         let asset = try await AudioCache.shared.progressiveAsset(for: track.fileURL, trackID: track.id)
         if await asset.isComplete(), let cachedURL = AudioCache.cachedFileURL(trackID: track.id) {
+            logger.info("Load source: cache-hit (completed) '\(track.title)'")
             return .local(cachedURL)
         }
+        logger.info("Load source: progressive '\(track.title)'")
         return .progressive(asset)
     }
 
@@ -422,6 +447,7 @@ final class PlaybackController {
         let generation = beginLoadSession(keepPrefetchFor: prefetchTrackIDsToKeep(for: track))
         isPlaying = false
         isLoading = true
+        logger.info("Load start: '\(track.title)' gen=\(generation)")
 
         do {
             let source = try await resolveLoadSource(for: track)
@@ -439,6 +465,7 @@ final class PlaybackController {
             audioEngine.play()
             isPlaying = true
             isLoading = false
+            logger.info("Load done: '\(track.title)' duration=\(String(format: "%.1f", self.duration))s")
             recentStore.record(track: track)
             mediaRemote.publishNowPlayingInfo()
             schedulePrefetch()
@@ -448,6 +475,7 @@ final class PlaybackController {
             guard isLoadGenerationCurrent(generation) else { return }
             logger.error("Failed to load track: \(error.localizedDescription)")
             isLoading = false
+            logger.info("Load failed, advancing to next track")
             next()
         }
     }
@@ -526,6 +554,8 @@ final class PlaybackController {
     }
 
     private func handleTrackFinished() {
+        let endedTitle = currentTrack?.title ?? "?"
+        logger.info("Track end: '\(endedTitle)' repeatMode=\(String(describing: self.repeatMode))")
         switch repeatMode {
         case .one:
             loadAndPlayCurrentTrack()

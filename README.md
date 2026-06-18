@@ -288,6 +288,36 @@ Storage:
 
 ---
 
+## Diagnostic Logging
+
+Playback events are logged via `os.log` (subsystem `dev.personal.cadence`). macOS retains `.info`-level logs on disk for several days — no configuration needed.
+
+Two log categories:
+
+| Category | What's logged |
+|---|---|
+| `Playback` | User actions (play/pause, seek, next, shuffle…), track load lifecycle (source resolution, duration, errors), buffering state |
+| `AudioEngine` | Chunk scheduled/consumed, backpressure, seek position, scheduler start/stop, decode cache hit/miss |
+
+### View logs in Terminal
+
+```bash
+# All events for the last hour
+log show --last 1h --predicate 'subsystem == "dev.personal.cadence"' --info
+
+# Only chunk/engine events (add --debug for cache hit/miss and decode details)
+log show --last 1h --predicate 'subsystem == "dev.personal.cadence" and category == "AudioEngine"' --info --debug
+
+# Live stream while the app is running
+log stream --predicate 'subsystem == "dev.personal.cadence"' --level info
+```
+
+### View logs in Console.app
+
+Open **Console.app** → search field → enter `dev.personal.cadence` → select "Subsystem". Use the time filter to limit to the last hour.
+
+---
+
 ## Error Handling
 
 - Network/decoding errors logged via `os_log`

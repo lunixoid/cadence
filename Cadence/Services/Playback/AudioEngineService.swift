@@ -1,5 +1,8 @@
 import AVFoundation
 import Foundation
+import os.log
+
+private let engineLogger = Logger(subsystem: "dev.personal.cadence", category: "AudioEngine")
 
 @MainActor
 final class AudioEngineService {
@@ -238,6 +241,11 @@ final class AudioEngineService {
         segmentOffsetInFirstChunk = 0
         scheduledUpToIndex = 0
 
+        let totalChunks = chunkDurationFrames > 0
+            ? Int((totalFrameCount + Int64(chunkDurationFrames) - 1) / Int64(chunkDurationFrames))
+            : 0
+        engineLogger.info("Loaded: \(totalChunks) chunks, \(Int(source.format.sampleRate))Hz, progressive=\(self.isProgressiveLoad)")
+
         engine.disconnectNodeOutput(playerNode)
         engine.disconnectNodeOutput(eqNode)
         engine.connect(playerNode, to: eqNode, format: source.format)
@@ -253,6 +261,10 @@ final class AudioEngineService {
         segmentStartFrame = min(max(frame, 0), max(endFrame - 1, 0))
         segmentOffsetInFirstChunk = AVAudioFrameCount(segmentStartFrame % Int64(chunkDurationFrames))
         scheduledUpToIndex = Int(segmentStartFrame / Int64(chunkDurationFrames))
+
+        let seekChunk = scheduledUpToIndex
+        let seekOffset = segmentOffsetInFirstChunk
+        engineLogger.info("Seek → \(String(format: "%.2f", time))s (chunk=\(seekChunk), offset=\(seekOffset))")
 
         isPaused = false
         decodePipeline?.reset()
@@ -277,6 +289,7 @@ final class AudioEngineService {
         let remainingFrames = playbackEndFrame() - segmentStartFrame
         guard remainingFrames > 0 else {
             stopProgressTimer()
+            engineLogger.info("Track finished (no frames remaining)")
             onTrackFinished?()
             return
         }
@@ -291,6 +304,7 @@ final class AudioEngineService {
         schedulerTask = Task { [weak self] in
             guard let self else { return }
 
+            engineLogger.info("Scheduler started gen=\(generation)")
             var index = self.scheduledUpToIndex
             let firstIndex = index  // seek offset applies only to the first chunk
 
@@ -298,7 +312,9 @@ final class AudioEngineService {
 
                 // ── Backpressure: cap buffered data ──────────────────────────────
                 if self.buffersInFlight >= self.maxBuffersInFlight {
+                    engineLogger.info("Backpressure: \(self.buffersInFlight)/\(self.maxBuffersInFlight) buffers in flight, waiting")
                     await self.waitForBufferConsumed()
+                    engineLogger.info("Backpressure released")
                     guard !Task.isCancelled, generation == self.scheduleGeneration else { return }
                 }
 
@@ -306,9 +322,11 @@ final class AudioEngineService {
                 var available = self.availableChunkCount()
                 if index >= available {
                     if self.isProgressiveLoad {
+                        engineLogger.info("Buffering: waiting for chunk \(index)")
                         self.onBuffering?(true)
                         let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
                         self.onBuffering?(false)
+                        engineLogger.info("Buffering: chunk \(index) available")
                         guard ok else { return }
                         let newAvailable = self.availableChunkCount()
                         if newAvailable <= available { break }  // download complete, nothing new — treat as EOF
@@ -327,9 +345,11 @@ final class AudioEngineService {
                     sourceChunk = try await pipeline.buffer(for: index)
                 } catch {
                     if self.isProgressiveLoad {
+                        engineLogger.info("Buffering: waiting for chunk \(index) (decode error)")
                         self.onBuffering?(true)
                         let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
                         self.onBuffering?(false)
+                        engineLogger.info("Buffering: chunk \(index) available")
                         guard ok else { return }
                         continue  // retry same index
                     } else {
@@ -347,6 +367,8 @@ final class AudioEngineService {
                 }
 
                 // ── Schedule IN ORDER ────────────────────────────────────────────
+                let scheduledIndex = index
+                engineLogger.info("Chunk \(scheduledIndex) scheduled")
                 self.buffersInFlight += 1
                 self.scheduledUpToIndex = index + 1
 
@@ -354,9 +376,11 @@ final class AudioEngineService {
                     Task { @MainActor in
                         guard let self, generation == self.scheduleGeneration else { return }
                         self.buffersInFlight -= 1
+                        engineLogger.info("Chunk \(scheduledIndex) consumed (inFlight=\(self.buffersInFlight))")
                         self.signalBufferConsumed()
                         if self.buffersInFlight == 0, self.schedulerFinishedAllChunks {
                             self.stopProgressTimer()
+                            engineLogger.info("Track finished (gen=\(generation))")
                             self.onTrackFinished?()
                         }
                     }
@@ -370,8 +394,10 @@ final class AudioEngineService {
             Task { @MainActor [weak self] in
                 guard let self, generation == self.scheduleGeneration else { return }
                 self.schedulerFinishedAllChunks = true
+                engineLogger.info("Scheduler: all chunks scheduled gen=\(generation)")
                 if self.buffersInFlight == 0 {
                     self.stopProgressTimer()
+                    engineLogger.info("Track finished (gen=\(generation))")
                     self.onTrackFinished?()
                 }
             }
@@ -690,6 +716,8 @@ private final class ChunkDecodePipeline: @unchecked Sendable {
         inFlight.insert(index)
         lock.unlock()
 
+        engineLogger.debug("Chunk \(index) decode started")
+
         Task.detached(priority: .userInitiated) { [source] in
             do {
                 let buffer = try source.decodeChunk(at: index)
@@ -701,6 +729,7 @@ private final class ChunkDecodePipeline: @unchecked Sendable {
     }
 
     private func completeDecode(index: Int, result: Result<AVAudioPCMBuffer, Error>) {
+        engineLogger.debug("Chunk \(index) decode complete")
         lock.lock()
         inFlight.remove(index)
 
@@ -797,6 +826,7 @@ private final class LazyChunkSource: @unchecked Sendable {
     func decodeChunk(at index: Int) throws -> AVAudioPCMBuffer {
         lock.lock()
         if let cached = chunkCache[index] {
+            engineLogger.debug("Chunk \(index) cache hit")
             lock.unlock()
             return cached
         }
@@ -831,6 +861,8 @@ private final class LazyChunkSource: @unchecked Sendable {
             throw Error.readBeyondBoundary
         }
 
+        engineLogger.debug("Chunk \(index) decoding frames \(startFrame)–\(startFrame + Int64(remaining))")
+
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: remaining) else {
             lock.unlock()
             throw Error.allocationFailed
@@ -851,6 +883,7 @@ private final class LazyChunkSource: @unchecked Sendable {
         if chunkCache.count > maxCachedChunks {
             let keysToRemove = chunkCache.keys.sorted().prefix(chunkCache.count - maxCachedChunks)
             for key in keysToRemove {
+                engineLogger.debug("Cache evict: chunk \(key)")
                 chunkCache.removeValue(forKey: key)
             }
         }

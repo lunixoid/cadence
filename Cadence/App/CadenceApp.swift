@@ -9,6 +9,7 @@ struct CadenceApp: App {
     @State private var recentStore = RecentStore()
     @State private var playbackController: PlaybackController
     @State private var uiState: AppUIState
+    @State private var hasRestoredState = false
 
     init() {
         let library = LibraryStore()
@@ -38,6 +39,8 @@ struct CadenceApp: App {
                 .environment(recentStore)
                 .environment(playbackController)
                 .task {
+                    guard !hasRestoredState else { return }
+                    hasRestoredState = true
                     async let folders: Void = libraryStore.restoreSavedFolders()
                     async let servers: Void = uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
                     _ = await (folders, servers)

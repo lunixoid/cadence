@@ -94,6 +94,16 @@ final class PlaybackController {
                 }
             }
         }
+
+        audioEngine.onDidStartPlayingBySystem = { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isPlaying = true
+                self.isLoading = false
+                self.mediaRemote.publishNowPlayingInfo()
+                self.persistState()
+            }
+        }
     }
 
     func setEQGain(at index: Int, gain: Double) {

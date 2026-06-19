@@ -24,8 +24,9 @@ struct CadenceApp: App {
         _recentStore = State(initialValue: recent)
         let playback = PlaybackController(libraryStore: library, recentStore: recent)
         _playbackController = State(initialValue: playback)
-        _uiState = State(initialValue: AppUIState(libraryStore: library))
-        PlaybackKeyboardMonitorService.shared.install(controller: playback)
+        let ui = AppUIState(libraryStore: library)
+        _uiState = State(initialValue: ui)
+        PlaybackKeyboardMonitorService.shared.install(controller: playback, uiState: ui)
     }
 
     var body: some Scene {

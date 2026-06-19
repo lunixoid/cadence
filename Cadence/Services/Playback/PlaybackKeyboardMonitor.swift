@@ -5,12 +5,14 @@ final class PlaybackKeyboardMonitorService {
     static let shared = PlaybackKeyboardMonitorService()
 
     private weak var controller: PlaybackController?
+    private weak var uiState: AppUIState?
     private var eventMonitor: Any?
 
     private init() {}
 
-    func install(controller: PlaybackController) {
+    func install(controller: PlaybackController, uiState: AppUIState) {
         self.controller = controller
+        self.uiState = uiState
         guard eventMonitor == nil else { return }
 
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .systemDefined]) { [weak self] event in
@@ -32,10 +34,16 @@ final class PlaybackKeyboardMonitorService {
     private func handle(_ event: NSEvent) -> Bool {
         switch event.type {
         case .keyDown:
-            guard event.keyCode == 49, !event.isARepeat else { return false }
-            event.window?.makeFirstResponder(nil)
-            perform(.playPause)
-            return true
+            switch event.keyCode {
+            case 49 where !event.isARepeat:
+                event.window?.makeFirstResponder(nil)
+                perform(.playPause)
+                return true
+            case 53:
+                return closeTopOverlay()
+            default:
+                return false
+            }
 
         case .systemDefined:
             guard let action = Self.mediaKeyAction(from: event) else { return false }
@@ -43,6 +51,16 @@ final class PlaybackKeyboardMonitorService {
             return true
 
         default:
+            return false
+        }
+    }
+
+    private func closeTopOverlay() -> Bool {
+        guard let uiState else { return false }
+        return MainActor.assumeIsolated {
+            if uiState.isConnectOpen { uiState.closeConnect(); return true }
+            if uiState.isPrefsOpen  { uiState.closePreferences(); return true }
+            if uiState.isEQOpen     { uiState.isEQOpen = false; return true }
             return false
         }
     }
@@ -105,13 +123,14 @@ final class PlaybackKeyboardMonitorService {
 
 struct PlaybackKeyboardMonitor: NSViewRepresentable {
     let controller: PlaybackController
+    let uiState: AppUIState
 
     func makeNSView(context: Context) -> NSView {
-        PlaybackKeyboardMonitorService.shared.install(controller: controller)
+        PlaybackKeyboardMonitorService.shared.install(controller: controller, uiState: uiState)
         return NSView()
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        PlaybackKeyboardMonitorService.shared.install(controller: controller)
+        PlaybackKeyboardMonitorService.shared.install(controller: controller, uiState: uiState)
     }
 }

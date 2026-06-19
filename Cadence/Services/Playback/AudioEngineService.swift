@@ -41,6 +41,7 @@ final class AudioEngineService {
     var onProgress: ((TimeInterval, TimeInterval) -> Void)?
     var onTrackFinished: (() -> Void)?
     var onBuffering: ((Bool) -> Void)?
+    var onDidStartPlayingBySystem: (() -> Void)?
 
     var volume: Double {
         get { Double(engine.mainMixerNode.outputVolume) * 100 }
@@ -216,6 +217,7 @@ final class AudioEngineService {
         do {
             try engine.start()
             applySeek(to: resumeTime, format: format)
+            onDidStartPlayingBySystem?()
         } catch {
             // Engine can't restart with new hardware config — stay silent
         }

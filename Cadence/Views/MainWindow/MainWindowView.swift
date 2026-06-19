@@ -40,10 +40,10 @@ struct MainWindowView: View {
         .background(CadenceTheme.windowBackground(for: resolvedColorScheme))
         .background(WindowConfigurator())
         .background {
-            PlaybackKeyboardMonitor(controller: playbackController)
+            PlaybackKeyboardMonitor(controller: playbackController, uiState: uiState)
         }
         .onAppear {
-            PlaybackKeyboardMonitorService.shared.install(controller: playbackController)
+            PlaybackKeyboardMonitorService.shared.install(controller: playbackController, uiState: uiState)
         }
     }
 

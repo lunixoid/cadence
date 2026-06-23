@@ -49,6 +49,9 @@ final class PlaybackController {
     }
 
     var eqGains: [Double] = EQPreset.signature.gains
+    var activeUserPresetID: UUID? = nil
+    var userPresets: [UserEQPreset] = []
+    private let userPresetStore = UserEQPresetStore()
 
     var currentTrack: Track? {
         playbackQueue.current
@@ -63,6 +66,7 @@ final class PlaybackController {
         self.recentStore = recentStore
 
         mediaRemote.configure(controller: self)
+        userPresets = userPresetStore.load()
 
         for (i, gain) in eqGains.enumerated() {
             audioEngine.setBandGain(at: i, gain: Float(gain))
@@ -109,9 +113,46 @@ final class PlaybackController {
     func setEQGain(at index: Int, gain: Double) {
         guard index < eqGains.count else { return }
         eqGains[index] = gain
+        activeUserPresetID = nil
         audioEngine.setBandGain(at: index, gain: Float(gain))
         applyGlobalGain()
         persistState()
+    }
+
+    func applyBuiltInPreset(_ preset: EQPreset) {
+        guard preset != .custom else { return }
+        activeUserPresetID = nil
+        for (i, gain) in preset.gains.enumerated() {
+            eqGains[i] = gain
+            audioEngine.setBandGain(at: i, gain: Float(gain))
+        }
+        applyGlobalGain()
+        persistState()
+    }
+
+    func applyUserPreset(_ preset: UserEQPreset) {
+        activeUserPresetID = preset.id
+        for (i, gain) in preset.gains.enumerated() {
+            eqGains[i] = gain
+            audioEngine.setBandGain(at: i, gain: Float(gain))
+        }
+        applyGlobalGain()
+        persistState()
+    }
+
+    func saveCurrentAsUserPreset(name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        let preset = UserEQPreset(name: trimmed, gains: eqGains)
+        userPresets.append(preset)
+        activeUserPresetID = preset.id
+        userPresetStore.save(userPresets)
+    }
+
+    func deleteUserPreset(id: UUID) {
+        userPresets.removeAll { $0.id == id }
+        if activeUserPresetID == id { activeUserPresetID = nil }
+        userPresetStore.save(userPresets)
     }
 
     /// Lowers the EQ pre-amp by the largest positive band boost (plus 1 dB safety
@@ -135,6 +176,7 @@ final class PlaybackController {
                 audioEngine.setBandGain(at: i, gain: Float(gain))
             }
             applyGlobalGain()
+            activeUserPresetID = userPresets.first { $0.gains == savedGains }?.id
         }
 
         guard let queue = stateStore.restoreQueue(from: snapshot, library: libraryStore) else {

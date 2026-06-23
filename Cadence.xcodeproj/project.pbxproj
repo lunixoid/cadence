@@ -70,6 +70,7 @@
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 		A10000010000000000000020 /* NavigationStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000020 /* NavigationStateStore.swift */; };
+		A10000010000000000000021 /* UserEQPresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000021 /* UserEQPresetStore.swift */; };
 		E10000010000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10000010000000000000001 /* Assets.xcassets */; };
 		T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000004 /* JellyfinFavoritesTests.swift */; };
 		T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000020 /* AudioEngineTestHelpers.swift */; };
@@ -132,6 +133,7 @@
 	B1000001000000000000001E /* PlaybackQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackQueue.swift; sourceTree = "<group>"; };
 	B1000001000000000000001F /* PlaybackStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackStateStore.swift; sourceTree = "<group>"; };
 	B10000010000000000000020 /* NavigationStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStateStore.swift; sourceTree = "<group>"; };
+	B10000010000000000000021 /* UserEQPresetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserEQPresetStore.swift; sourceTree = "<group>"; };
 	C20000010000000000000011 /* JellyfinClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinClient.swift; sourceTree = "<group>"; };
 	C20000010000000000000012 /* JellyfinLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryLoader.swift; sourceTree = "<group>"; };
 	C20000010000000000000013 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
@@ -298,6 +300,7 @@
 			B1000001000000000000000A /* FavoritesStore.swift */,
 			B1000001000000000000000C /* PlaylistStore.swift */,
 			B1000001000000000000000B /* RecentStore.swift */,
+			B10000010000000000000021 /* UserEQPresetStore.swift */,
 		);
 		path = UserData;
 		sourceTree = "<group>";
@@ -617,6 +620,7 @@
 			A1000001000000000000000A /* FavoritesStore.swift in Sources */,
 			A1000001000000000000000B /* RecentStore.swift in Sources */,
 			A1000001000000000000000C /* PlaylistStore.swift in Sources */,
+			A10000010000000000000021 /* UserEQPresetStore.swift in Sources */,
 			A1000001000000000000000D /* AlbumCoverView.swift in Sources */,
 			A1000001000000000000000E /* LibraryContentShell.swift in Sources */,
 			A1000001000000000000000F /* TrackListView.swift in Sources */,
@@ -720,7 +724,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.5.0;
+			MARKETING_VERSION = 1.6.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -750,7 +754,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.5.0;
+			MARKETING_VERSION = 1.6.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -772,7 +776,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.5.0;
+			MARKETING_VERSION = 1.6.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;
@@ -793,7 +797,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.5.0;
+			MARKETING_VERSION = 1.6.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;

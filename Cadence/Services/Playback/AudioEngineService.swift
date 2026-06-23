@@ -9,6 +9,16 @@ final class AudioEngineService {
     private let engine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()
     private let eqNode = AVAudioUnitEQ(numberOfBands: 10)
+    private let limiterNode: AVAudioUnitEffect = {
+        let desc = AudioComponentDescription(
+            componentType: kAudioUnitType_Effect,
+            componentSubType: kAudioUnitSubType_PeakLimiter,
+            componentManufacturer: kAudioUnitManufacturer_Apple,
+            componentFlags: 0,
+            componentFlagsMask: 0
+        )
+        return AVAudioUnitEffect(audioComponentDescription: desc)
+    }()
     private var progressTimer: Timer?
     private var currentFileURL: URL?
 
@@ -51,6 +61,7 @@ final class AudioEngineService {
     init() {
         engine.attach(playerNode)
         engine.attach(eqNode)
+        engine.attach(limiterNode)
 
         for (i, freq) in eqFrequencies.enumerated() {
             let band = eqNode.bands[i]
@@ -60,6 +71,11 @@ final class AudioEngineService {
             band.gain = 0
             band.bypass = false
         }
+
+        let limiterAU = limiterNode.audioUnit
+        AudioUnitSetParameter(limiterAU, kLimiterParam_AttackTime, kAudioUnitScope_Global, 0, 0.002, 0)
+        AudioUnitSetParameter(limiterAU, kLimiterParam_DecayTime, kAudioUnitScope_Global, 0, 0.020, 0)
+        AudioUnitSetParameter(limiterAU, kLimiterParam_PreGain, kAudioUnitScope_Global, 0, 0, 0)
 
         volume = 72
 
@@ -250,8 +266,10 @@ final class AudioEngineService {
 
         engine.disconnectNodeOutput(playerNode)
         engine.disconnectNodeOutput(eqNode)
+        engine.disconnectNodeOutput(limiterNode)
         engine.connect(playerNode, to: eqNode, format: source.format)
-        engine.connect(eqNode, to: engine.mainMixerNode, format: source.format)
+        engine.connect(eqNode, to: limiterNode, format: source.format)
+        engine.connect(limiterNode, to: engine.mainMixerNode, format: source.format)
 
         try engine.start()
     }

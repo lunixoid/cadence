@@ -70,12 +70,26 @@ struct EQWindowView: View {
     let isOpen: Bool
     let onClose: () -> Void
 
+    @State private var isShowingSavePopover = false
+    @State private var newPresetName = ""
+
     private let minGain: Double = -12
     private let maxGain: Double = 12
     private let trackHeight: CGFloat = 150
 
-    private var selectedPreset: EQPreset {
+    private var selectedBuiltInPreset: EQPreset {
         EQPreset.matching(gains: playbackController.eqGains)
+    }
+
+    private var isCustom: Bool {
+        playbackController.activeUserPresetID == nil && selectedBuiltInPreset == .custom
+    }
+
+    private var pickerTag: String {
+        if let uid = playbackController.activeUserPresetID {
+            return "user:\(uid.uuidString)"
+        }
+        return selectedBuiltInPreset.rawValue
     }
 
     var body: some View {
@@ -109,31 +123,66 @@ struct EQWindowView: View {
     }
 
     private var controlsRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             EQToggle(isOn: playbackController.eqEnabled) {
                 playbackController.eqEnabled.toggle()
             }
 
             Picker("Пресет", selection: Binding(
-                get: { selectedPreset },
-                set: { preset in
-                    guard preset != .custom else { return }
-                    for (i, gain) in preset.gains.enumerated() {
-                        playbackController.setEQGain(at: i, gain: gain)
+                get: { pickerTag },
+                set: { value in
+                    if value.hasPrefix("user:"),
+                       let uuidStr = value.split(separator: ":").last.map(String.init),
+                       let uuid = UUID(uuidString: uuidStr),
+                       let preset = playbackController.userPresets.first(where: { $0.id == uuid }) {
+                        playbackController.applyUserPreset(preset)
+                    } else if let preset = EQPreset(rawValue: value) {
+                        playbackController.applyBuiltInPreset(preset)
                     }
                 }
             )) {
                 ForEach(EQPreset.allCases.filter { $0 != .custom }) { preset in
-                    Text(preset.rawValue).tag(preset)
+                    Text(preset.rawValue).tag(preset.rawValue)
                 }
-                if selectedPreset == .custom {
-                    Text("Custom").tag(EQPreset.custom)
+                if isCustom {
+                    Text("Custom").tag(EQPreset.custom.rawValue)
+                }
+                if !playbackController.userPresets.isEmpty {
+                    Divider()
+                    ForEach(playbackController.userPresets) { preset in
+                        Text(preset.name).tag("user:\(preset.id.uuidString)")
+                    }
                 }
             }
             .labelsHidden()
             .pickerStyle(.menu)
             .frame(maxWidth: .infinity)
             .disabled(!playbackController.eqEnabled)
+
+            if let uid = playbackController.activeUserPresetID {
+                Button {
+                    playbackController.deleteUserPreset(id: uid)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Удалить пресет")
+            } else if isCustom {
+                Button {
+                    newPresetName = ""
+                    isShowingSavePopover = true
+                } label: {
+                    Text("Сохранить")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(CadenceTheme.accent(for: colorScheme))
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $isShowingSavePopover, arrowEdge: .bottom) {
+                    savePopover
+                }
+            }
         }
         .padding(.horizontal, 20)
         .frame(height: 44)
@@ -142,6 +191,42 @@ struct EQWindowView: View {
                 .fill(CadenceTheme.borderColor(for: colorScheme))
                 .frame(height: 0.5)
         }
+    }
+
+    private var savePopover: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Имя пресета")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.primary)
+
+            TextField("Мой пресет", text: $newPresetName)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 200)
+                .onSubmit { commitSave() }
+
+            HStack(spacing: 8) {
+                Button("Отмена") {
+                    isShowingSavePopover = false
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button("Сохранить") {
+                    commitSave()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(newPresetName.trimmingCharacters(in: .whitespaces).isEmpty)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16)
+    }
+
+    private func commitSave() {
+        playbackController.saveCurrentAsUserPreset(name: newPresetName)
+        isShowingSavePopover = false
     }
 
     private var slidersArea: some View {

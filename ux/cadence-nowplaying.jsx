@@ -254,6 +254,111 @@ function UpNextRow({ track, index, dark, onDoubleClick }) {
   );
 }
 
+// ─── Spectrum Visualizer ────────────────────────────────────────────────────
+
+function SpectrumVisualizer({ isPlaying, dark, accent }) {
+  const canvasRef = React.useRef(null);
+  const isPlayingRef = React.useRef(isPlaying);
+  const animRef = React.useRef(null);
+  const barsRef = React.useRef(
+    Array.from({ length: 10 }, () => ({ cur: 0.05, tgt: 0.05, peak: 0.05, peakHold: 0 }))
+  );
+  const lastTickRef = React.useRef(0);
+
+  React.useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const BANDS = ['32', '64', '125', '250', '500', '1K', '2K', '4K', '8K', '16K'];
+    // Rock preset normalized bias (0–1)
+    const BIAS = [6, 5, 3, 0, -2, -3, -2, 1, 4, 5].map(v => (v + 12) / 24);
+
+    const frame = (ts) => {
+      animRef.current = requestAnimationFrame(frame);
+      const playing = isPlayingRef.current;
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.width / dpr;
+      const H = canvas.height / dpr;
+
+      // New targets every ~150ms when playing
+      if (playing && ts - lastTickRef.current > 150) {
+        lastTickRef.current = ts;
+        barsRef.current.forEach((b, i) => {
+          const lo = 0.08 + BIAS[i] * 0.12;
+          const hi = 0.28 + BIAS[i] * 0.60;
+          b.tgt = lo + Math.random() * (hi - lo);
+        });
+      }
+
+      // Interpolate current → target
+      barsRef.current.forEach(b => {
+        b.cur += (b.tgt - b.cur) * (playing ? 0.18 : 0.06);
+        if (!playing) b.tgt = Math.max(0.04, b.tgt * 0.986);
+        // Peak hold & decay
+        if (b.cur >= b.peak) { b.peak = b.cur; b.peakHold = 52; }
+        else if (b.peakHold > 0) { b.peakHold--; }
+        else { b.peak = Math.max(b.cur, b.peak - 0.005); }
+      });
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      const labelH = 16;
+      const plotH = H - labelH - 4;
+      const n = 10;
+      const gap = 3;
+      const bw = (W - gap * (n - 1)) / n;
+
+      barsRef.current.forEach((b, i) => {
+        const x = i * (bw + gap);
+        const bh = Math.max(2, b.cur * plotH);
+        const y = plotH - bh + 2;
+
+        // Bar gradient
+        const g = ctx.createLinearGradient(0, y, 0, plotH + 2);
+        g.addColorStop(0, accent + 'f0');
+        g.addColorStop(1, accent + '40');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, bw, bh, [2, 2, 1, 1]);
+        else ctx.rect(x, y, bw, bh);
+        ctx.fill();
+
+        // Peak line
+        if (b.peak > 0.1) {
+          const py = plotH - b.peak * plotH + 2;
+          ctx.fillStyle = accent + 'cc';
+          ctx.fillRect(x, py - 1.5, bw, 1.5);
+        }
+
+        // Frequency label
+        ctx.fillStyle = dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)';
+        ctx.font = '9px -apple-system, "SF Pro Text", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(BANDS[i], x + bw / 2, H - 2);
+      });
+
+      ctx.restore();
+    };
+
+    animRef.current = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [dark, accent]);
+
+  const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={Math.round(214 * DPR)}
+      height={Math.round(110 * DPR)}
+      style={{ width: '100%', height: 110, display: 'block' }}
+    />
+  );
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 function NowPlayingScreen({ dark, isPlaying, onPlayPause, shuffleOn, repeatOn, onShuffleToggle, onRepeatToggle, playingAlbum, playingTrackIdx, onNext, onPrev, onPlayTrack, onGoToAlbum }) {
@@ -371,15 +476,15 @@ function NowPlayingScreen({ dark, isPlaying, onPlayPause, shuffleOn, repeatOn, o
         </div>
       </div>
 
-      {/* RIGHT — Up Next + Metadata (wide) */}
+      {/* RIGHT — Up Next + Spectrum (wide) */}
       {wide && (
         <div style={{
           width: 262, flexShrink: 0, position: 'relative', zIndex: 1,
           borderLeft: `0.5px solid ${borderColor}`,
-          display: 'flex', flexDirection: 'column', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          {/* Up Next */}
-          <div style={{ padding: '24px 12px 10px' }}>
+          {/* Up Next — scrollable, fills available space */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 12px 10px' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: mutedColor, textTransform: 'uppercase', padding: '0 12px', marginBottom: 8 }}>
               Далее в очереди
             </div>
@@ -388,36 +493,9 @@ function NowPlayingScreen({ dark, isPlaying, onPlayPause, shuffleOn, repeatOn, o
             ))}
           </div>
 
-          <div style={{ height: 0.5, background: borderColor, margin: '4px 16px 0' }} />
-
-          {/* Metadata */}
-          <div style={{ padding: '16px 24px 28px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: mutedColor, textTransform: 'uppercase', marginBottom: 12 }}>
-              Информация
-            </div>
-            {/* Format badge */}
-            <div style={{ marginBottom: 12 }}>
-              <span style={{
-                fontSize: 11, fontWeight: 700, letterSpacing: '0.05em',
-                color: dark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.58)',
-                background: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)',
-                padding: '3px 9px', borderRadius: 5,
-              }}>FLAC</span>
-            </div>
-            <div style={{ borderTop: `0.5px solid ${borderColor}`, paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 0 }}>
-              {[
-                ['Битрейт', '1411 kbps'],
-                ['Частота', '44 100 Hz'],
-                ['Каналы', 'Stereo'],
-                ['Трек', `${currentTrack?.index || safeIdx + 1} из ${tracks.length}`],
-                ['Диск', '1'],
-              ].map(([label, value]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0' }}>
-                  <span style={{ fontSize: 12, color: mutedColor }}>{label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: subColor, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
-                </div>
-              ))}
-            </div>
+          {/* Spectrum Visualizer — pinned to bottom */}
+          <div style={{ flexShrink: 0, borderTop: `0.5px solid ${borderColor}`, padding: '14px 20px 16px' }}>
+            <SpectrumVisualizer isPlaying={isPlaying} dark={dark} accent={accent} />
           </div>
         </div>
       )}

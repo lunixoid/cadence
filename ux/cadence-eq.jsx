@@ -4,16 +4,20 @@ const EQ_BANDS = ['32', '64', '125', '250', '500', '1K', '2K', '4K', '8K', '16K'
 const EQ_MIN = -12, EQ_MAX = 12;
 
 const EQ_PRESETS = {
-  'Flat':        [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-  'Rock':        [ 6,  5,  3,  0, -2, -3, -2,  1,  4,  5],
-  'Pop':         [-1,  0,  2,  3,  2,  0, -1, -1,  0,  0],
-  'Jazz':        [ 3,  2,  1,  2, -2, -2,  0,  1,  2,  3],
-  'Classical':   [ 4,  3,  2,  1, -2, -2,  0,  2,  3,  4],
-  'Electronic':  [ 5,  4,  1,  0, -3, -4, -2,  1,  4,  5],
-  'Hip-Hop':     [ 5,  4,  1,  1, -2, -2, -1,  1,  2,  1],
-  'Acoustic':    [ 3,  2,  2,  1,  1,  0,  0,  1,  1,  2],
-  'Bass Boost':  [ 6,  5,  4,  2,  0, -1, -1,  0,  0,  0],
-  'Vocal Boost': [-2, -1,  0,  2,  4,  4,  3,  1,  0, -1],
+  'Flat':               [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+  'Signature':          [ 3,  4,  0, -1,  0,  1,  2,  2,  3,  3],
+  'Bass':               [ 5,  5,  2, -1, -1,  0,  0,  1,  2,  2],
+  'Heavy Metal':        [ 4,  4,  1,  0,  1,  1,  3,  3,  4,  2],
+  'Alternative / Rock': [ 3,  3,  1,  0,  0,  1,  2,  2,  3,  3],
+  'Anime OST':          [ 2,  3,  0,  0,  1,  2,  3,  2,  3,  4],
+  'Jazz':               [ 3,  3,  1,  0,  1,  1,  0,  1,  2,  2],
+  'Pop':                [ 2,  2,  1,  0,  1,  1,  1,  1,  2,  2],
+  'Classical':          [ 2,  2,  1,  0,  0,  0,  0,  1,  2,  2],
+  'Electronic':         [ 5,  4,  2,  0, -1,  0,  1,  2,  3,  4],
+  'Hip-Hop':            [ 5,  5,  2,  0, -1,  0,  0,  1,  1,  1],
+  'Acoustic':           [ 2,  2,  1,  1,  1,  1,  1,  1,  2,  2],
+  'Vocal':              [-1,  0,  0,  1,  2,  3,  3,  2,  1,  0],
+  'Custom':             [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 };
 
 const TRACK_H = 150; // px for the slider visual track
@@ -128,35 +132,10 @@ function EQSlider({ value, bandLabel, onChange, dark, accent, enabled }) {
   );
 }
 
-function OverlayCloseButton({ onClose }) {
-  const [hovered, setHovered] = React.useState(false);
-
-  return (
-    <div
-      onClick={onClose}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: 12, height: 12, borderRadius: '50%',
-        background: '#FF5F57', cursor: 'pointer',
-        border: '0.5px solid rgba(0,0,0,0.12)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-      }}
-    >
-      {hovered && (
-        <svg width="6" height="6" viewBox="0 0 6 6" fill="none" style={{ pointerEvents: 'none' }}>
-          <path d="M1 1l4 4M5 1L1 5" stroke="rgba(0,0,0,0.55)" strokeWidth="1.3" strokeLinecap="round"/>
-        </svg>
-      )}
-    </div>
-  );
-}
-
 function EQWindow({ dark, isOpen, onClose }) {
   const [enabled,  setEnabled]  = React.useState(true);
-  const [preset,   setPreset]   = React.useState('Rock');
-  const [bands,    setBands]    = React.useState([...EQ_PRESETS['Rock']]);
+  const [preset,   setPreset]   = React.useState('Flat');
+  const [bands,    setBands]    = React.useState([...EQ_PRESETS['Flat']]);
 
   const accent      = dark ? '#0A84FF' : '#007AFF';
   const winBg       = dark ? 'rgba(36,36,40,0.97)' : 'rgba(250,250,252,0.97)';
@@ -209,12 +188,27 @@ function EQWindow({ dark, isOpen, onClose }) {
         background: headerBg,
         borderBottom: `0.5px solid ${borderColor}`,
       }}>
-        <OverlayCloseButton onClose={onClose} />
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.015em', color: textColor }}>Эквалайзер</span>
         </div>
-        {/* Balance spacer */}
-        <div style={{ width: 12, flexShrink: 0 }}></div>
+        <div
+          onClick={onClose}
+          style={{
+            width: 22, height: 22, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            color: dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)',
+            background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
+            flexShrink: 0,
+            transition: 'background 0.1s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.13)'}
+          onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'}
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </div>
       </div>
 
       {/* Controls row */}
@@ -337,4 +331,4 @@ function EQWindow({ dark, isOpen, onClose }) {
   );
 }
 
-Object.assign(window, { EQWindow, EQSlider, OverlayCloseButton, EQ_BANDS, EQ_PRESETS });
+Object.assign(window, { EQWindow, EQSlider, EQ_BANDS, EQ_PRESETS });

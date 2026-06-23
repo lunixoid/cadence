@@ -40,6 +40,15 @@ const IconArtist = ({ size = 16, color = 'currentColor' }) => (
   </CadenceIcon>
 );
 
+const IconGenre = ({ size = 16, color = 'currentColor' }) => (
+  <CadenceIcon size={size}>
+    <path d="M9 19V8l8-3v11" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="6.5" cy="19" r="2.5" stroke={color} strokeWidth="2"/>
+    <circle cx="14.5" cy="16" r="2.5" stroke={color} strokeWidth="2"/>
+    <path d="M17 5l-8 3" stroke={color} strokeWidth="2"/>
+  </CadenceIcon>
+);
+
 const IconPlaylist = ({ size = 16, color = 'currentColor' }) => (
   <CadenceIcon size={size}>
     <path d="M4 6h12M4 10h12M4 14h8" stroke={color} strokeWidth="2" strokeLinecap="round"/>
@@ -180,7 +189,7 @@ const IconSettings = ({ size = 16, color = 'currentColor' }) => (
 );
 
 Object.assign(window, {
-  IconNowPlaying, IconMusicNote, IconAlbum, IconArtist,
+  IconNowPlaying, IconMusicNote, IconAlbum, IconArtist, IconGenre,
   IconPlaylist, IconHeart, IconRecent, IconDownload, IconPlus,
   IconPlay, IconPause, IconPrevious, IconNext, IconShuffle, IconRepeat,
   IconVolume, IconVolumeMute, IconQueue, IconEqualizer, IconSearch,

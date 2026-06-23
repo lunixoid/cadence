@@ -215,7 +215,7 @@ struct NowPlayingDetailView: View {
             }
 
             NowPlayingActionPill(
-                icon: "square.stack",
+                icon: "opticaldisc",
                 label: "К альбому",
                 colorScheme: colorScheme,
                 action: {

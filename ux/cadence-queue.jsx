@@ -211,14 +211,18 @@ function QueuePanel({ dark, isOpen, onClose, currentTrack, currentAlbum }) {
             style={{
               width: 22, height: 22, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', fontSize: 14, fontWeight: 500, lineHeight: 1,
+              cursor: 'pointer',
               color: dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)',
               background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
               transition: 'background 0.1s',
             }}
             onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.13)'}
             onMouseLeave={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'}
-          >×</div>
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
         </div>
 
         {/* Scrollable body */}

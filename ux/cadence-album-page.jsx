@@ -270,15 +270,6 @@ function AlbumPage({ album, dark, playingTrackIdx, isPlaying, onPlayTrack, onBac
                 <IconShuffle size={12} />
                 Перемешать
               </button>
-              {/* More button */}
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                border: `0.5px solid ${dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', fontSize: 16, color: subColor, fontWeight: 700,
-                letterSpacing: '1px',
-              }}>⋯</div>
             </div>
           </div>
         </div>

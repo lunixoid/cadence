@@ -19,9 +19,8 @@ struct NowPlayingDetailView: View {
 
     private var upNextDisplayTracks: [Track] {
         let explicit = playbackController.upNextTracks
-        let remaining = max(0, 5 - explicit.count)
-        let autoplay = remaining > 0 ? playbackController.autoplayPreviewTracks(limit: remaining) : []
-        return Array((explicit + autoplay).prefix(5))
+        let autoplay = playbackController.autoplayPreviewTracks(limit: .max)
+        return explicit + autoplay
     }
 
     var body: some View {
@@ -58,7 +57,7 @@ struct NowPlayingDetailView: View {
             controlsColumn(track: track, album: album, containerWidth: containerWidth, isWide: true)
                 .frame(maxWidth: .infinity)
 
-            rightPanel(track: track, album: album, limit: 5)
+            rightPanel(track: track, album: album)
                 .frame(width: CadenceTheme.nowPlayingRightPanelWidth)
         }
     }
@@ -68,7 +67,7 @@ struct NowPlayingDetailView: View {
             controlsColumn(track: track, album: album, containerWidth: containerWidth, isWide: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            narrowUpNextPanel(limit: 3)
+            narrowUpNextPanel()
         }
     }
 
@@ -242,10 +241,10 @@ struct NowPlayingDetailView: View {
         return favoritesStore.isFavorite(track: track)
     }
 
-    private func rightPanel(track: Track, album: Album, limit: Int) -> some View {
+    private func rightPanel(track: Track, album: Album) -> some View {
         VStack(spacing: 0) {
             ScrollView {
-                upNextSection(limit: limit, showFullTitle: true)
+                upNextSection(showFullTitle: true)
                     .padding(.horizontal, 12)
                     .padding(.top, 24)
                     .padding(.bottom, 16)
@@ -270,12 +269,15 @@ struct NowPlayingDetailView: View {
         }
     }
 
-    private func narrowUpNextPanel(limit: Int) -> some View {
+    private func narrowUpNextPanel() -> some View {
         VStack(spacing: 0) {
-            upNextSection(limit: limit, showFullTitle: false)
-                .padding(.horizontal, 12)
-                .padding(.top, 14)
-                .padding(.bottom, 18)
+            ScrollView {
+                upNextSection(showFullTitle: false)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 14)
+                    .padding(.bottom, 18)
+            }
+            .frame(maxHeight: 200)
         }
         .background(
             colorScheme == .dark
@@ -289,7 +291,7 @@ struct NowPlayingDetailView: View {
         }
     }
 
-    private func upNextSection(limit: Int, showFullTitle: Bool) -> some View {
+    private func upNextSection(showFullTitle: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(showFullTitle ? "Далее в очереди" : "Далее")
                 .font(.system(size: 11, weight: .bold))
@@ -299,7 +301,7 @@ struct NowPlayingDetailView: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, showFullTitle ? 8 : 6)
 
-            let tracks = Array(upNextDisplayTracks.prefix(limit))
+            let tracks = upNextDisplayTracks
             if tracks.isEmpty {
                 Text("Нет треков")
                     .font(.system(size: 12))
@@ -335,7 +337,7 @@ struct NowPlayingDetailView: View {
         }
 
         let autoplayIndex = index - explicitCount
-        let autoplay = playbackController.autoplayPreviewTracks(limit: autoplayIndex + 1)
+        let autoplay = playbackController.autoplayPreviewTracks(limit: .max)
         guard autoplayIndex < autoplay.count else { return }
         playbackController.playTrack(autoplay[autoplayIndex])
     }

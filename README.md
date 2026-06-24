@@ -50,7 +50,32 @@ Not implemented:
 
 Built on **AVAudioEngine**.
 
-Signal chain: `AVAudioPlayerNode` → `AVAudioUnitEQ` → `AVAudioEngine.mainMixerNode` → output.
+#### Signal Chain
+
+```
+AVAudioPlayerNode
+      │  PCM buffers (decoded chunks, ~1 s each)
+      ▼
+AVAudioUnitEQ          ← 10-band parametric EQ (±12 dB per band)
+      │
+      ▼
+AVAudioUnitEffect      ← Peak Limiter (attack 2 ms / decay 20 ms)
+      │
+      ▼
+AVAudioEngine.mainMixerNode   ← volume control; spectrum analyzer tap
+      │
+      ▼
+      Output (system audio device)
+```
+
+Each stage:
+
+- **AVAudioPlayerNode** — receives pre-decoded PCM buffers in strict order and feeds them to the hardware clock. Does not do any signal processing.
+- **AVAudioUnitEQ** — applies the 10-band equalizer. Each band is a parametric filter (IIR biquad) centered at a fixed frequency. Bands are in bypass when the EQ is disabled.
+- **Peak Limiter** — transparent ceiling that prevents inter-sample clipping when EQ bands boost the signal above 0 dBFS. Attack 2 ms, decay 20 ms. No pre-gain by default; a negative global gain offset is applied automatically when any band exceeds +0 dB to keep the signal well below the limiter threshold.
+- **mainMixerNode** — final output volume (0–100 %, independent of the system volume). The spectrum analyzer installs a tap here to read the post-EQ, post-limiter signal for visualization.
+
+#### Decoding and Scheduling
 
 A track is split into chunks of ~1 second (equal to the sample rate in frames). Each chunk is decoded via `AVAudioFile` into an `AVAudioPCMBuffer`. Buffers are scheduled into `AVAudioPlayerNode` in strictly ascending index order — this guarantees correct playback order.
 
@@ -78,21 +103,58 @@ Not implemented. The transition occurs after the current track ends; the next tr
 
 ## Equalizer
 
-### Type
+### How It Works
 
-Graphic equalizer: **10 bands** (32, 64, 125, 250, 500, 1K, 2K, 4K, 8K, 16K Hz). Implemented via `AVAudioUnitEQ` with filter type `.parametric`. Gain range in UI: −12 dB to +12 dB.
+The equalizer is a **10-band parametric graphic EQ** implemented via `AVAudioUnitEQ`. Each band is an IIR biquad filter sitting in the signal chain between the player node and the peak limiter.
+
+| Band | Center | Filter type | Bandwidth |
+|------|--------|-------------|-----------|
+| 1 | 32 Hz | Parametric | 1 octave |
+| 2 | 64 Hz | Parametric | 1 octave |
+| 3 | 125 Hz | Parametric | 1 octave |
+| 4 | 250 Hz | Parametric | 1 octave |
+| 5 | 500 Hz | Parametric | 1 octave |
+| 6 | 1 000 Hz | Parametric | 1 octave |
+| 7 | 2 000 Hz | Parametric | 1 octave |
+| 8 | 4 000 Hz | Parametric | 1 octave |
+| 9 | 8 000 Hz | Parametric | 1 octave |
+| 10 | 16 000 Hz | Parametric | 1 octave |
+
+Gain range per band: **−12 dB to +12 dB**. At 0 dB every band is acoustically neutral (flat response).
+
+**Clipping protection.** When any band has a positive gain the aggregate headroom shrinks. To prevent clipping, a global pre-gain offset equal to the negative of the largest positive band boost is applied to `AVAudioUnitEQ.globalGain`. For example, if the loudest boost is +5 dB the global gain is set to −5 dB, so the total signal level stays safe for the limiter downstream.
+
+**Bypass.** A single on/off toggle bypasses the entire `AVAudioUnitEQ` node without touching individual band settings. State is persisted across launches.
 
 ### Presets
 
-Built-in presets: Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass Boost, Vocal Boost.
+14 built-in presets optimised for Sony WH-1000XM5 headphones:
 
-Custom user presets are not implemented (manual adjustment only with current values saved).
+| Preset | Character |
+|--------|-----------|
+| Flat | All bands at 0 dB |
+| Signature | Slight V-shape, enhanced bass and air |
+| Bass | Deep low-end boost |
+| Heavy Metal | Scooped mids, boosted lows and highs |
+| Alternative / Rock | Mid-forward with edge |
+| Anime OST | Bright, vocal clarity |
+| Jazz | Warm low-mids, open highs |
+| Pop | Balanced with presence |
+| Classical | Natural, wide stage |
+| Electronic | Sub-bass and high-frequency extension |
+| Hip-Hop | Low-end weight, recessed mids |
+| Acoustic | Guitar and voice body |
+| Vocal | Presence and intelligibility |
+| Custom | User-defined manual adjustments |
+
+User-defined presets can be saved, named, and deleted. They are stored in `UserDefaults` alongside the built-in ones and appear in the preset picker.
 
 ### EQ UI
 
-- Separate window, accessible from the toolbar (⌘E)
-- 10 vertical sliders with frequency labels
-- Preset dropdown
+- Separate overlay panel, accessible from the toolbar (⌘E)
+- 10 vertical sliders with frequency labels and numeric dB readouts
+- Preset picker (built-in + saved user presets)
+- Save button (appears when bands diverge from any preset → saves as a new user preset)
 - Enable/disable button (bypass)
 - Frequency response curve not implemented
 

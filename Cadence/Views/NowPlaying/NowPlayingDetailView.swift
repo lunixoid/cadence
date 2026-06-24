@@ -243,24 +243,25 @@ struct NowPlayingDetailView: View {
     }
 
     private func rightPanel(track: Track, album: Album, limit: Int) -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
+            ScrollView {
                 upNextSection(limit: limit, showFullTitle: true)
                     .padding(.horizontal, 12)
                     .padding(.top, 24)
-                    .padding(.bottom, 10)
-
-                Rectangle()
-                    .fill(CadenceTheme.borderColor(for: colorScheme))
-                    .frame(height: 0.5)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-
-                metadataSection(track: track, album: album)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 16)
-                    .padding(.bottom, 28)
+                    .padding(.bottom, 16)
             }
+
+            Rectangle()
+                .fill(CadenceTheme.borderColor(for: colorScheme))
+                .frame(height: 0.5)
+
+            SpectrumVisualizerView(
+                analyzer: playbackController.spectrumAnalyzer,
+                isPlaying: playbackController.isPlaying
+            )
+            .padding(.horizontal, 20)
+            .padding(.top, 14)
+            .padding(.bottom, 16)
         }
         .overlay(alignment: .leading) {
             Rectangle()
@@ -317,53 +318,6 @@ struct NowPlayingDetailView: View {
                 }
             }
         }
-    }
-
-    private func metadataSection(track: Track, album: Album) -> some View {
-        let albumTracks = uiState.tracks(for: album)
-
-        return VStack(alignment: .leading, spacing: 0) {
-            Text("Информация")
-                .font(.system(size: 11, weight: .bold))
-                .kerning(0.06 * 11)
-                .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
-                .textCase(.uppercase)
-                .padding(.bottom, 12)
-
-            VStack(spacing: 0) {
-                metadataRow(label: "Формат", value: "—")
-                metadataRow(label: "Битрейт", value: "—")
-                metadataRow(label: "Частота", value: "—")
-                metadataRow(label: "Каналы", value: "—")
-                metadataRow(
-                    label: "Трек",
-                    value: "\((albumTracks.firstIndex(where: { $0.id == track.id }) ?? 0) + 1) из \(albumTracks.count)"
-                )
-                metadataRow(label: "Диск", value: "\(track.discNumber)")
-            }
-            .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(CadenceTheme.borderColor(for: colorScheme))
-                    .frame(height: 0.5)
-            }
-            .padding(.top, 8)
-        }
-    }
-
-    private func metadataRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(CadenceTheme.mutedText(for: colorScheme))
-
-            Spacer()
-
-            Text(value)
-                .font(.system(size: 12, weight: .medium))
-                .monospacedDigit()
-                .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
-        }
-        .padding(.vertical, 5)
     }
 
     private func heroCoverSize(containerWidth: CGFloat, isWide: Bool) -> CGFloat {

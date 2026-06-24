@@ -53,6 +53,8 @@ final class PlaybackController {
     var userPresets: [UserEQPreset] = []
     private let userPresetStore = UserEQPresetStore()
 
+    var spectrumAnalyzer: SpectrumAnalyzer { audioEngine.spectrumAnalyzer }
+
     var currentTrack: Track? {
         playbackQueue.current
     }

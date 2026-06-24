@@ -48,6 +48,8 @@ final class AudioEngineService {
     private let prefetchAheadCount = 10
     private let eqFrequencies: [Float] = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
+    let spectrumAnalyzer = SpectrumAnalyzer()
+
     var onProgress: ((TimeInterval, TimeInterval) -> Void)?
     var onTrackFinished: (() -> Void)?
     var onBuffering: ((Bool) -> Void)?
@@ -232,6 +234,7 @@ final class AudioEngineService {
         // restarting without reconnecting works for the common case (same-sample-rate device switch).
         do {
             try engine.start()
+            spectrumAnalyzer.start(on: engine.mainMixerNode, format: format)
             applySeek(to: resumeTime, format: format)
             onDidStartPlayingBySystem?()
         } catch {
@@ -272,6 +275,7 @@ final class AudioEngineService {
         engine.connect(limiterNode, to: engine.mainMixerNode, format: source.format)
 
         try engine.start()
+        spectrumAnalyzer.start(on: engine.mainMixerNode, format: source.format)
     }
 
     private func applySeek(to time: TimeInterval, format: AVAudioFormat) {
@@ -629,6 +633,7 @@ final class AudioEngineService {
     }
 
     private func stopInternal(resetProgress: Bool) {
+        spectrumAnalyzer.stop()
         isPaused = false
         cancelScheduler()
         scheduleGeneration += 1

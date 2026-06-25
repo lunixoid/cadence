@@ -27,9 +27,9 @@ enum ProgressiveDownloadError: LocalizedError {
 }
 
 enum ProgressivePlayback {
-    static let initialBufferBytes: Int64 = 1_500_000
-    static let safetyMarginFrames: AVAudioFramePosition = 22_050
-    static let continueWaitByteIncrement: Int64 = 768 * 1024
+    static let initialBufferBytes: Int64 = 4_000_000
+    static let safetyMarginFrames: AVAudioFramePosition = 88_200
+    static let continueWaitByteIncrement: Int64 = 2 * 1024 * 1024
 }
 
 actor ProgressiveDownloadSession {

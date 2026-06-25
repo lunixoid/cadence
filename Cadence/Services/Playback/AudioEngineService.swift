@@ -30,9 +30,11 @@ final class AudioEngineService {
 
     // Serial scheduler
     private var schedulerTask: Task<Void, Never>?
-    private var bufferConsumedContinuation: CheckedContinuation<Void, Never>?
-    private var buffersInFlight = 0
-    private var schedulerFinishedAllChunks = false
+    private let bufferTracker = BufferFlightTracker()
+
+    // Gapless next-track
+    private var nextChunkSource: LazyChunkSource?
+    private var nextDecodePipeline: ChunkDecodePipeline?
 
     private var processingFormat: AVAudioFormat?
     private var chunkDurationFrames: AVAudioFrameCount = 0
@@ -43,9 +45,12 @@ final class AudioEngineService {
     private var scheduleGeneration = 0
     private var isProgressiveLoad = false
     private var isPaused = false
+    private var userVolume: Float = 0.72
 
     private let maxBuffersInFlight = 8
     private let prefetchAheadCount = 10
+    private let fadeSteps = 6
+    private let fadeDuration: UInt64 = 15_000_000 // 15ms total
     private let eqFrequencies: [Float] = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
     let spectrumAnalyzer = SpectrumAnalyzer()
@@ -54,10 +59,14 @@ final class AudioEngineService {
     var onTrackFinished: (() -> Void)?
     var onBuffering: ((Bool) -> Void)?
     var onDidStartPlayingBySystem: (() -> Void)?
+    var onGaplessAdvance: ((TimeInterval) -> Void)?
 
     var volume: Double {
-        get { Double(engine.mainMixerNode.outputVolume) * 100 }
-        set { engine.mainMixerNode.outputVolume = Float(newValue / 100) }
+        get { Double(userVolume) * 100 }
+        set {
+            userVolume = Float(newValue / 100)
+            engine.mainMixerNode.outputVolume = userVolume
+        }
     }
 
     init() {
@@ -128,6 +137,32 @@ final class AudioEngineService {
         try await load(url: localURL)
     }
 
+    /// Pre-decode the next track for gapless transition. Returns true if the format
+    /// is compatible and the source was accepted; false means the caller should
+    /// fall back to a normal load when the current track finishes.
+    func prepareNextTrack(url: URL) async throws -> Bool {
+        let source = try await Task.detached(priority: .userInitiated) {
+            try LazyChunkSource(url: url, isProgressive: false)
+        }.value
+
+        guard let currentFormat = processingFormat,
+              source.format.sampleRate == currentFormat.sampleRate,
+              source.format.channelCount == currentFormat.channelCount else {
+            nextChunkSource = nil
+            nextDecodePipeline = nil
+            return false
+        }
+
+        nextChunkSource = source
+        nextDecodePipeline = ChunkDecodePipeline(source: source)
+        return true
+    }
+
+    func cancelPreparedNext() {
+        nextChunkSource = nil
+        nextDecodePipeline = nil
+    }
+
     nonisolated static func ext(forContentType contentType: String) -> String? {
         let type = contentType.split(separator: ";").first.map(String.init) ?? contentType
         switch type.trimmingCharacters(in: .whitespaces) {
@@ -158,17 +193,22 @@ final class AudioEngineService {
         // If paused: buffers already queued on playerNode, just resume
 
         isPaused = false
+        engine.mainMixerNode.outputVolume = 0
         playerNode.play()
         startProgressTimer()
         if isProgressiveLoad, progressiveMonitorTask == nil {
             startProgressiveMonitoring()
         }
+        Task { await fadeIn() }
     }
 
     func pause() {
-        playerNode.pause()
-        stopProgressTimer()
-        isPaused = true
+        Task {
+            await fadeOut()
+            playerNode.pause()
+            stopProgressTimer()
+            isPaused = true
+        }
     }
 
     func stop() {
@@ -222,6 +262,28 @@ final class AudioEngineService {
     /// always enough headroom for a clean signal.
     func setGlobalGain(_ gain: Float) {
         eqNode.globalGain = max(-24, min(24, gain))
+    }
+
+    // MARK: - Volume fade
+
+    private func fadeIn() async {
+        let target = userVolume
+        let stepDelay = fadeDuration / UInt64(fadeSteps)
+        for i in 1...fadeSteps {
+            engine.mainMixerNode.outputVolume = target * Float(i) / Float(fadeSteps)
+            try? await Task.sleep(nanoseconds: stepDelay)
+        }
+        engine.mainMixerNode.outputVolume = target
+    }
+
+    private func fadeOut() async {
+        let current = engine.mainMixerNode.outputVolume
+        let stepDelay = fadeDuration / UInt64(fadeSteps)
+        for i in 1...fadeSteps {
+            engine.mainMixerNode.outputVolume = current * Float(fadeSteps - i) / Float(fadeSteps)
+            try? await Task.sleep(nanoseconds: stepDelay)
+        }
+        engine.mainMixerNode.outputVolume = 0
     }
 
     // MARK: - Engine configuration change
@@ -279,6 +341,11 @@ final class AudioEngineService {
     }
 
     private func applySeek(to time: TimeInterval, format: AVAudioFormat) {
+        let wasPlaying = playerNode.isPlaying
+        if wasPlaying {
+            engine.mainMixerNode.outputVolume = 0
+        }
+
         let sampleRate = format.sampleRate
         let frame = AVAudioFramePosition(time * sampleRate)
         let endFrame = playbackEndFrame()
@@ -297,6 +364,7 @@ final class AudioEngineService {
         if engine.isRunning, segmentStartFrame < playbackEndFrame() {
             playerNode.play()
             startProgressTimer()
+            Task { await fadeIn() }
         }
         emitProgress()
     }
@@ -325,105 +393,120 @@ final class AudioEngineService {
     /// Parallel decode is handled by ChunkDecodePipeline.prefetch; this loop only awaits
     /// each index sequentially so scheduleBuffer is always called 0,1,2,3…
     private func startScheduler(generation: Int) {
+        let tracker = bufferTracker
         schedulerTask = Task { [weak self] in
             guard let self else { return }
 
             engineLogger.info("Scheduler started gen=\(generation)")
             var index = self.scheduledUpToIndex
-            let firstIndex = index  // seek offset applies only to the first chunk
+            var firstIndex = index
 
-            while !Task.isCancelled, generation == self.scheduleGeneration {
+            // Outer loop: one iteration per track (current + gapless continuations)
+            trackLoop: while !Task.isCancelled, generation == self.scheduleGeneration {
 
-                // ── Backpressure: cap buffered data ──────────────────────────────
-                if self.buffersInFlight >= self.maxBuffersInFlight {
-                    engineLogger.info("Backpressure: \(self.buffersInFlight)/\(self.maxBuffersInFlight) buffers in flight, waiting")
-                    await self.waitForBufferConsumed()
-                    engineLogger.info("Backpressure released")
-                    guard !Task.isCancelled, generation == self.scheduleGeneration else { return }
-                }
+                // Inner loop: schedule all chunks of the current source
+                while !Task.isCancelled, generation == self.scheduleGeneration {
 
-                // ── Wait for enough downloaded data for this chunk ───────────────
-                var available = self.availableChunkCount()
-                if index >= available {
-                    if self.isProgressiveLoad {
-                        engineLogger.info("Buffering: waiting for chunk \(index)")
-                        self.onBuffering?(true)
-                        let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
-                        self.onBuffering?(false)
-                        engineLogger.info("Buffering: chunk \(index) available")
-                        guard ok else { return }
-                        let newAvailable = self.availableChunkCount()
-                        if newAvailable <= available { break }  // download complete, nothing new — treat as EOF
-                        available = newAvailable
-                    } else {
-                        break  // non-progressive: all chunks consumed
+                    if tracker.count >= self.maxBuffersInFlight {
+                        await tracker.waitForConsumption()
+                        guard !Task.isCancelled, generation == self.scheduleGeneration else { return }
                     }
-                }
 
-                // ── Kick off parallel decode ahead, then await THIS index ────────
-                self.decodePipeline?.prefetch(from: index, to: min(available, index + self.prefetchAheadCount))
-
-                guard let pipeline = self.decodePipeline else { return }
-                let sourceChunk: AVAudioPCMBuffer
-                do {
-                    sourceChunk = try await pipeline.buffer(for: index)
-                } catch {
-                    if self.isProgressiveLoad {
-                        engineLogger.info("Buffering: waiting for chunk \(index) (decode error)")
-                        self.onBuffering?(true)
-                        let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
-                        self.onBuffering?(false)
-                        engineLogger.info("Buffering: chunk \(index) available")
-                        guard ok else { return }
-                        continue  // retry same index
-                    } else {
-                        break
-                    }
-                }
-                guard !Task.isCancelled, generation == self.scheduleGeneration else { return }
-
-                // ── Apply seek offset to the first chunk only ────────────────────
-                let buffer: AVAudioPCMBuffer
-                if index == firstIndex, self.segmentOffsetInFirstChunk > 0 {
-                    buffer = self.subBuffer(from: sourceChunk, startingAt: self.segmentOffsetInFirstChunk) ?? sourceChunk
-                } else {
-                    buffer = sourceChunk
-                }
-
-                // ── Schedule IN ORDER ────────────────────────────────────────────
-                let scheduledIndex = index
-                engineLogger.info("Chunk \(scheduledIndex) scheduled")
-                self.buffersInFlight += 1
-                self.scheduledUpToIndex = index + 1
-
-                self.playerNode.scheduleBuffer(buffer, at: nil, completionCallbackType: .dataConsumed) { [weak self] _ in
-                    Task { @MainActor in
-                        guard let self, generation == self.scheduleGeneration else { return }
-                        self.buffersInFlight -= 1
-                        engineLogger.info("Chunk \(scheduledIndex) consumed (inFlight=\(self.buffersInFlight))")
-                        self.signalBufferConsumed()
-                        if self.buffersInFlight == 0, self.schedulerFinishedAllChunks {
-                            self.stopProgressTimer()
-                            engineLogger.info("Track finished (gen=\(generation))")
-                            self.onTrackFinished?()
+                    var available = self.availableChunkCount()
+                    if index >= available {
+                        if self.isProgressiveLoad {
+                            self.onBuffering?(true)
+                            let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
+                            self.onBuffering?(false)
+                            guard ok else { return }
+                            let newAvailable = self.availableChunkCount()
+                            if newAvailable <= available { break }
+                            available = newAvailable
+                        } else {
+                            break
                         }
                     }
+
+                    self.decodePipeline?.prefetch(from: index, to: min(available, index + self.prefetchAheadCount))
+
+                    guard let pipeline = self.decodePipeline else { return }
+                    let sourceChunk: AVAudioPCMBuffer
+                    do {
+                        sourceChunk = try await pipeline.buffer(for: index)
+                    } catch {
+                        if self.isProgressiveLoad {
+                            self.onBuffering?(true)
+                            let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
+                            self.onBuffering?(false)
+                            guard ok else { return }
+                            continue
+                        } else {
+                            break
+                        }
+                    }
+                    guard !Task.isCancelled, generation == self.scheduleGeneration else { return }
+
+                    let buffer: AVAudioPCMBuffer
+                    if index == firstIndex, self.segmentOffsetInFirstChunk > 0 {
+                        buffer = self.subBuffer(from: sourceChunk, startingAt: self.segmentOffsetInFirstChunk) ?? sourceChunk
+                    } else {
+                        buffer = sourceChunk
+                    }
+
+                    let scheduledIndex = index
+                    tracker.increment()
+                    self.scheduledUpToIndex = index + 1
+
+                    self.playerNode.scheduleBuffer(buffer, at: nil, completionCallbackType: .dataConsumed) { [weak self] _ in
+                        let remaining = tracker.decrementAndSignal()
+                        if remaining == 0, tracker.isFinished {
+                            Task { @MainActor [weak self] in
+                                guard let self, generation == self.scheduleGeneration else { return }
+                                self.stopProgressTimer()
+                                engineLogger.info("Track finished (gen=\(generation))")
+                                self.onTrackFinished?()
+                            }
+                        }
+                    }
+
+                    index += 1
                 }
 
-                index += 1
-            }
+                // Inner loop exited: all chunks of current source scheduled
+                guard generation == self.scheduleGeneration, !Task.isCancelled else { return }
 
-            // Loop exited naturally: all chunks scheduled (or non-progressive EOF)
-            guard generation == self.scheduleGeneration, !Task.isCancelled else { return }
-            Task { @MainActor [weak self] in
-                guard let self, generation == self.scheduleGeneration else { return }
-                self.schedulerFinishedAllChunks = true
+                // Gapless: continue with next track if prepared
+                if let nextSource = self.nextChunkSource, let nextPipeline = self.nextDecodePipeline {
+                    engineLogger.info("Gapless: transitioning to next track")
+                    let nextDuration = Double(nextSource.totalFrameCount) / nextSource.format.sampleRate
+
+                    self.chunkSource = nextSource
+                    self.decodePipeline = nextPipeline
+                    self.totalFrameCount = nextSource.totalFrameCount
+                    self.chunkDurationFrames = nextSource.chunkDurationFrames
+                    self.segmentStartFrame = 0
+                    self.segmentOffsetInFirstChunk = 0
+                    self.scheduledUpToIndex = 0
+                    self.isProgressiveLoad = false
+                    self.nextChunkSource = nil
+                    self.nextDecodePipeline = nil
+
+                    self.onGaplessAdvance?(nextDuration)
+
+                    index = 0
+                    firstIndex = 0
+                    continue trackLoop
+                }
+
+                // No gapless source — mark finished
+                tracker.markFinished()
                 engineLogger.info("Scheduler: all chunks scheduled gen=\(generation)")
-                if self.buffersInFlight == 0 {
+                if tracker.count == 0 {
                     self.stopProgressTimer()
                     engineLogger.info("Track finished (gen=\(generation))")
                     self.onTrackFinished?()
                 }
+                break trackLoop
             }
         }
     }
@@ -453,26 +536,10 @@ final class AudioEngineService {
         return false
     }
 
-    private func waitForBufferConsumed() async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            bufferConsumedContinuation = continuation
-        }
-    }
-
-    private func signalBufferConsumed() {
-        let c = bufferConsumedContinuation
-        bufferConsumedContinuation = nil
-        c?.resume()
-    }
-
     private func cancelScheduler() {
         schedulerTask?.cancel()
         schedulerTask = nil
-        let c = bufferConsumedContinuation
-        bufferConsumedContinuation = nil
-        c?.resume()
-        buffersInFlight = 0
-        schedulerFinishedAllChunks = false
+        bufferTracker.reset()
     }
 
     // MARK: - Progressive support
@@ -633,6 +700,7 @@ final class AudioEngineService {
     }
 
     private func stopInternal(resetProgress: Bool) {
+        engine.mainMixerNode.outputVolume = 0
         spectrumAnalyzer.stop()
         isPaused = false
         cancelScheduler()
@@ -643,6 +711,8 @@ final class AudioEngineService {
         progressiveMonitorTask = nil
         chunkSource = nil
         decodePipeline = nil
+        nextChunkSource = nil
+        nextDecodePipeline = nil
         progressiveAsset = nil
         knownDuration = nil
         isProgressiveLoad = false
@@ -672,6 +742,72 @@ final class AudioEngineService {
 
     private func emitProgress() {
         onProgress?(currentTime(), duration())
+    }
+}
+
+// MARK: - Buffer flight tracker
+
+/// Thread-safe tracker for in-flight audio buffers. Called from the audio render
+/// thread (scheduleBuffer completion) without hopping through MainActor.
+private final class BufferFlightTracker: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _count = 0
+    private var _finished = false
+    private var waiter: CheckedContinuation<Void, Never>?
+
+    var count: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _count
+    }
+
+    var isFinished: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return _finished
+    }
+
+    func increment() {
+        lock.lock()
+        _count += 1
+        lock.unlock()
+    }
+
+    /// Returns remaining count after decrement. Wakes the scheduler if it's waiting.
+    @discardableResult
+    func decrementAndSignal() -> Int {
+        lock.lock()
+        _count = max(0, _count - 1)
+        let remaining = _count
+        let w = waiter
+        waiter = nil
+        lock.unlock()
+        w?.resume()
+        return remaining
+    }
+
+    func markFinished() {
+        lock.lock()
+        _finished = true
+        lock.unlock()
+    }
+
+    func reset() {
+        lock.lock()
+        _count = 0
+        _finished = false
+        let w = waiter
+        waiter = nil
+        lock.unlock()
+        w?.resume()
+    }
+
+    func waitForConsumption() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            lock.lock()
+            waiter = continuation
+            lock.unlock()
+        }
     }
 }
 

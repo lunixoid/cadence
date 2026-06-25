@@ -110,6 +110,13 @@ final class PlaybackController {
                 self.persistState()
             }
         }
+
+        audioEngine.onGaplessAdvance = { [weak self] nextDuration in
+            Task { @MainActor in
+                guard let self else { return }
+                self.handleGaplessAdvance(nextDuration: nextDuration)
+            }
+        }
     }
 
     func setEQGain(at index: Int, gain: Double) {
@@ -534,10 +541,22 @@ final class PlaybackController {
         }
     }
 
-    private func schedulePrefetch() {
+    private func schedulePrefetchAndPrepareGapless() {
         guard let next = playbackQueue.peekNext(repeatMode: repeatMode),
-              !next.fileURL.isFileURL,
-              prefetchedCache?.trackID != next.id else { return }
+              repeatMode != .one else {
+            audioEngine.cancelPreparedNext()
+            return
+        }
+
+        if next.fileURL.isFileURL {
+            prepareGapless(url: next.fileURL)
+            return
+        }
+
+        if let cached = prefetchedCache, cached.trackID == next.id {
+            prepareGapless(url: cached.fileURL)
+            return
+        }
 
         if prefetchTrackID == next.id, prefetchTask != nil {
             return
@@ -558,12 +577,32 @@ final class PlaybackController {
                 if self.prefetchTrackID == trackID {
                     self.prefetchTrackID = nil
                 }
+                self.prepareGapless(url: localURL)
             } catch {
                 if self.prefetchTrackID == trackID {
                     self.prefetchTrackID = nil
                 }
             }
         }
+    }
+
+    private func prepareGapless(url: URL) {
+        Task {
+            do {
+                let accepted = try await audioEngine.prepareNextTrack(url: url)
+                if accepted {
+                    logger.info("Gapless: next track prepared")
+                } else {
+                    logger.info("Gapless: format mismatch, will use normal transition")
+                }
+            } catch {
+                logger.info("Gapless: failed to prepare next track: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func schedulePrefetch() {
+        schedulePrefetchAndPrepareGapless()
     }
 
     private func loadCurrentTrack(seekTo time: TimeInterval, shouldPlay: Bool) {
@@ -605,6 +644,18 @@ final class PlaybackController {
                 progress = 0
             }
         }
+    }
+
+    private func handleGaplessAdvance(nextDuration: TimeInterval) {
+        guard repeatMode != .one else { return }
+        guard let track = playbackQueue.consumeNext(repeatMode: repeatMode) else { return }
+        logger.info("Gapless advance → '\(track.title)'")
+        progress = 0
+        duration = nextDuration
+        recentStore.record(track: track)
+        mediaRemote.publishNowPlayingInfo()
+        persistState()
+        schedulePrefetchAndPrepareGapless()
     }
 
     private func handleTrackFinished() {

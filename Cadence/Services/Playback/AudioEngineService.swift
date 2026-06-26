@@ -41,6 +41,7 @@ final class AudioEngineService {
     private var totalFrameCount: AVAudioFramePosition = 0
     private var segmentStartFrame: AVAudioFramePosition = 0
     private var segmentOffsetInFirstChunk: AVAudioFrameCount = 0
+    private var playerTimeBase: AVAudioFramePosition = 0
     private var scheduledUpToIndex = 0
     private var scheduleGeneration = 0
     private var isProgressiveLoad = false
@@ -229,7 +230,7 @@ final class AudioEngineService {
         guard sampleRate > 0 else { return 0 }
         let nodeTime = playerNode.lastRenderTime
         let playerTime = playerNode.playerTime(forNodeTime: nodeTime ?? AVAudioTime(sampleTime: 0, atRate: sampleRate))
-        let playedFrames = AVAudioFramePosition(playerTime?.sampleTime ?? 0)
+        let playedFrames = AVAudioFramePosition(playerTime?.sampleTime ?? 0) - playerTimeBase
         return Double(segmentStartFrame + playedFrames) / sampleRate
     }
 
@@ -358,6 +359,7 @@ final class AudioEngineService {
         engineLogger.info("Seek → \(String(format: "%.2f", time))s (chunk=\(seekChunk), offset=\(seekOffset))")
 
         isPaused = false
+        playerTimeBase = 0
         decodePipeline?.reset()
         playerNode.stop()
         scheduleFromCurrentPosition()
@@ -479,6 +481,11 @@ final class AudioEngineService {
                 if let nextSource = self.nextChunkSource, let nextPipeline = self.nextDecodePipeline {
                     engineLogger.info("Gapless: transitioning to next track")
                     let nextDuration = Double(nextSource.totalFrameCount) / nextSource.format.sampleRate
+
+                    if let nodeTime = self.playerNode.lastRenderTime,
+                       let pTime = self.playerNode.playerTime(forNodeTime: nodeTime) {
+                        self.playerTimeBase = AVAudioFramePosition(pTime.sampleTime)
+                    }
 
                     self.chunkSource = nextSource
                     self.decodePipeline = nextPipeline
@@ -721,6 +728,7 @@ final class AudioEngineService {
         chunkDurationFrames = 0
         scheduledUpToIndex = 0
         segmentOffsetInFirstChunk = 0
+        playerTimeBase = 0
         if resetProgress {
             segmentStartFrame = 0
         }

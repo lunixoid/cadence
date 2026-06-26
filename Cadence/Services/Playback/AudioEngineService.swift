@@ -599,17 +599,21 @@ final class AudioEngineService {
 
         source.updateDownloadProgress(downloaded: downloaded, total: total)
 
-        try await Task.detached {
-            try source.refreshFromDisk(isDownloadComplete: isComplete)
-        }.value
-
-        guard scheduleGeneration == capturedGeneration, !Task.isCancelled else { return }
-
         if isComplete, let finalURL = try? await asset.waitUntilComplete() {
+            guard scheduleGeneration == capturedGeneration, !Task.isCancelled else { return }
+            source.updateFileURL(finalURL)
+            try await Task.detached {
+                try source.refreshFromDisk(isDownloadComplete: true)
+            }.value
+            guard scheduleGeneration == capturedGeneration, !Task.isCancelled else { return }
             currentFileURL = finalURL
             isProgressiveLoad = false
             totalFrameCount = source.totalFrameCount
         } else {
+            try await Task.detached {
+                try source.refreshFromDisk(isDownloadComplete: isComplete)
+            }.value
+            guard scheduleGeneration == capturedGeneration, !Task.isCancelled else { return }
             totalFrameCount = source.totalFrameCount
         }
     }
@@ -967,6 +971,13 @@ private final class LazyChunkSource: @unchecked Sendable {
             return max(0, estimated - ProgressivePlayback.safetyMarginFrames)
         }
         return max(0, fileLength - ProgressivePlayback.safetyMarginFrames)
+    }
+
+    func updateFileURL(_ url: URL) {
+        lock.lock()
+        defer { lock.unlock() }
+        fileURL = url
+        audioFile = nil
     }
 
     func refreshFromDisk(isDownloadComplete: Bool) throws {

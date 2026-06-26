@@ -95,7 +95,7 @@ final class PlaybackController {
                 logger.info("Buffering: \(isBuffering ? "start" : "end")")
                 if isBuffering {
                     self.isLoading = true
-                } else if self.isPlaying {
+                } else {
                     self.isLoading = false
                 }
             }
@@ -303,17 +303,13 @@ final class PlaybackController {
 
     private func scheduleLoadedTrack(_ track: Track) {
         pendingLoadTrack = track
-
-        if loadSerialTask != nil {
-            _ = beginLoadSession(keepPrefetchFor: prefetchTrackIDsToKeep(for: track))
-            return
-        }
+        loadSerialTask?.cancel()
 
         loadSerialTask = Task { @MainActor in
-            defer { loadSerialTask = nil }
             while let track = pendingLoadTrack {
                 pendingLoadTrack = nil
                 await performOneLoad(track)
+                guard !Task.isCancelled else { return }
                 persistState()
             }
         }

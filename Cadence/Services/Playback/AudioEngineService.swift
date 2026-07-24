@@ -42,6 +42,7 @@ final class AudioEngineService {
     private var segmentStartFrame: AVAudioFramePosition = 0
     private var segmentOffsetInFirstChunk: AVAudioFrameCount = 0
     private var playerTimeBase: AVAudioFramePosition = 0
+    private var pendingGaplessAdvance: (callbackDuration: TimeInterval, oldTrackEndTime: TimeInterval, newTotalFrameCount: AVAudioFramePosition)?
     private var scheduledUpToIndex = 0
     private var scheduleGeneration = 0
     private var isProgressiveLoad = false
@@ -342,6 +343,7 @@ final class AudioEngineService {
     }
 
     private func applySeek(to time: TimeInterval, format: AVAudioFormat) {
+        commitPendingGaplessAdvance()
         let wasPlaying = playerNode.isPlaying
         if wasPlaying {
             engine.mainMixerNode.outputVolume = 0
@@ -481,15 +483,17 @@ final class AudioEngineService {
                 if let nextSource = self.nextChunkSource, let nextPipeline = self.nextDecodePipeline {
                     engineLogger.info("Gapless: transitioning to next track")
                     let nextDuration = Double(nextSource.totalFrameCount) / nextSource.format.sampleRate
+                    let oldTrackEndTime = Double(self.totalFrameCount) / nextSource.format.sampleRate
 
-                    if let nodeTime = self.playerNode.lastRenderTime,
-                       let pTime = self.playerNode.playerTime(forNodeTime: nodeTime) {
-                        self.playerTimeBase = AVAudioFramePosition(pTime.sampleTime)
-                    }
+                    self.pendingGaplessAdvance = (
+                        callbackDuration: nextDuration,
+                        oldTrackEndTime: oldTrackEndTime,
+                        newTotalFrameCount: nextSource.totalFrameCount
+                    )
+                    self.playerTimeBase -= self.segmentStartFrame
 
                     self.chunkSource = nextSource
                     self.decodePipeline = nextPipeline
-                    self.totalFrameCount = nextSource.totalFrameCount
                     self.chunkDurationFrames = nextSource.chunkDurationFrames
                     self.segmentStartFrame = 0
                     self.segmentOffsetInFirstChunk = 0
@@ -497,8 +501,6 @@ final class AudioEngineService {
                     self.isProgressiveLoad = false
                     self.nextChunkSource = nil
                     self.nextDecodePipeline = nil
-
-                    self.onGaplessAdvance?(nextDuration)
 
                     index = 0
                     firstIndex = 0
@@ -733,6 +735,7 @@ final class AudioEngineService {
         scheduledUpToIndex = 0
         segmentOffsetInFirstChunk = 0
         playerTimeBase = 0
+        pendingGaplessAdvance = nil
         if resetProgress {
             segmentStartFrame = 0
         }
@@ -753,7 +756,21 @@ final class AudioEngineService {
     }
 
     private func emitProgress() {
+        if let pending = pendingGaplessAdvance, currentTime() >= pending.oldTrackEndTime {
+            commitPendingGaplessAdvance()
+        }
         onProgress?(currentTime(), duration())
+    }
+
+    private func commitPendingGaplessAdvance() {
+        guard let pending = pendingGaplessAdvance else { return }
+        if let nodeTime = playerNode.lastRenderTime,
+           let pTime = playerNode.playerTime(forNodeTime: nodeTime) {
+            playerTimeBase = AVAudioFramePosition(pTime.sampleTime)
+        }
+        totalFrameCount = pending.newTotalFrameCount
+        pendingGaplessAdvance = nil
+        onGaplessAdvance?(pending.callbackDuration)
     }
 }
 

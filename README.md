@@ -329,7 +329,7 @@ Filters the local library by tracks, albums, and artists. Jellyfin server-side s
 - **Servers**: list of Jellyfin servers, add/remove, select active
 - **Playback**: UI settings (values do not affect the engine)
 - **Cache**: total size (artwork + audio + library), clear; max size slider is not applied to `AudioCache`
-- **Appearance**: system / light / dark (state stored in memory, not persisted)
+- **Appearance**: system / light / dark (persisted)
 
 ---
 

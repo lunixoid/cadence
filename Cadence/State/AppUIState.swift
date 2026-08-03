@@ -31,18 +31,27 @@ final class AppUIState {
     var isEQOpen = false
     var isPrefsOpen = false
     var isConnectOpen = false
-    var appThemePreference: AppThemePreference = .system
+    var appThemePreference: AppThemePreference = .system {
+        didSet {
+            UserDefaults.standard.set(appThemePreference.rawValue, forKey: themeKey)
+        }
+    }
 
     var jellyfinServers: [JellyfinServer] = []
     var activeJellyfinClient: JellyfinClient?
 
     private let serversKey = "cadence.jellyfinServers"
+    private let themeKey = "cadence.appThemePreference"
     private let navigationStateStore = NavigationStateStore()
 
     let libraryStore: LibraryStore
 
     init(libraryStore: LibraryStore) {
         self.libraryStore = libraryStore
+        if let raw = UserDefaults.standard.string(forKey: themeKey),
+           let saved = AppThemePreference(rawValue: raw) {
+            appThemePreference = saved
+        }
     }
 
     var downloadedCount: Int {

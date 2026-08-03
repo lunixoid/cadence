@@ -13,10 +13,6 @@ struct NowPlayingDetailView: View {
     private var track: Track? { playbackController.currentTrack }
     private var album: Album? { playbackController.album() }
 
-    private var duration: TimeInterval {
-        max(playbackController.duration, track?.duration ?? 1, 1)
-    }
-
     private var upNextDisplayTracks: [Track] {
         let explicit = playbackController.upNextTracks
         let autoplay = playbackController.autoplayPreviewTracks(limit: .max)
@@ -86,13 +82,8 @@ struct NowPlayingDetailView: View {
 
                 trackInfo(track: track, album: album, maxWidth: controlMaxWidth)
 
-                NowPlayingSeekBar(
-                    progress: playbackController.progress,
-                    duration: duration,
-                    colorScheme: colorScheme,
-                    onSeek: { playbackController.seek(to: $0) }
-                )
-                .frame(maxWidth: controlMaxWidth)
+                NowPlayingSeekBar(colorScheme: colorScheme)
+                    .frame(maxWidth: controlMaxWidth)
 
                 transportControls
 
@@ -292,7 +283,7 @@ struct NowPlayingDetailView: View {
     }
 
     private func upNextSection(showFullTitle: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        LazyVStack(alignment: .leading, spacing: 0) {
             Text(showFullTitle ? "Далее в очереди" : "Далее")
                 .font(.system(size: 11, weight: .bold))
                 .kerning(0.06 * 11)
@@ -502,10 +493,9 @@ private struct NowPlayingHeroCover: View {
 // MARK: - Seek Bar
 
 private struct NowPlayingSeekBar: View {
-    let progress: TimeInterval
-    let duration: TimeInterval
     let colorScheme: ColorScheme
-    let onSeek: (TimeInterval) -> Void
+
+    @Environment(PlaybackController.self) private var playbackController
 
     @State private var isHovered = false
     @State private var isDragging = false
@@ -513,8 +503,12 @@ private struct NowPlayingSeekBar: View {
 
     private var active: Bool { isHovered || isDragging }
 
+    private var duration: TimeInterval {
+        max(playbackController.duration, playbackController.currentTrack?.duration ?? 1, 1)
+    }
+
     private var displayedProgress: TimeInterval {
-        scrubPosition ?? progress
+        scrubPosition ?? playbackController.progress
     }
 
     var body: some View {
@@ -558,7 +552,7 @@ private struct NowPlayingSeekBar: View {
                         }
                         .onEnded { _ in
                             if let scrubPosition {
-                                onSeek(scrubPosition)
+                                playbackController.seek(to: scrubPosition)
                             }
                             isDragging = false
                             scrubPosition = nil

@@ -466,6 +466,7 @@ private struct NowPlayingHeroCover: View {
             size: size,
             cornerRadius: 14
         )
+        .id(album.id)
         .shadow(
             color: (album.accentColors.count > 1 ? album.accentColors[1] : .black).opacity(0.35),
             radius: 30,

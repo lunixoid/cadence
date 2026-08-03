@@ -14,17 +14,14 @@ struct CachedAlbum: Codable {
     var artworkItemID: String?
 
     func toAlbum() -> Album {
-        var resolvedCoverURL = coverURL
-        if let itemID = artworkItemID,
-           let local = ArtworkCache.cachedFileURL(itemID: itemID, maxWidth: 300) {
-            resolvedCoverURL = local
-        }
-        return Album(
+        // Keep remote coverURL so ArtworkCache can key by itemID+maxWidth.
+        // Do not rewrite to a local file URL (breaks size-specific cache lookup).
+        Album(
             id: id,
             title: title,
             artist: artist,
             year: year,
-            coverURL: resolvedCoverURL
+            coverURL: coverURL
         )
     }
 

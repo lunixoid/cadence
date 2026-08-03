@@ -13,7 +13,9 @@ actor ArtworkCache {
     private init() {
         memoryCache.countLimit = 200
         let config = URLSessionConfiguration.default
-        config.requestCachePolicy = .returnCacheDataElseLoad
+        // Avoid sticky wrong HTTP responses across artwork URLs.
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
         session = URLSession(configuration: config)
     }
 
@@ -67,6 +69,7 @@ actor ArtworkCache {
     func clearAll() {
         memoryCache.removeAllObjects()
         try? FileManager.default.removeItem(at: Self.artworkDirectory)
+        URLCache.shared.removeAllCachedResponses()
     }
 
     // MARK: - Static helpers

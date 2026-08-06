@@ -69,6 +69,8 @@
 	C30000010000000000000002 /* ArtworkCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000012 /* ArtworkCache.swift */; };
 	C30000010000000000000003 /* AudioCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000013 /* AudioCache.swift */; };
 	C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000014 /* ProgressiveAudioDownload.swift */; };
+	C40000010000000000000001 /* OfflineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000011 /* OfflineStore.swift */; };
+	C40000010000000000000002 /* OfflineDownloadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000012 /* OfflineDownloadQueue.swift */; };
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 		A10000010000000000000020 /* NavigationStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000020 /* NavigationStateStore.swift */; };
@@ -77,6 +79,7 @@
 		T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000004 /* JellyfinFavoritesTests.swift */; };
 		T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000020 /* AudioEngineTestHelpers.swift */; };
 		T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000021 /* AudioEngineServiceTests.swift */; };
+		T10000010000000000000024 /* OfflineStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000025 /* OfflineStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -148,11 +151,14 @@
 	C30000010000000000000012 /* ArtworkCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkCache.swift; sourceTree = "<group>"; };
 	C30000010000000000000013 /* AudioCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCache.swift; sourceTree = "<group>"; };
 	C30000010000000000000014 /* ProgressiveAudioDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveAudioDownload.swift; sourceTree = "<group>"; };
+	C40000010000000000000011 /* OfflineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStore.swift; sourceTree = "<group>"; };
+	C40000010000000000000012 /* OfflineDownloadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadQueue.swift; sourceTree = "<group>"; };
 	D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 	T10000010000000000000003 /* CadenceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CadenceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 	T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
 	T10000010000000000000020 /* AudioEngineTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTestHelpers.swift; sourceTree = "<group>"; };
 	T10000010000000000000021 /* AudioEngineServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineServiceTests.swift; sourceTree = "<group>"; };
+	T10000010000000000000025 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -236,6 +242,7 @@
 			C20000010000000000000010 /* Jellyfin */,
 			C10000010000000000000002 /* Library */,
 			C1000001000000000000000B /* Navigation */,
+			C40000010000000000000010 /* Offline */,
 			C10000010000000000000003 /* Playback */,
 			C10000010000000000000004 /* UserData */,
 		);
@@ -259,6 +266,15 @@
 			C30000010000000000000014 /* ProgressiveAudioDownload.swift */,
 		);
 		path = Cache;
+		sourceTree = "<group>";
+	};
+	C40000010000000000000010 /* Offline */ = {
+		isa = PBXGroup;
+		children = (
+			C40000010000000000000011 /* OfflineStore.swift */,
+			C40000010000000000000012 /* OfflineDownloadQueue.swift */,
+		);
+		path = Offline;
 		sourceTree = "<group>";
 	};
 	C20000010000000000000010 /* Jellyfin */ = {
@@ -472,6 +488,7 @@
 			T10000010000000000000004 /* JellyfinFavoritesTests.swift */,
 			T10000010000000000000020 /* AudioEngineTestHelpers.swift */,
 			T10000010000000000000021 /* AudioEngineServiceTests.swift */,
+			T10000010000000000000025 /* OfflineStoreTests.swift */,
 		);
 		path = CadenceTests;
 		sourceTree = "<group>";
@@ -651,6 +668,8 @@
 			C30000010000000000000002 /* ArtworkCache.swift in Sources */,
 			C30000010000000000000003 /* AudioCache.swift in Sources */,
 			C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */,
+			C40000010000000000000001 /* OfflineStore.swift in Sources */,
+			C40000010000000000000002 /* OfflineDownloadQueue.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -661,6 +680,7 @@
 			T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */,
 			T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */,
 			T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */,
+			T10000010000000000000024 /* OfflineStoreTests.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -732,7 +752,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.8.0;
+			MARKETING_VERSION = 1.10.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -762,7 +782,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.8.0;
+			MARKETING_VERSION = 1.10.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -784,7 +804,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.8.0;
+			MARKETING_VERSION = 1.10.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;
@@ -805,7 +825,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.8.0;
+			MARKETING_VERSION = 1.10.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;

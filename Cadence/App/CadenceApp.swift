@@ -5,6 +5,7 @@ struct CadenceApp: App {
     @State private var libraryStore = LibraryStore()
     @State private var playlistStore = PlaylistStore()
     @State private var favoritesStore = FavoritesStore()
+    @State private var offlineStore = OfflineStore()
     @State private var jellyfinFavoritesSync: JellyfinFavoritesSync
     @State private var recentStore = RecentStore()
     @State private var playbackController: PlaybackController
@@ -15,14 +16,21 @@ struct CadenceApp: App {
         let library = LibraryStore()
         let recent = RecentStore()
         let favorites = FavoritesStore()
+        let offline = OfflineStore()
         _libraryStore = State(initialValue: library)
         _favoritesStore = State(initialValue: favorites)
+        _offlineStore = State(initialValue: offline)
         _jellyfinFavoritesSync = State(initialValue: JellyfinFavoritesSync(
             favoritesStore: favorites,
-            libraryStore: library
+            libraryStore: library,
+            offlineStore: offline
         ))
         _recentStore = State(initialValue: recent)
-        let playback = PlaybackController(libraryStore: library, recentStore: recent)
+        let playback = PlaybackController(
+            libraryStore: library,
+            recentStore: recent,
+            offlineStore: offline
+        )
         _playbackController = State(initialValue: playback)
         let ui = AppUIState(libraryStore: library)
         _uiState = State(initialValue: ui)
@@ -36,12 +44,14 @@ struct CadenceApp: App {
                 .environment(libraryStore)
                 .environment(playlistStore)
                 .environment(favoritesStore)
+                .environment(offlineStore)
                 .environment(jellyfinFavoritesSync)
                 .environment(recentStore)
                 .environment(playbackController)
                 .task {
                     guard !hasRestoredState else { return }
                     hasRestoredState = true
+                    offlineStore.pruneMissingFiles()
                     async let folders: Void = libraryStore.restoreSavedFolders()
                     async let servers: Void = uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
                     _ = await (folders, servers)

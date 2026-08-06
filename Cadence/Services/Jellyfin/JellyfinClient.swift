@@ -351,6 +351,33 @@ final class JellyfinClient: Sendable {
         return components?.url
     }
 
+    /// Original file download (no transcoding). Requires EnableContentDownloading on the server.
+    func originalFileURL(itemID: String) -> URL? {
+        var components = URLComponents(
+            url: serverURL.appendingPathComponent("Items/\(itemID)/Download"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "api_key", value: token),
+        ]
+        return components?.url
+    }
+
+    /// Original bitstream via stream endpoint (`static=true` disables transcoding).
+    func staticStreamURL(itemID: String) -> URL? {
+        var components = URLComponents(
+            url: serverURL.appendingPathComponent("Audio/\(itemID)/stream"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "static", value: "true"),
+            URLQueryItem(name: "api_key", value: token),
+            URLQueryItem(name: "userId", value: userID),
+            URLQueryItem(name: "deviceId", value: deviceID),
+        ]
+        return components?.url
+    }
+
     func artworkURL(itemID: String, maxWidth: Int = 300) -> URL? {
         var components = URLComponents(
             url: serverURL.appendingPathComponent("Items/\(itemID)/Images/Primary"),

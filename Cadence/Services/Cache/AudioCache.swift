@@ -52,6 +52,16 @@ actor AudioCache {
         try? FileManager.default.removeItem(at: Self.audioDirectory)
     }
 
+    func removeCachedFile(trackID: UUID) {
+        if let url = Self.cachedFileURL(trackID: trackID) {
+            try? FileManager.default.removeItem(at: url)
+        }
+        let partial = Self.audioDirectory
+            .appendingPathComponent("\(trackID.uuidString).partial")
+            .appendingPathExtension("partial")
+        try? FileManager.default.removeItem(at: partial)
+    }
+
     nonisolated static func totalDiskUsageBytes() -> Int64 {
         directorySize(at: audioDirectory)
     }

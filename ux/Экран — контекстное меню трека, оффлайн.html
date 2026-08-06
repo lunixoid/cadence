@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Cadence — Контекстное меню трека · Оффлайн (FEAT5)</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+<style>
+  body.artifact { overflow: auto; }
+
+  .board {
+    width: 1820px;
+    height: 920px;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .theme-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .theme-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.4);
+  }
+
+  .menus-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .menu-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 420px;
+    flex-shrink: 0;
+  }
+
+  .menu-col-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.45);
+    padding-left: 2px;
+  }
+
+  /* Mini app window backdrop */
+  .app-slice {
+    width: 420px;
+    height: 380px;
+    border-radius: var(--radius-xl);
+    background: var(--window);
+    box-shadow: var(--shadow-window);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .slice-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--content);
+    min-height: 0;
+  }
+
+  .slice-toolbar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: var(--hairline) solid var(--border-soft);
+    flex-shrink: 0;
+  }
+
+  .slice-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .track-header {
+    display: grid;
+    grid-template-columns: 36px 1fr 52px;
+    padding: 8px 16px;
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: var(--hairline) solid var(--border);
+  }
+
+  .track-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 52px;
+    padding: 0 16px;
+    height: 36px;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .track-row.is-target {
+    background: var(--selected);
+  }
+
+  .track-row .num {
+    text-align: center;
+    color: var(--ink-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .track-row.is-target .num,
+  .track-row.is-target .name {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .track-row .name {
+    color: var(--ink-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 8px;
+  }
+
+  .track-row .dur {
+    text-align: right;
+    font-size: 12px;
+    color: var(--ink-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Context menu */
+  .ctx-menu {
+    position: absolute;
+    left: 72px;
+    top: 148px;
+    z-index: 20;
+    min-width: 220px;
+    background: var(--menu);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    border: var(--hairline) solid var(--border);
+    box-shadow: var(--shadow-menu);
+    font-family: var(--font-sans);
+  }
+
+  .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-radius: var(--radius-xs);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink-primary);
+    cursor: default;
+    min-height: 26px;
+  }
+
+  .ctx-item:hover:not(.is-disabled):not(.is-danger-hover) {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .ctx-item:hover:not(.is-disabled):not(.is-danger-hover) .ctx-icon {
+    color: #fff;
+  }
+
+  .ctx-item:hover:not(.is-disabled):not(.is-danger-hover) .ctx-chevron {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .ctx-item.is-disabled {
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+
+  .ctx-item.is-disabled .ctx-icon {
+    color: var(--ink-muted);
+  }
+
+  .ctx-item.is-retry {
+    color: var(--danger);
+  }
+
+  .ctx-item.is-retry .ctx-icon {
+    color: var(--danger);
+  }
+
+  .ctx-item.is-retry:hover {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .ctx-item.is-retry:hover .ctx-icon {
+    color: #fff;
+  }
+
+  .ctx-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: var(--icon);
+    display: grid;
+    place-items: center;
+  }
+
+  .ctx-icon svg {
+    width: 13px;
+    height: 13px;
+    display: block;
+  }
+
+  .ctx-label {
+    flex: 1;
+    white-space: nowrap;
+  }
+
+  .ctx-chevron {
+    font-size: 9px;
+    color: var(--ink-muted);
+    margin-left: 8px;
+  }
+
+  .ctx-sep {
+    height: var(--hairline);
+    background: var(--border);
+    margin: 4px 6px;
+  }
+
+  .offline-badge {
+    position: absolute;
+    right: 14px;
+    top: 118px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ink-muted);
+    background: var(--hover);
+    padding: 3px 7px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body class="artifact">
+  <div class="stage light-stage" style="position:relative;min-height:100vh;padding:24px 0;display:flex;justify-content:center;align-items:flex-start;">
+    <div class="board artboard" data-screen-label="Контекстное меню трека — Оффлайн" data-od-id="screen-offline-menu" style="width:1820px;height:920px;">
+
+      <!-- LIGHT -->
+      <div class="theme-block" data-od-id="menus-light">
+        <div class="theme-label">Light</div>
+        <div class="menus-row">
+
+          <!-- a. Download -->
+          <div class="menu-col" data-od-id="menu-download-light">
+            <div class="menu-col-label">a. Загрузить оффлайн</div>
+            <div class="app-slice" data-theme="light">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span style="text-align:right"></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="ctx-menu" data-od-id="ctx-a">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item" data-od-id="offline-action-a">
+                  <span class="ctx-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </span>
+                  <span class="ctx-label">Загрузить оффлайн</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- b. Downloading -->
+          <div class="menu-col" data-od-id="menu-progress-light">
+            <div class="menu-col-label">b. Загрузка…</div>
+            <div class="app-slice" data-theme="light">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span style="text-align:right"></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="ctx-menu" data-od-id="ctx-b">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item is-disabled" data-od-id="offline-action-b">
+                  <span class="ctx-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </span>
+                  <span class="ctx-label">Загрузка… 42%</span>
+                </div>
+                <div class="ctx-item" data-od-id="offline-cancel-b">
+                  <span class="ctx-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </span>
+                  <span class="ctx-label">Отменить загрузку</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- c. Remove -->
+          <div class="menu-col" data-od-id="menu-remove-light">
+            <div class="menu-col-label">c. Удалить загрузку</div>
+            <div class="app-slice" data-theme="light">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span style="text-align:right"></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="offline-badge">оффлайн</div>
+              <div class="ctx-menu" data-od-id="ctx-c">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item" data-od-id="offline-action-c">
+                  <span class="ctx-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.18"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v6m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span>
+                  <span class="ctx-label">Удалить загрузку</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- d. Retry -->
+          <div class="menu-col" data-od-id="menu-retry-light">
+            <div class="menu-col-label">d. Повторить загрузку</div>
+            <div class="app-slice" data-theme="light">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span style="text-align:right"></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="ctx-menu" data-od-id="ctx-d">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item is-retry" data-od-id="offline-action-d">
+                  <span class="ctx-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 0113.2-4.9M19.5 12a7.5 7.5 0 01-13.2 4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 3.5v4h-4M7 20.5v-4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span>
+                  <span class="ctx-label">Повторить загрузку</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DARK -->
+      <div class="theme-block" data-od-id="menus-dark">
+        <div class="theme-label" style="color:rgba(0,0,0,0.4)">Dark</div>
+        <div class="menus-row">
+
+          <div class="menu-col" data-od-id="menu-download-dark">
+            <div class="menu-col-label">a. Загрузить оффлайн</div>
+            <div class="app-slice" data-theme="dark">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="ctx-menu">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item">
+                  <span class="ctx-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                  <span class="ctx-label">Загрузить оффлайн</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-col" data-od-id="menu-progress-dark">
+            <div class="menu-col-label">b. Загрузка…</div>
+            <div class="app-slice" data-theme="dark">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="ctx-menu">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item is-disabled">
+                  <span class="ctx-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                  <span class="ctx-label">Загрузка… 42%</span>
+                </div>
+                <div class="ctx-item">
+                  <span class="ctx-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                  <span class="ctx-label">Отменить загрузку</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-col" data-od-id="menu-remove-dark">
+            <div class="menu-col-label">c. Удалить загрузку</div>
+            <div class="app-slice" data-theme="dark">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="offline-badge">оффлайн</div>
+              <div class="ctx-menu">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item">
+                  <span class="ctx-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.18"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v6m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="ctx-label">Удалить загрузку</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-col" data-od-id="menu-retry-dark">
+            <div class="menu-col-label">d. Повторить загрузку</div>
+            <div class="app-slice" data-theme="dark">
+              <div class="slice-main">
+                <div class="slice-toolbar"><div class="slice-title">Static Dreams</div></div>
+                <div class="track-header"><span style="text-align:center">#</span><span>Название</span><span></span></div>
+                <div class="track-row"><span class="num">1</span><span class="name">Neon Pulse</span><span class="dur">3:12</span></div>
+                <div class="track-row is-target"><span class="num">2</span><span class="name">Static Dreams</span><span class="dur">3:54</span></div>
+                <div class="track-row"><span class="num">3</span><span class="name">Violet Rain</span><span class="dur">4:01</span></div>
+                <div class="track-row"><span class="num">4</span><span class="name">Afterglow</span><span class="dur">2:48</span></div>
+                <div class="track-row"><span class="num">5</span><span class="name">Drift</span><span class="dur">5:22</span></div>
+              </div>
+              <div class="ctx-menu">
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести</span></div>
+                <div class="ctx-item"><span class="ctx-label">Воспроизвести далее</span></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в очередь</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Добавить в плейлист</span><span class="ctx-chevron">▶</span></div>
+                <div class="ctx-item"><span class="ctx-label">В избранное</span></div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item is-retry">
+                  <span class="ctx-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 0113.2-4.9M19.5 12a7.5 7.5 0 01-13.2 4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 3.5v4h-4M7 20.5v-4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="ctx-label">Повторить загрузку</span>
+                </div>
+                <div class="ctx-sep"></div>
+                <div class="ctx-item"><span class="ctx-label">Показать в Finder</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 1820, H = 920;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H) * 0.94;
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'top center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

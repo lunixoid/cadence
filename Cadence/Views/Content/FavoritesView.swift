@@ -72,10 +72,18 @@ struct RecentView: View {
 struct DownloadedView: View {
     @Environment(AppUIState.self) private var uiState
     @Environment(LibraryStore.self) private var libraryStore
+    @Environment(OfflineStore.self) private var offlineStore
     @Environment(PlaybackController.self) private var playbackController
 
     private var tracks: [Track] {
-        libraryStore.filteredTracks(query: uiState.searchQuery, from: libraryStore.localTracks())
+        var seen = Set<UUID>()
+        var combined: [Track] = []
+        for track in libraryStore.localTracks() + offlineStore.offlineTracks(from: libraryStore) {
+            if seen.insert(track.id).inserted {
+                combined.append(track)
+            }
+        }
+        return libraryStore.filteredTracks(query: uiState.searchQuery, from: combined)
     }
 
     var body: some View {

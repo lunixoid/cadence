@@ -223,7 +223,7 @@ After playback starts, `PlaybackController` launches a background download of th
 
 ### Offline Mode
 
-No dedicated offline mode. Already cached tracks play without a network connection. The "Downloaded" section shows user's local folders, not Jellyfin downloads.
+No dedicated offline-only mode. Offline Jellyfin downloads live in `Application Support/Cadence/offline/` and take priority at playback. The **Downloaded** sidebar section shows local folder tracks **and** completed Jellyfin offline downloads.
 
 ---
 
@@ -257,7 +257,7 @@ No dedicated offline mode. Already cached tracks play without a network connecti
 - **Playlists**: local playlists + "New Playlist"
 - **Favorites**
 - **Recent**
-- **Downloaded** (user's local folders)
+- **Downloaded** (local folders + Jellyfin offline downloads)
 
 ### Content Area
 

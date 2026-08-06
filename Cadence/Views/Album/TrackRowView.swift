@@ -5,6 +5,7 @@ struct TrackRowView: View {
     @Environment(PlaybackController.self) private var playbackController
     @Environment(PlaylistStore.self) private var playlistStore
     @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(OfflineStore.self) private var offlineStore
     @Environment(JellyfinFavoritesSync.self) private var jellyfinFavoritesSync
     @Environment(AppUIState.self) private var uiState
     @Environment(\.colorScheme) private var colorScheme
@@ -19,6 +20,14 @@ struct TrackRowView: View {
 
     private var rowIsPlaying: Bool {
         isActive && playbackController.isPlaying
+    }
+
+    private var canManageOffline: Bool {
+        !track.fileURL.isFileURL && uiState.activeJellyfinClient != nil
+    }
+
+    private var offlineState: OfflineState {
+        offlineStore.state(for: track.id)
     }
 
     var body: some View {
@@ -117,9 +126,65 @@ struct TrackRowView: View {
         Button(favoritesStore.isFavorite(track: track) ? "Убрать из избранного" : "В избранное") {
             jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
         }
+        if canManageOffline {
+            Divider()
+            offlineMenuItems
+        }
         Divider()
         Button("Показать в Finder") {
-            NSWorkspace.shared.activateFileViewerSelecting([track.fileURL])
+            if let offlineURL = offlineStore.localURL(for: track.id) {
+                NSWorkspace.shared.activateFileViewerSelecting([offlineURL])
+            } else if track.fileURL.isFileURL {
+                NSWorkspace.shared.activateFileViewerSelecting([track.fileURL])
+            }
+        }
+        .disabled(!track.fileURL.isFileURL && offlineStore.localURL(for: track.id) == nil)
+    }
+
+    @ViewBuilder
+    private var offlineMenuItems: some View {
+        switch offlineState {
+        case .none:
+            Button {
+                guard let client = uiState.activeJellyfinClient else { return }
+                offlineStore.download(track: track, client: client, origin: .manual)
+            } label: {
+                Label("Загрузить оффлайн", systemImage: "arrow.down.circle")
+            }
+        case .queued:
+            Button {} label: {
+                Label("Загрузка… 0%", systemImage: "arrow.down.circle")
+            }
+            .disabled(true)
+            Button {
+                offlineStore.cancelDownload(trackID: track.id)
+            } label: {
+                Label("Отменить загрузку", systemImage: "xmark.circle")
+            }
+        case .downloading(let progress):
+            Button {} label: {
+                Label("Загрузка… \(Int(progress * 100))%", systemImage: "arrow.down.circle")
+            }
+            .disabled(true)
+            Button {
+                offlineStore.cancelDownload(trackID: track.id)
+            } label: {
+                Label("Отменить загрузку", systemImage: "xmark.circle")
+            }
+        case .ready:
+            Button {
+                offlineStore.remove(trackID: track.id)
+            } label: {
+                Label("Удалить загрузку", systemImage: "arrow.down.circle.fill")
+            }
+        case .failed:
+            Button {
+                guard let client = uiState.activeJellyfinClient else { return }
+                offlineStore.download(track: track, client: client, origin: .manual)
+            } label: {
+                Label("Повторить загрузку", systemImage: "arrow.clockwise")
+            }
+            .foregroundStyle(Color(red: 1, green: 0.231, blue: 0.188))
         }
     }
 }

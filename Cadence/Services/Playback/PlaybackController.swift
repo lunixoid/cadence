@@ -9,6 +9,7 @@ final class PlaybackController {
     private let audioEngine = AudioEngineService()
     private let libraryStore: LibraryStore
     private let recentStore: RecentStore
+    private let offlineStore: OfflineStore
     private let mediaRemote = MediaRemoteService()
     private let stateStore = PlaybackStateStore()
 
@@ -63,9 +64,10 @@ final class PlaybackController {
         currentTrack?.id
     }
 
-    init(libraryStore: LibraryStore, recentStore: RecentStore) {
+    init(libraryStore: LibraryStore, recentStore: RecentStore, offlineStore: OfflineStore) {
         self.libraryStore = libraryStore
         self.recentStore = recentStore
+        self.offlineStore = offlineStore
 
         mediaRemote.configure(controller: self)
         userPresets = userPresetStore.load()
@@ -454,6 +456,11 @@ final class PlaybackController {
             return .local(track.fileURL)
         }
 
+        if let offlineURL = offlineStore.localURL(for: track.id) {
+            logger.info("Load source: offline '\(track.title)'")
+            return .local(offlineURL)
+        }
+
         if let cached = prefetchedCache, cached.trackID == track.id {
             prefetchedCache = nil
             if await AudioCache.shared.hasCachedFile(trackID: track.id) {
@@ -546,6 +553,11 @@ final class PlaybackController {
 
         if next.fileURL.isFileURL {
             prepareGapless(url: next.fileURL)
+            return
+        }
+
+        if let offlineURL = offlineStore.localURL(for: next.id) {
+            prepareGapless(url: offlineURL)
             return
         }
 

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Cadence — Player bar · Оффлайн (FEAT5)</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+<style>
+  body.artifact { overflow: auto; }
+
+  .board {
+    width: 1180px;
+    height: 920px;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .theme-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .theme-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.4);
+  }
+
+  .states {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .state-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .state-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.45);
+    padding-left: 2px;
+  }
+
+  /* Player bar strip inside themed window chrome */
+  .bar-frame {
+    width: 1100px;
+    height: 72px;
+    border-radius: var(--radius-xl);
+    background: var(--window);
+    box-shadow: var(--shadow-window);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .player {
+    height: var(--player-h);
+    background: var(--player-bar);
+    border-top: var(--hairline) solid var(--border);
+    display: grid;
+    grid-template-columns: 260px 1fr 230px;
+    align-items: center;
+    padding: 0 20px;
+  }
+
+  .np-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .np-cover {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, #5c2d91, #8e44ad);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-cover);
+    flex-shrink: 0;
+  }
+
+  .np-cover .disc {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 40%;
+    height: 40%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .np-text { min-width: 0; flex: 1; }
+  .np-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 18px;
+  }
+  .np-artist {
+    font-size: 12px;
+    color: var(--ink-secondary);
+    margin-top: 2px;
+    line-height: 16px;
+  }
+
+  .track-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .icon-hit {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--icon);
+    cursor: default;
+    position: relative;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .icon-hit:hover {
+    background: var(--hover);
+    color: var(--icon-hover);
+  }
+
+  .icon-hit.is-fav { color: var(--favorites); }
+  .icon-hit.is-fav:hover { color: var(--favorites); background: var(--hover); }
+
+  .icon-hit.is-downloading {
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+
+  .icon-hit.is-downloaded { color: var(--ink-primary); }
+  .icon-hit.is-downloaded:hover { color: var(--ink); background: var(--hover); }
+
+  .icon-hit.is-retry { color: var(--danger); }
+  .icon-hit.is-retry:hover { color: var(--danger); background: var(--hover); }
+
+  .icon-hit svg { display: block; }
+
+  /* Circular progress around download icon — sole extra accent use with seek fill */
+  .dl-ring {
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background:
+      conic-gradient(var(--accent) 0 42%, var(--track-rail) 42% 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  }
+
+  .transport {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .transport-btns {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .t-icon {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    color: var(--icon);
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .progress-row .progress-rail { flex: 1; height: 4px; border-radius: 3px; background: var(--track-rail); overflow: hidden; }
+  .progress-row .progress-fill { width: 42%; height: 100%; border-radius: 3px; background: var(--accent); }
+
+  .right-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    color: var(--icon);
+  }
+
+  .vol-rail {
+    width: 72px;
+    height: 4px;
+    border-radius: 3px;
+    background: var(--track-rail);
+  }
+  .vol-fill {
+    width: 70%;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--volume-fill);
+  }
+
+  .note {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.4);
+    line-height: 1.4;
+    max-width: 1100px;
+  }
+</style>
+</head>
+<body class="artifact">
+  <div class="stage light-stage" style="min-height:100vh;align-items:flex-start;padding:40px 0;">
+    <div class="board artboard" data-screen-label="Player bar — Оффлайн" data-od-id="screen-offline-player-bar" style="width:1180px;height:920px;">
+
+      <div class="note" data-od-id="note-placement">
+        Кнопка оффлайна — слева в meta-блоке, рядом с избранным. На экране «Сейчас играет» бар свернут в полоску seek → кнопка там не показывается (см. макет NP).
+      </div>
+
+      <!-- LIGHT -->
+      <div class="theme-block" data-od-id="bars-light">
+        <div class="theme-label">Light</div>
+        <div class="states">
+
+          <div class="state-row" data-od-id="bar-idle-light">
+            <div class="state-label">a. Не загружен — «Загрузить оффлайн»</div>
+            <div class="bar-frame" data-theme="light">
+              <div class="player">
+                <div class="np-meta">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-text">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                  </div>
+                  <div class="track-actions">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном" data-od-id="btn-fav">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit" type="button" aria-label="Загрузить оффлайн" data-od-id="btn-dl-idle">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="transport">
+                  <div class="transport-btns">
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="progress-row">
+                    <span class="t-time">1:24</span>
+                    <div class="progress-rail"><div class="progress-fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                </div>
+                <div class="right-controls">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a3.5 3.5 0 0 0-2.5-3.3v6.6a3.5 3.5 0 0 0 2.5-3.3z"/></svg>
+                  <div class="vol-rail"><div class="vol-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-row" data-od-id="bar-progress-light">
+            <div class="state-label">b. Загрузка — кольцо 42%, кнопка неактивна (отмена — в меню трека)</div>
+            <div class="bar-frame" data-theme="light">
+              <div class="player">
+                <div class="np-meta">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-text">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                  </div>
+                  <div class="track-actions">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit is-downloading" type="button" aria-label="Загрузка 42%" data-od-id="btn-dl-progress">
+                      <span class="dl-ring" aria-hidden="true"></span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="position:relative;z-index:1"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="transport">
+                  <div class="transport-btns">
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="progress-row">
+                    <span class="t-time">1:24</span>
+                    <div class="progress-rail"><div class="progress-fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                </div>
+                <div class="right-controls">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a3.5 3.5 0 0 0-2.5-3.3v6.6a3.5 3.5 0 0 0 2.5-3.3z"/></svg>
+                  <div class="vol-rail"><div class="vol-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-row" data-od-id="bar-done-light">
+            <div class="state-label">c. Загружен — filled download; клик → удалить загрузку</div>
+            <div class="bar-frame" data-theme="light">
+              <div class="player">
+                <div class="np-meta">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-text">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                  </div>
+                  <div class="track-actions">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit is-downloaded" type="button" aria-label="Удалить загрузку" data-od-id="btn-dl-done">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.14"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v6m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="transport">
+                  <div class="transport-btns">
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="progress-row">
+                    <span class="t-time">1:24</span>
+                    <div class="progress-rail"><div class="progress-fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                </div>
+                <div class="right-controls">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a3.5 3.5 0 0 0-2.5-3.3v6.6a3.5 3.5 0 0 0 2.5-3.3z"/></svg>
+                  <div class="vol-rail"><div class="vol-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-row" data-od-id="bar-retry-light">
+            <div class="state-label">d. Ошибка — «Повторить» (danger, без полосы слева)</div>
+            <div class="bar-frame" data-theme="light">
+              <div class="player">
+                <div class="np-meta">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-text">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                  </div>
+                  <div class="track-actions">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit is-retry" type="button" aria-label="Повторить загрузку" data-od-id="btn-dl-retry">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 0113.2-4.9M19.5 12a7.5 7.5 0 01-13.2 4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 3.5v4h-4M7 20.5v-4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="transport">
+                  <div class="transport-btns">
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="progress-row">
+                    <span class="t-time">1:24</span>
+                    <div class="progress-rail"><div class="progress-fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                </div>
+                <div class="right-controls">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a3.5 3.5 0 0 0-2.5-3.3v6.6a3.5 3.5 0 0 0 2.5-3.3z"/></svg>
+                  <div class="vol-rail"><div class="vol-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DARK (compact: idle + done) -->
+      <div class="theme-block" data-od-id="bars-dark">
+        <div class="theme-label">Dark · a / c</div>
+        <div class="states">
+
+          <div class="state-row" data-od-id="bar-idle-dark">
+            <div class="state-label">a. Не загружен</div>
+            <div class="bar-frame" data-theme="dark">
+              <div class="player">
+                <div class="np-meta">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-text">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                  </div>
+                  <div class="track-actions">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit" type="button" aria-label="Загрузить оффлайн">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="transport">
+                  <div class="transport-btns">
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="progress-row">
+                    <span class="t-time">1:24</span>
+                    <div class="progress-rail"><div class="progress-fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                </div>
+                <div class="right-controls">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a3.5 3.5 0 0 0-2.5-3.3v6.6a3.5 3.5 0 0 0 2.5-3.3z"/></svg>
+                  <div class="vol-rail"><div class="vol-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-row" data-od-id="bar-done-dark">
+            <div class="state-label">c. Загружен</div>
+            <div class="bar-frame" data-theme="dark">
+              <div class="player">
+                <div class="np-meta">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-text">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                  </div>
+                  <div class="track-actions">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit is-downloaded" type="button" aria-label="Удалить загрузку">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.18"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v6m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="transport">
+                  <div class="transport-btns">
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="progress-row">
+                    <span class="t-time">1:24</span>
+                    <div class="progress-rail"><div class="progress-fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                </div>
+                <div class="right-controls">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a3.5 3.5 0 0 0-2.5-3.3v6.6a3.5 3.5 0 0 0 2.5-3.3z"/></svg>
+                  <div class="vol-rail"><div class="vol-fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

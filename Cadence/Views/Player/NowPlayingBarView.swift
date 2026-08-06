@@ -165,6 +165,12 @@ struct NowPlayingBarView: View {
             .onTapGesture(perform: openNowPlaying)
 
             favoriteButton
+            OfflineDownloadButton(
+                track: currentTrack,
+                size: 36,
+                iconFont: 17,
+                progressStyle: .accent
+            )
         }
         .frame(width: 230, alignment: .leading)
         .id(currentTrack?.id)

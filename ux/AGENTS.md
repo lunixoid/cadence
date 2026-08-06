@@ -91,6 +91,7 @@
 - Height ~64–72; cover 56×56 radius 8
 - Play button 56 круглый: light fill `#1c1c1e` + white icon; dark fill `#ffffff` + `#1c1c1e` icon
 - Progress height 4 (hover 6), thumb 14 circle accent
+- **Оффлайн (FEAT5):** icon-кнопка рядом с избранным (♥) в meta-блоке; на экране «Сейчас играет» — в ряду действий, бар свёрнут в strip. Состояния: download / ring progress / filled (удалить) / retry (danger). Не второй accent CTA.
 
 ### Buttons / controls
 - Icon hit target ≥ 28–44

@@ -25,6 +25,7 @@
 	463EAD6D8E3E40E091DC127D /* ContentToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */; };
 	0180027AD8C146688E6A659D /* AlbumCoverPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */; };
 	87F6BFE9308843038CD54A4C /* EqualizerBarsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */; };
+	C50000010000000000000001 /* OfflineDownloadButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50000010000000000000011 /* OfflineDownloadButton.swift */; };
 	4B112FB122D343BD912FBF71 /* VisualEffectBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D515D596B749AC96306FFB /* VisualEffectBackground.swift */; };
 	5D1DBDE0F4D24C01944C4A28 /* AlbumPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */; };
 	7FDED7D3815D40909AD076C9 /* TrackRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */; };
@@ -102,6 +103,7 @@
 	18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentToolbarView.swift; sourceTree = "<group>"; };
 	FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCoverPlaceholderView.swift; sourceTree = "<group>"; };
 	2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EqualizerBarsView.swift; sourceTree = "<group>"; };
+	C50000010000000000000011 /* OfflineDownloadButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadButton.swift; sourceTree = "<group>"; };
 	11D515D596B749AC96306FFB /* VisualEffectBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectBackground.swift; sourceTree = "<group>"; };
 	32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumPageView.swift; sourceTree = "<group>"; };
 	9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRowView.swift; sourceTree = "<group>"; };
@@ -425,6 +427,7 @@
 			B1000001000000000000000D /* AlbumCoverView.swift */,
 			FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */,
 			2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */,
+			C50000010000000000000011 /* OfflineDownloadButton.swift */,
 			B10000010000000000000019 /* OverlayWindowChrome.swift */,
 			11D515D596B749AC96306FFB /* VisualEffectBackground.swift */,
 		);
@@ -620,6 +623,7 @@
 			463EAD6D8E3E40E091DC127D /* ContentToolbarView.swift in Sources */,
 			0180027AD8C146688E6A659D /* AlbumCoverPlaceholderView.swift in Sources */,
 			87F6BFE9308843038CD54A4C /* EqualizerBarsView.swift in Sources */,
+			C50000010000000000000001 /* OfflineDownloadButton.swift in Sources */,
 			4B112FB122D343BD912FBF71 /* VisualEffectBackground.swift in Sources */,
 			5D1DBDE0F4D24C01944C4A28 /* AlbumPageView.swift in Sources */,
 			7FDED7D3815D40909AD076C9 /* TrackRowView.swift in Sources */,
@@ -752,7 +756,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.11.0;
+			MARKETING_VERSION = 1.12.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -782,7 +786,7 @@
 				"@executable_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.11.0;
+			MARKETING_VERSION = 1.12.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_EMIT_LOC_STRINGS = YES;
@@ -804,7 +808,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.11.0;
+			MARKETING_VERSION = 1.12.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;
@@ -825,7 +829,7 @@
 				"@loader_path/../Frameworks",
 			);
 			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.11.0;
+			MARKETING_VERSION = 1.12.0;
 			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SWIFT_VERSION = 5.0;

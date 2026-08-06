@@ -24,19 +24,28 @@ enum PreviewData {
     ]
 
     @MainActor
-    static func makeEnvironment() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, JellyfinFavoritesSync, RecentStore, PlaybackController) {
+    static func makeEnvironment() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, OfflineStore, JellyfinFavoritesSync, RecentStore, PlaybackController) {
         let library = LibraryStore()
         let recent = RecentStore()
         let favorites = FavoritesStore()
-        let favoritesSync = JellyfinFavoritesSync(favoritesStore: favorites, libraryStore: library)
-        let playback = PlaybackController(libraryStore: library, recentStore: recent)
+        let offline = OfflineStore()
+        let favoritesSync = JellyfinFavoritesSync(
+            favoritesStore: favorites,
+            libraryStore: library,
+            offlineStore: offline
+        )
+        let playback = PlaybackController(
+            libraryStore: library,
+            recentStore: recent,
+            offlineStore: offline
+        )
         let uiState = AppUIState(libraryStore: library)
 
-        return (uiState, library, PlaylistStore(), favorites, favoritesSync, recent, playback)
+        return (uiState, library, PlaylistStore(), favorites, offline, favoritesSync, recent, playback)
     }
 
     @MainActor
-    static func stateWithAlbumPage() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, JellyfinFavoritesSync, RecentStore, PlaybackController) {
+    static func stateWithAlbumPage() -> (AppUIState, LibraryStore, PlaylistStore, FavoritesStore, OfflineStore, JellyfinFavoritesSync, RecentStore, PlaybackController) {
         let env = makeEnvironment()
         env.1.loadPreview(result: LibraryScanResult(
             albums: [album],
@@ -44,7 +53,7 @@ enum PreviewData {
             artists: [Artist(name: album.artist, albumIDs: [album.id])]
         ))
         env.0.contentRoute = .albumDetail(album.id)
-        env.6.loadPreviewState(
+        env.7.loadPreviewState(
             tracks: tracks,
             currentIndex: 1,
             isPlaying: true,
@@ -65,6 +74,7 @@ enum PreviewData {
         .environment(env.4)
         .environment(env.5)
         .environment(env.6)
+        .environment(env.7)
         .frame(width: 1100, height: 700)
 }
 
@@ -78,6 +88,7 @@ enum PreviewData {
         .environment(env.4)
         .environment(env.5)
         .environment(env.6)
+        .environment(env.7)
         .frame(width: 880, height: 600)
 }
 
@@ -91,6 +102,7 @@ enum PreviewData {
         .environment(env.4)
         .environment(env.5)
         .environment(env.6)
+        .environment(env.7)
         .frame(width: 1100)
 }
 #endif

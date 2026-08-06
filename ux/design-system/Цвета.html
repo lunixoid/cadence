@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Cadence — Цвета</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .artboard {
+    width: 1100px;
+    height: 700px;
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    background: var(--content);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .head .t-caption { font-variant-numeric: tabular-nums; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; flex: 1; }
+  .swatch {
+    background: var(--window);
+    border: var(--hairline) solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .chip { height: 72px; }
+  .meta { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .name { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .hex { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink-secondary); }
+  .role { font-size: 11px; color: var(--ink-muted); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0; height: 72px; }
+  .pair > div { height: 100%; }
+  .row-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-muted); margin-bottom: 12px;
+  }
+  .dual { display: flex; gap: 24px; }
+  .dual > section { flex: 1; }
+</style>
+</head>
+<body class="artifact">
+  <div class="stage light-stage">
+    <div class="artboard" data-theme="light" data-screen-label="ДС — Цвета">
+      <div class="head">
+        <div>
+          <div class="t-section-upper" style="margin-bottom:8px">Design system</div>
+          <div class="t-h1">Цвета</div>
+        </div>
+        <div class="t-caption">Light · Dark · только роли из AGENTS.md</div>
+      </div>
+
+      <div class="dual">
+        <section>
+          <div class="row-label">Light</div>
+          <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="swatch" data-od-id="swatch-accent-light">
+              <div class="chip" style="background:#007AFF"></div>
+              <div class="meta">
+                <span class="name">Accent</span>
+                <span class="hex">#007AFF</span>
+                <span class="role">progress · selected icon</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="pair">
+                <div style="background:#ffffff"></div>
+                <div style="background:#f5f5f7"></div>
+              </div>
+              <div class="meta">
+                <span class="name">Window / Content</span>
+                <span class="hex">#FFFFFF · #F5F5F7</span>
+                <span class="role">chrome · main</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background:rgba(245,245,247,0.72); backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(0,0,0,0.08)"></div>
+              <div class="meta">
+                <span class="name">Sidebar glass</span>
+                <span class="hex">rgba(245,245,247,0.72)</span>
+                <span class="role">blur 50 · saturate 180</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="pair">
+                <div style="background:#FF3B30"></div>
+                <div style="background:#FF375F"></div>
+              </div>
+              <div class="meta">
+                <span class="name">Danger / Favorites</span>
+                <span class="hex">#FF3B30 · #FF375F</span>
+                <span class="role">delete · heart</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="pair">
+                <div style="display:flex;align-items:center;justify-content:center;gap:6px;background:#f5f5f7">
+                  <span style="width:12px;height:12px;border-radius:50%;background:#FF5F57;border:0.5px solid rgba(0,0,0,0.12)"></span>
+                  <span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E;border:0.5px solid rgba(0,0,0,0.12)"></span>
+                  <span style="width:12px;height:12px;border-radius:50%;background:#28C840;border:0.5px solid rgba(0,0,0,0.12)"></span>
+                </div>
+                <div style="background:rgba(0,0,0,0.85)"></div>
+              </div>
+              <div class="meta">
+                <span class="name">Traffic / Ink</span>
+                <span class="hex">system · rgba(0,0,0,0.85)</span>
+                <span class="role">titlebar · primary text</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background:linear-gradient(90deg,rgba(0,0,0,0.08),rgba(0,0,0,0.05),rgba(0,0,0,0.1))"></div>
+              <div class="meta">
+                <span class="name">Border · Hover · Rail</span>
+                <span class="hex">rgba black 0.08 / 0.06 / 0.10</span>
+                <span class="role">hairline · fills</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section data-theme="dark" style="background:var(--content);border-radius:var(--radius-md);padding:16px;border:0.5px solid var(--border)">
+          <div class="row-label">Dark</div>
+          <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="swatch" style="background:var(--window)">
+              <div class="chip" style="background:#0A84FF"></div>
+              <div class="meta">
+                <span class="name">Accent</span>
+                <span class="hex">#0A84FF</span>
+                <span class="role">dark system blue</span>
+              </div>
+            </div>
+            <div class="swatch" style="background:var(--window)">
+              <div class="pair">
+                <div style="background:#282828"></div>
+                <div style="background:#1e1e20"></div>
+              </div>
+              <div class="meta">
+                <span class="name">Window / Content</span>
+                <span class="hex">#282828 · #1E1E20</span>
+                <span class="role">chrome · main</span>
+              </div>
+            </div>
+            <div class="swatch" style="background:var(--window)">
+              <div class="chip" style="background:rgba(40,40,45,0.82)"></div>
+              <div class="meta">
+                <span class="name">Sidebar glass</span>
+                <span class="hex">rgba(40,40,45,0.82)</span>
+                <span class="role">frosted dark</span>
+              </div>
+            </div>
+            <div class="swatch" style="background:var(--window)">
+              <div class="pair">
+                <div style="background:rgba(28,28,30,0.97)"></div>
+                <div style="background:rgba(255,255,255,0.12)"></div>
+              </div>
+              <div class="meta">
+                <span class="name">Player / Selected</span>
+                <span class="hex">bar · row fill</span>
+                <span class="role">transport · nav</span>
+              </div>
+            </div>
+            <div class="swatch" style="background:var(--window)">
+              <div class="chip" style="background:rgba(255,255,255,0.85)"></div>
+              <div class="meta">
+                <span class="name">Ink primary</span>
+                <span class="hex">rgba(255,255,255,0.85)</span>
+                <span class="role">titles · rows</span>
+              </div>
+            </div>
+            <div class="swatch" style="background:var(--window)">
+              <div class="chip" style="background:linear-gradient(90deg,#FF3B30,#FF375F,#34C759)"></div>
+              <div class="meta">
+                <span class="name">Semantic</span>
+                <span class="hex">danger · fav · success</span>
+                <span class="role">без смены в dark</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 1100, H = 700;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H) * 0.92;
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

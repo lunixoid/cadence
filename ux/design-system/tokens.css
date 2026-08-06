@@ -1,0 +1,312 @@
+/* Cadence design system — токены из Cadence.html / cadence-*.jsx */
+/* В макетах только var(--*); hex здесь и в эталонах. */
+
+:root,
+[data-theme="light"] {
+  --artboard-w: 1100px;
+  --artboard-h: 700px;
+
+  /* Accent & semantic */
+  --accent: #007aff;
+  --accent-sel: rgba(0, 122, 255, 0.09);
+  --danger: #ff3b30;
+  --favorites: #ff375f;
+  --success: #34c759;
+  --success-text: #1a9a3c;
+  --traffic-close: #ff5f57;
+  --traffic-min: #febc2e;
+  --traffic-zoom: #28c840;
+
+  /* Surfaces */
+  --window: #ffffff;
+  --content: #f5f5f7;
+  --sidebar: rgba(245, 245, 247, 0.72);
+  --player-bar: rgba(252, 252, 253, 0.97);
+  --prefs-win: #f2f2f5;
+  --prefs-card: #ffffff;
+  --prefs-bar: rgba(242, 242, 245, 0.97);
+  --menu: rgba(255, 255, 255, 0.96);
+  --seg-bg: rgba(0, 0, 0, 0.07);
+  --seg-sel: #ffffff;
+  --play-btn: #1c1c1e;
+  --play-icon: #ffffff;
+  --stage: #c8cdd3;
+
+  /* Text */
+  --ink: rgba(0, 0, 0, 0.88);
+  --ink-primary: rgba(0, 0, 0, 0.85);
+  --ink-secondary: rgba(0, 0, 0, 0.45);
+  --ink-muted: rgba(0, 0, 0, 0.3);
+  --ink-section: rgba(0, 0, 0, 0.4);
+  --icon: rgba(0, 0, 0, 0.48);
+  --icon-hover: rgba(0, 0, 0, 0.88);
+
+  /* Borders & fills */
+  --border: rgba(0, 0, 0, 0.08);
+  --border-soft: rgba(0, 0, 0, 0.06);
+  --hover: rgba(0, 0, 0, 0.06);
+  --selected: rgba(0, 0, 0, 0.09);
+  --search-bg: rgba(0, 0, 0, 0.05);
+  --track-rail: rgba(0, 0, 0, 0.1);
+  --volume-fill: rgba(0, 0, 0, 0.42);
+
+  /* Shadows */
+  --shadow-window: 0 0 0 0.5px rgba(0, 0, 0, 0.15), 0 24px 80px rgba(0, 0, 0, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-play: 0 3px 16px rgba(0, 0, 0, 0.16);
+  --shadow-cover: 0 4px 14px rgba(0, 0, 0, 0.22);
+
+  /* Aliases for skill template compatibility */
+  --accent-1: var(--accent);
+  --bg: var(--window);
+  --panel: var(--content);
+  --ink-muted-alias: var(--ink-muted);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-cover-lg: 14px;
+  --radius-pill: 10px;
+
+  /* Layout */
+  --sidebar-w: 220px;
+  --titlebar-h: 52px;
+  --player-h: 72px;
+  --hairline: 0.5px;
+
+  /* Type */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+    sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
+[data-theme="dark"] {
+  --accent: #0a84ff;
+  --accent-sel: rgba(10, 132, 255, 0.18);
+
+  --window: #282828;
+  --content: #1e1e20;
+  --sidebar: rgba(40, 40, 45, 0.82);
+  --player-bar: rgba(28, 28, 30, 0.97);
+  --prefs-win: #2c2c2e;
+  --prefs-card: #3a3a3c;
+  --prefs-bar: #313133;
+  --menu: rgba(50, 50, 54, 0.96);
+  --seg-bg: #1e1e20;
+  --seg-sel: #48484a;
+  --play-btn: #ffffff;
+  --play-icon: #1c1c1e;
+  --stage: #1a1a1c;
+
+  --ink: rgba(255, 255, 255, 0.92);
+  --ink-primary: rgba(255, 255, 255, 0.85);
+  --ink-secondary: rgba(255, 255, 255, 0.45);
+  --ink-muted: rgba(255, 255, 255, 0.3);
+  --ink-section: rgba(255, 255, 255, 0.4);
+  --icon: rgba(255, 255, 255, 0.58);
+  --icon-hover: rgba(255, 255, 255, 0.92);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --hover: rgba(255, 255, 255, 0.08);
+  --selected: rgba(255, 255, 255, 0.12);
+  --search-bg: rgba(255, 255, 255, 0.08);
+  --track-rail: rgba(255, 255, 255, 0.13);
+  --volume-fill: rgba(255, 255, 255, 0.62);
+
+  --shadow-window: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 24px 80px rgba(0, 0, 0, 0.65),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-play: 0 3px 16px rgba(0, 0, 0, 0.45);
+  --shadow-cover: 0 4px 14px rgba(0, 0, 0, 0.4);
+
+  --bg: var(--window);
+  --panel: var(--content);
+  --accent-1: var(--accent);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.artifact {
+  margin: 0;
+  background: var(--stage);
+  font-family: var(--font-sans);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--stage);
+}
+
+.stage.light-stage {
+  background: radial-gradient(ellipse at 30% 40%, #b5c7df 0%, #c8cdd3 60%, #d2cfc8 100%);
+}
+
+.stage.dark-stage {
+  background: radial-gradient(ellipse at 30% 40%, #1e2636 0%, #1a1a1c 60%, #1c1a18 100%);
+}
+
+.artboard {
+  width: var(--artboard-w);
+  height: var(--artboard-h);
+  position: relative;
+  background: var(--window);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-window);
+  overflow: hidden;
+  flex: none;
+  font-family: var(--font-sans);
+}
+
+/* Type scale */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.t-h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.t-body {
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-primary);
+}
+.t-meta {
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+.t-caption {
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ink-muted);
+}
+.t-section {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ink-section);
+}
+.t-section-upper {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.t-time {
+  font-weight: 500;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+}
+
+/* Shared chrome helpers */
+.hairline {
+  height: var(--hairline);
+  background: var(--border);
+  border: none;
+}
+.sidebar-glass {
+  background: var(--sidebar);
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+}
+.btn-play {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--play-btn);
+  color: var(--play-icon);
+  border: none;
+  box-shadow: var(--shadow-play);
+  display: grid;
+  place-items: center;
+}
+.progress-rail {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--track-rail);
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  margin: 0 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--ink-primary);
+}
+.nav-item.is-selected {
+  background: var(--selected);
+  font-weight: 600;
+}
+.nav-item.is-selected .nav-icon {
+  color: var(--accent);
+}
+.vinyl-cover {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-cover);
+}
+.vinyl-cover .disc {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 38%;
+  height: 38%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.15);
+}
+.vinyl-cover .disc::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 32%;
+  height: 32%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Cadence — Линии и формы</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .artboard {
+    width: 1100px;
+    height: 700px;
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    background: var(--content);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    flex: 1;
+  }
+  .card {
+    background: var(--window);
+    border: var(--hairline) solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-muted); }
+  .note { font-size: 12px; color: var(--ink-secondary); line-height: 1.4; }
+  .radii { display: flex; align-items: flex-end; gap: 12px; }
+  .r {
+    background: var(--accent);
+    opacity: 0.85;
+  }
+  .traffic { display: flex; gap: 8px; align-items: center; }
+  .tl { width: 12px; height: 12px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.12); }
+  .play {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--play-btn); box-shadow: var(--shadow-play);
+    display: grid; place-items: center;
+  }
+  .play svg { margin-left: 2px; }
+  .rail {
+    height: 4px; border-radius: 3px; background: var(--track-rail); position: relative; margin-top: 8px;
+  }
+  .rail > i {
+    display: block; height: 100%; width: 48%; border-radius: 3px; background: var(--accent); position: relative;
+  }
+  .rail > i::after {
+    content: ""; position: absolute; right: -7px; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.28);
+  }
+  .vinyl {
+    width: 96px; height: 96px; border-radius: 8px; overflow: hidden; position: relative;
+    background: linear-gradient(135deg, #5c2d91, #8e44ad); box-shadow: var(--shadow-cover);
+  }
+  .vinyl .d {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.15);
+  }
+  .vinyl .d::after {
+    content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 12px; height: 12px; border-radius: 50%; background: rgba(0,0,0,0.25);
+  }
+  .nav-demo {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .nav-demo .nav-item { margin: 0; }
+  .win-mini {
+    height: 64px; border-radius: 12px; background: var(--window);
+    box-shadow: var(--shadow-window); display: flex; align-items: center; padding: 0 16px;
+  }
+</style>
+</head>
+<body class="artifact">
+  <div class="stage light-stage">
+    <div class="artboard" data-theme="light" data-screen-label="ДС — Линии и формы">
+      <div>
+        <div class="t-section-upper" style="margin-bottom:8px">Design system</div>
+        <div class="t-h1">Линии и формы</div>
+      </div>
+
+      <div class="grid">
+        <div class="card" data-od-id="shape-radii">
+          <div class="label">Радиусы</div>
+          <div class="radii">
+            <div class="r" style="width:36px;height:28px;border-radius:4px" title="4"></div>
+            <div class="r" style="width:40px;height:32px;border-radius:6px" title="6"></div>
+            <div class="r" style="width:44px;height:36px;border-radius:8px" title="8"></div>
+            <div class="r" style="width:48px;height:40px;border-radius:10px" title="10"></div>
+            <div class="r" style="width:56px;height:44px;border-radius:12px" title="12"></div>
+          </div>
+          <div class="note">4 menu · 6 nav · 8 cover/menu · 10 tile · 12 window</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Hairline</div>
+          <div style="height:0.5px;background:var(--border);margin:12px 0"></div>
+          <div style="height:0.5px;background:var(--border-soft);margin:12px 0"></div>
+          <div class="note">Только 0.5px. Без 1px «жирных» рамок в chrome.</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Window chrome</div>
+          <div class="win-mini">
+            <div class="traffic">
+              <span class="tl" style="background:var(--traffic-close)"></span>
+              <span class="tl" style="background:var(--traffic-min)"></span>
+              <span class="tl" style="background:var(--traffic-zoom)"></span>
+            </div>
+          </div>
+          <div class="note">12×12 · gap 8 · titlebar zone 52</div>
+        </div>
+
+        <div class="card" data-od-id="shape-vinyl">
+          <div class="label">Signature — vinyl</div>
+          <div class="vinyl"><div class="d"></div></div>
+          <div class="note">Квадрат + диск. Цвета с обложки альбома, не из accent.</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Transport</div>
+          <div style="display:flex;align-items:center;gap:20px">
+            <div class="play">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--play-icon)"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <div style="flex:1">
+              <div class="rail"><i></i></div>
+              <div class="note" style="margin-top:10px">Play 56 · rail 4→6 hover · thumb 14 accent</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Nav + glass</div>
+          <div class="sidebar-glass" style="border-radius:8px;padding:8px 0;border:0.5px solid var(--border)">
+            <div class="nav-demo">
+              <div class="nav-item is-selected"><span class="nav-icon" style="color:var(--accent)">◉</span> Альбомы</div>
+              <div class="nav-item"><span style="color:var(--icon)">○</span> Артисты</div>
+              <div class="nav-item"><span style="color:var(--favorites)">♥</span> Избранное</div>
+            </div>
+          </div>
+          <div class="note">Selected fill · accent icon · favorites #FF375F</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 1100, H = 700;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H) * 0.92;
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

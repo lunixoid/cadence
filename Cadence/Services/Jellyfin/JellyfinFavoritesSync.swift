@@ -8,14 +8,24 @@ private let logger = Logger(subsystem: "dev.personal.cadence", category: "Jellyf
 final class JellyfinFavoritesSync {
     private let favoritesStore: FavoritesStore
     private let libraryStore: LibraryStore
+    private let offlineStore: OfflineStore
 
-    init(favoritesStore: FavoritesStore, libraryStore: LibraryStore) {
+    init(favoritesStore: FavoritesStore, libraryStore: LibraryStore, offlineStore: OfflineStore) {
         self.favoritesStore = favoritesStore
         self.libraryStore = libraryStore
+        self.offlineStore = offlineStore
     }
 
     func toggle(track: Track, client: JellyfinClient?) {
         let isFavorite = favoritesStore.toggle(track: track)
+
+        if isFavorite {
+            if let client {
+                offlineStore.download(track: track, client: client, origin: .favorite)
+            }
+        } else {
+            offlineStore.removeIfFavoriteOrigin(trackID: track.id)
+        }
 
         guard let client,
               let itemID = JellyfinIdentity.itemID(from: track.fileURL) else {

@@ -51,6 +51,9 @@ struct ServerEntry: Identifiable, Equatable {
 
 struct PreferencesWindowView: View {
     @Environment(AppUIState.self) private var uiState
+    @Environment(OfflineStore.self) private var offlineStore
+    @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(LibraryStore.self) private var libraryStore
     @Environment(\.colorScheme) private var colorScheme
 
     let isOpen: Bool
@@ -383,8 +386,16 @@ struct PreferencesWindowView: View {
 
     private var cacheTab: some View {
         let _ = cacheRevision
-        let usedGb = Double(ArtworkCache.totalDiskUsageBytes()) / 1_073_741_824
+        let usedGb = Double(ArtworkCache.totalDiskUsageBytes() + AudioCache.totalDiskUsageBytes()) / 1_073_741_824
         let pct = min(usedGb / Double(cacheLimitGB), 1.0)
+        let offlineCount = offlineStore.trackCount
+        let offlineGb = Double(offlineStore.totalBytes) / 1_073_741_824
+        let isBatch = offlineStore.isBatchDownloading
+        let batchDone = offlineStore.batchCompleted
+        let batchTotal = max(offlineStore.batchTotal, 1)
+        let batchProgress = offlineStore.isBatchDownloading
+            ? Double(offlineStore.batchCompleted) / Double(batchTotal)
+            : 0
 
         return VStack(alignment: .leading, spacing: 0) {
             prefsSectionLabel("Хранилище", first: true)
@@ -431,6 +442,89 @@ struct PreferencesWindowView: View {
                         cacheRevision += 1
                     }
                 }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(CadenceTheme.prefsText(for: cs))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 5)
+                .background(CadenceTheme.prefsCardBackground(for: cs))
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(CadenceTheme.prefsBorder(for: cs), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 10)
+
+            prefsSectionLabel("Оффлайн")
+            PrefsCard {
+                if offlineCount == 0 && !isBatch {
+                    VStack(spacing: 6) {
+                        Text("Нет загруженных треков")
+                            .font(.system(size: 13))
+                            .foregroundStyle(CadenceTheme.prefsSubtext(for: cs))
+                        Text("Оффлайн-треки хранятся отдельно и не удаляются при очистке кеша")
+                            .font(.system(size: 11))
+                            .foregroundStyle(CadenceTheme.prefsMuted(for: cs))
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 72)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Загружено")
+                                .font(.system(size: 13))
+                                .foregroundStyle(CadenceTheme.prefsText(for: cs))
+                            Spacer()
+                            Text(offlineSummaryLabel(count: offlineCount, gb: offlineGb))
+                                .font(.system(size: 12))
+                                .monospacedDigit()
+                                .foregroundStyle(CadenceTheme.prefsMuted(for: cs))
+                        }
+
+                        Text("Оффлайн-треки хранятся отдельно и не удаляются при очистке кеша")
+                            .font(.system(size: 11))
+                            .foregroundStyle(CadenceTheme.prefsMuted(for: cs))
+
+                        if isBatch {
+                            HStack {
+                                Text("Загрузка \(batchDone) из \(offlineStore.batchTotal)")
+                                    .font(.system(size: 12))
+                                    .monospacedDigit()
+                                    .foregroundStyle(CadenceTheme.prefsText(for: cs))
+                                Spacer()
+                                Button("Отменить") {
+                                    offlineStore.cancelBatchDownload()
+                                }
+                                .font(.system(size: 12))
+                                .foregroundStyle(CadenceTheme.prefsText(for: cs))
+                                .buttonStyle(.plain)
+                            }
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(CadenceTheme.prefsSliderTrack(for: cs))
+                                    Capsule()
+                                        .fill(CadenceTheme.prefsAccent(for: cs))
+                                        .frame(width: geo.size.width * batchProgress)
+                                }
+                            }
+                            .frame(height: 5)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+            }
+
+            HStack {
+                Spacer()
+                if !isBatch {
+                    Button("Загрузить избранное") {
+                        downloadFavoritesOffline()
+                    }
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(CadenceTheme.prefsText(for: cs))
                     .padding(.horizontal, 14)
@@ -443,17 +537,50 @@ struct PreferencesWindowView: View {
                     }
                     .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
                     .buttonStyle(.plain)
+                    .disabled(uiState.activeJellyfinClient == nil)
+                }
+
+                Button("Удалить все загрузки") {
+                    offlineStore.clearAll()
+                    cacheRevision += 1
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 5)
+                .background(
+                    offlineCount == 0
+                        ? Color(red: 1, green: 0.231, blue: 0.188).opacity(0.35)
+                        : Color(red: 1, green: 0.231, blue: 0.188)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .buttonStyle(.plain)
+                .disabled(offlineCount == 0)
             }
             .padding(.top, 10)
-
-            prefsSectionLabel("Скачанное")
-            PrefsCard {
-                Text("Нет скачанного контента")
-                    .font(.system(size: 13))
-                    .foregroundStyle(CadenceTheme.prefsSubtext(for: cs))
-                    .frame(maxWidth: .infinity, minHeight: 80)
-            }
         }
+    }
+
+    private func offlineSummaryLabel(count: Int, gb: Double) -> String {
+        let tracksWord: String
+        let mod100 = count % 100
+        let mod10 = count % 10
+        if mod100 >= 11 && mod100 <= 14 {
+            tracksWord = "треков"
+        } else if mod10 == 1 {
+            tracksWord = "трек"
+        } else if mod10 >= 2 && mod10 <= 4 {
+            tracksWord = "трека"
+        } else {
+            tracksWord = "треков"
+        }
+        return String(format: "%d %@ · %.1f ГБ", count, tracksWord, gb)
+    }
+
+    private func downloadFavoritesOffline() {
+        guard let client = uiState.activeJellyfinClient else { return }
+        let favorites = libraryStore.allTracks().filter { favoritesStore.isFavorite(track: $0) }
+        offlineStore.downloadAll(tracks: favorites, client: client, origin: .favorite)
     }
 
     // MARK: - Appearance tab

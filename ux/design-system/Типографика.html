@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Cadence — Типографика</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .artboard {
+    width: 1100px;
+    height: 700px;
+    padding: 40px 56px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 40px;
+    background: var(--content);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .spec {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+  .sample { margin-bottom: 28px; }
+  .panel {
+    background: var(--window);
+    border: var(--hairline) solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+  }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: var(--hairline) solid var(--border-soft);
+  }
+  .row:last-child { border-bottom: none; }
+</style>
+</head>
+<body class="artifact">
+  <div class="stage light-stage">
+    <div class="artboard" data-theme="light" data-screen-label="ДС — Типографика">
+      <div>
+        <div class="t-section-upper" style="margin-bottom:8px">Design system</div>
+        <div class="t-h1" style="margin-bottom:28px">Типографика</div>
+
+        <div class="sample" data-od-id="type-display">
+          <div class="t-display">Static Dreams</div>
+          <div class="spec">Display · 26px · 700 · tracking −0.025em · Now Playing title</div>
+        </div>
+        <div class="sample">
+          <div class="t-h1">Альбомы</div>
+          <div class="spec">H1 · 20px · 700 · content toolbar title</div>
+        </div>
+        <div class="sample">
+          <div class="t-body" style="font-weight:600">Midnight Echoes</div>
+          <div class="t-meta" style="margin-top:4px">Luna Solaris</div>
+          <div class="spec">Row title 13/600 · meta 12/400 secondary</div>
+        </div>
+        <div class="sample">
+          <div class="t-section">ПЛЕЙЛИСТЫ</div>
+          <div class="spec" style="margin-top:8px">Section · 11px · 700 · letter-spacing 0.02em</div>
+        </div>
+        <div class="sample">
+          <div class="t-section-upper">Up Next</div>
+          <div class="spec" style="margin-top:8px">Uppercase section · 11/700 · 0.06em</div>
+        </div>
+        <div class="sample">
+          <span class="t-time">1:24</span>
+          <span class="t-time" style="margin:0 8px">·</span>
+          <span class="t-time">3:54</span>
+          <div class="spec">Time · 11/500 · tabular-nums</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="t-section-upper" style="margin-bottom:16px">Stack</div>
+        <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px">SF Pro Text / system UI</div>
+        <div class="t-meta" style="margin-bottom:24px;line-height:1.5">
+          -apple-system, BlinkMacSystemFont,<br>
+          "SF Pro Text", "Helvetica Neue", sans-serif
+        </div>
+        <div class="t-section-upper" style="margin-bottom:12px">В интерфейсе</div>
+        <div class="row">
+          <span class="t-body">Нав. пункт</span>
+          <span class="t-caption">13 · 400 / 600 selected</span>
+        </div>
+        <div class="row">
+          <span class="t-body" style="font-size:12px;font-weight:500">Tile title</span>
+          <span class="t-caption">12 · 500</span>
+        </div>
+        <div class="row">
+          <span class="t-body" style="font-size:11px;color:var(--ink-secondary)">Tile artist</span>
+          <span class="t-caption">11 · 400</span>
+        </div>
+        <div class="row">
+          <span class="t-body" style="color:var(--accent);font-weight:500">Neon Drift</span>
+          <span class="t-caption">artist link · accent</span>
+        </div>
+        <div style="margin-top:24px;padding:14px;background:var(--search-bg);border-radius:var(--radius-md);border:0.5px solid var(--border)">
+          <div class="t-body" style="color:var(--ink-muted)">Поиск в библиотеке…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 1100, H = 700;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H) * 0.92;
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Cadence — Сейчас играет · Оффлайн (FEAT5)</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+<style>
+  body.artifact { overflow: auto; }
+
+  .board {
+    width: 1680px;
+    height: 1080px;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .theme-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.4);
+  }
+
+  .windows-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .win-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .win-col-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  .app-win {
+    width: 780px;
+    height: 640px;
+    border-radius: var(--radius-xl);
+    background: var(--window);
+    box-shadow: var(--shadow-window);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  .sidebar {
+    width: 180px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: var(--hairline) solid var(--border);
+  }
+
+  .titlebar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    flex-shrink: 0;
+  }
+
+  .traffic { display: flex; gap: 8px; }
+  .tl {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 0.5px solid rgba(0, 0, 0, 0.12);
+  }
+
+  .side-scroll { flex: 1; padding: 4px 0 8px; overflow: hidden; }
+  .side-scroll .nav-item { margin: 1px 6px; font-size: 12px; height: 28px; padding: 0 10px; }
+  .side-section { padding: 10px 14px 4px; }
+
+  .np-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .np-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .np-bg .blob-a {
+    position: absolute;
+    width: 70%; height: 70%;
+    top: -18%; left: -12%;
+    border-radius: 50%;
+    background: radial-gradient(circle, #8e44adc8 0%, transparent 68%);
+    filter: blur(48px);
+  }
+
+  .np-bg .blob-b {
+    position: absolute;
+    width: 58%; height: 58%;
+    bottom: -14%; right: -8%;
+    border-radius: 50%;
+    background: radial-gradient(circle, #5c2d91a8 0%, transparent 68%);
+    filter: blur(56px);
+  }
+
+  .np-bg .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(244, 244, 248, 0.74);
+  }
+
+  [data-theme="dark"] .np-bg .overlay {
+    background: rgba(20, 20, 23, 0.60);
+  }
+
+  .np-center {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 32px 12px;
+    gap: 12px;
+    min-height: 0;
+  }
+
+  .np-cover {
+    width: 168px;
+    height: 168px;
+    border-radius: var(--radius-cover-lg);
+    background: linear-gradient(140deg, #5c2d91 0%, #8e44ad 52%, #c39bd3 100%);
+    box-shadow: 0 18px 60px #8e44ad58, 0 4px 18px rgba(0, 0, 0, 0.28);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .np-cover .disc {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 27%; height: 27%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .np-cover .disc::after {
+    content: "";
+    width: 40%; height: 40%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.24);
+  }
+
+  .np-meta {
+    text-align: center;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .np-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+
+  .np-artist {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1.3;
+    margin-bottom: 2px;
+  }
+
+  .np-album {
+    font-size: 13px;
+    color: var(--ink-secondary);
+  }
+
+  .seek {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .seek .rail {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--track-rail);
+    overflow: hidden;
+  }
+
+  .seek .fill {
+    width: 36%;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+  }
+
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .t-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--icon);
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .icon-hit {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--ink-muted);
+    cursor: default;
+    position: relative;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .icon-hit:hover {
+    background: var(--hover);
+    color: var(--icon-hover);
+  }
+
+  .icon-hit.is-fav { color: var(--favorites); }
+  .icon-hit.is-fav:hover { color: var(--favorites); background: var(--hover); }
+
+  .icon-hit.is-dl { color: var(--icon); }
+  .icon-hit.is-dl:hover { color: var(--icon-hover); background: var(--hover); }
+
+  .icon-hit.is-downloading {
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+
+  /* Progress ring без accent — бюджет уже на artist + seek */
+  .dl-ring {
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background:
+      conic-gradient(var(--ink-secondary) 0 58%, var(--track-rail) 58% 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  }
+
+  .icon-hit.is-downloaded { color: var(--ink-primary); }
+  .icon-hit.is-downloaded:hover { color: var(--ink); background: var(--hover); }
+
+  .icon-hit.is-retry { color: var(--danger); }
+  .icon-hit.is-retry:hover { color: var(--danger); background: var(--hover); }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 7px;
+    border: 0.5px solid var(--border);
+    background: var(--hover);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Collapsed seek strip at bottom (replaces full player bar on NP) */
+  .strip {
+    height: 10px;
+    flex-shrink: 0;
+    background: var(--player-bar);
+    border-top: var(--hairline) solid var(--border);
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .strip .rail {
+    width: 100%;
+    height: 2px;
+    background: var(--track-rail);
+  }
+
+  .strip .fill {
+    width: 36%;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  /* States kit under windows */
+  .kit {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .kit-row {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .kit-card {
+    width: 200px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    background: var(--window);
+    box-shadow: var(--shadow-window);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .kit-card-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-secondary);
+  }
+
+  .kit-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .note {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.4);
+    line-height: 1.4;
+    max-width: 1100px;
+  }
+</style>
+</head>
+<body class="artifact">
+  <div class="stage light-stage" style="min-height:100vh;align-items:flex-start;padding:40px 0;">
+    <div class="board artboard" data-screen-label="Сейчас играет — Оффлайн" data-od-id="screen-offline-nowplaying" style="width:1680px;height:1080px;">
+
+      <div class="note" data-od-id="note-np">
+        На «Сейчас играет» нижний бар свёрнут в полоску seek. Кнопка оффлайна — в ряду действий рядом с избранным (те же 4 состояния, что в player bar / меню).
+      </div>
+
+      <div class="theme-label">Контекст экрана</div>
+      <div class="windows-row">
+
+        <!-- Light idle -->
+        <div class="win-col" data-od-id="np-idle-light">
+          <div class="win-col-label">Light · не загружен</div>
+          <div class="app-win" data-theme="light">
+            <div class="app-body">
+              <aside class="sidebar sidebar-glass">
+                <div class="titlebar">
+                  <div class="traffic">
+                    <span class="tl" style="background:var(--traffic-close)"></span>
+                    <span class="tl" style="background:var(--traffic-min)"></span>
+                    <span class="tl" style="background:var(--traffic-zoom)"></span>
+                  </div>
+                </div>
+                <div class="side-scroll">
+                  <div class="nav-item is-selected">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="3" height="16" rx="1"/><rect x="10.5" y="8" width="3" height="12" rx="1"/><rect x="17" y="2" width="3" height="18" rx="1"/></svg>
+                    Сейчас играет
+                  </div>
+                  <div class="hairline" style="margin:8px 12px"></div>
+                  <div class="side-section t-section">Библиотека</div>
+                  <div class="nav-item">Альбомы</div>
+                  <div class="nav-item">Артисты</div>
+                  <div class="nav-item">Избранное</div>
+                </div>
+              </aside>
+
+              <div class="np-main">
+                <div class="np-bg" aria-hidden="true">
+                  <div class="blob-a"></div>
+                  <div class="blob-b"></div>
+                  <div class="overlay"></div>
+                </div>
+                <div class="np-center">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-meta">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                    <div class="np-album">Static Dreams</div>
+                  </div>
+                  <div class="seek">
+                    <span class="t-time">1:24</span>
+                    <div class="rail"><div class="fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                  <div class="transport">
+                    <div class="t-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause" style="width:64px;height:64px">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="actions" data-od-id="np-actions-idle">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit is-dl" type="button" aria-label="Загрузить оффлайн" data-od-id="np-btn-dl">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                    <span class="pill">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3"/></svg>
+                      К альбому
+                    </span>
+                    <span class="pill">К артисту</span>
+                  </div>
+                </div>
+                <div class="strip" data-od-id="np-collapsed-bar"><div class="rail"><div class="fill"></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dark downloaded -->
+        <div class="win-col" data-od-id="np-done-dark">
+          <div class="win-col-label">Dark · загружен</div>
+          <div class="app-win" data-theme="dark">
+            <div class="app-body">
+              <aside class="sidebar sidebar-glass">
+                <div class="titlebar">
+                  <div class="traffic">
+                    <span class="tl" style="background:var(--traffic-close)"></span>
+                    <span class="tl" style="background:var(--traffic-min)"></span>
+                    <span class="tl" style="background:var(--traffic-zoom)"></span>
+                  </div>
+                </div>
+                <div class="side-scroll">
+                  <div class="nav-item is-selected">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="3" height="16" rx="1"/><rect x="10.5" y="8" width="3" height="12" rx="1"/><rect x="17" y="2" width="3" height="18" rx="1"/></svg>
+                    Сейчас играет
+                  </div>
+                  <div class="hairline" style="margin:8px 12px"></div>
+                  <div class="side-section t-section">Библиотека</div>
+                  <div class="nav-item">Альбомы</div>
+                  <div class="nav-item">Артисты</div>
+                  <div class="nav-item">Избранное</div>
+                </div>
+              </aside>
+
+              <div class="np-main">
+                <div class="np-bg" aria-hidden="true">
+                  <div class="blob-a"></div>
+                  <div class="blob-b"></div>
+                  <div class="overlay"></div>
+                </div>
+                <div class="np-center">
+                  <div class="np-cover"><div class="disc"></div></div>
+                  <div class="np-meta">
+                    <div class="np-title">Static Dreams</div>
+                    <div class="np-artist">Neon Drift</div>
+                    <div class="np-album">Static Dreams</div>
+                  </div>
+                  <div class="seek">
+                    <span class="t-time">1:24</span>
+                    <div class="rail"><div class="fill"></div></div>
+                    <span class="t-time">3:54</span>
+                  </div>
+                  <div class="transport">
+                    <div class="t-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h2v12H3zm4 6 12 7V5z"/></svg></div>
+                    <button class="btn-play" type="button" aria-label="Pause" style="width:64px;height:64px">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--play-icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <div class="t-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h2v12h-2zM5 5v14l12-7z"/></svg></div>
+                  </div>
+                  <div class="actions" data-od-id="np-actions-done">
+                    <button class="icon-hit is-fav" type="button" aria-label="В избранном">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </button>
+                    <button class="icon-hit is-downloaded" type="button" aria-label="Удалить загрузку" data-od-id="np-btn-dl-done">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.18"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v6m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <span class="pill">К альбому</span>
+                    <span class="pill">К артисту</span>
+                  </div>
+                </div>
+                <div class="strip"><div class="rail"><div class="fill"></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- States kit -->
+      <div class="kit" data-od-id="np-states-kit">
+        <div class="theme-label">Ряд действий · 4 состояния (light)</div>
+        <div class="kit-row">
+
+          <div class="kit-card" data-theme="light" data-od-id="kit-idle">
+            <div class="kit-card-label">a. Загрузить</div>
+            <div class="kit-actions">
+              <button class="icon-hit is-fav" type="button" aria-label="Избранное">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </button>
+              <button class="icon-hit is-dl" type="button" aria-label="Загрузить оффлайн">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+              <span class="pill">К альбому</span>
+            </div>
+          </div>
+
+          <div class="kit-card" data-theme="light" data-od-id="kit-progress">
+            <div class="kit-card-label">b. Загрузка 58%</div>
+            <div class="kit-actions">
+              <button class="icon-hit is-fav" type="button" aria-label="Избранное">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </button>
+              <button class="icon-hit is-downloading" type="button" aria-label="Загрузка">
+                <span class="dl-ring" aria-hidden="true"></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="position:relative;z-index:1"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+              <span class="pill">К альбому</span>
+            </div>
+          </div>
+
+          <div class="kit-card" data-theme="light" data-od-id="kit-done">
+            <div class="kit-card-label">c. Удалить загрузку</div>
+            <div class="kit-actions">
+              <button class="icon-hit is-fav" type="button" aria-label="Избранное">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </button>
+              <button class="icon-hit is-downloaded" type="button" aria-label="Удалить">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.14"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v6m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <span class="pill">К альбому</span>
+            </div>
+          </div>
+
+          <div class="kit-card" data-theme="light" data-od-id="kit-retry">
+            <div class="kit-card-label">d. Повторить</div>
+            <div class="kit-actions">
+              <button class="icon-hit is-fav" type="button" aria-label="Избранное">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </button>
+              <button class="icon-hit is-retry" type="button" aria-label="Повторить">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 0113.2-4.9M19.5 12a7.5 7.5 0 01-13.2 4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 3.5v4h-4M7 20.5v-4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <span class="pill">К альбому</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

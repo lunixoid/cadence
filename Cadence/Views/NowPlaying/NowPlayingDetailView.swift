@@ -204,6 +204,13 @@ struct NowPlayingDetailView: View {
                     )
             }
 
+            OfflineDownloadButton(
+                track: playbackController.currentTrack,
+                size: 36,
+                iconFont: 22,
+                progressStyle: .muted
+            )
+
             NowPlayingActionPill(
                 icon: "opticaldisc",
                 label: "К альбому",

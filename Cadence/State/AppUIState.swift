@@ -204,7 +204,11 @@ final class AppUIState {
               let servers = try? JSONDecoder().decode([JellyfinServer].self, from: data) else { return }
         jellyfinServers = servers
         if let active = servers.first(where: { $0.isActive }) {
-            await activateClient(for: active, favoritesSync: favoritesSync)
+            await activateClient(
+                for: active,
+                favoritesSync: favoritesSync,
+                deferNetworkRefresh: true
+            )
         }
     }
 
@@ -229,7 +233,11 @@ final class AppUIState {
         UserDefaults.standard.set(data, forKey: serversKey)
     }
 
-    private func activateClient(for server: JellyfinServer, favoritesSync: JellyfinFavoritesSync? = nil) async {
+    private func activateClient(
+        for server: JellyfinServer,
+        favoritesSync: JellyfinFavoritesSync? = nil,
+        deferNetworkRefresh: Bool = false
+    ) async {
         guard let client = try? JellyfinClient(server: server) else { return }
         activeJellyfinClient = client
 
@@ -242,6 +250,17 @@ final class AppUIState {
         }
 
         let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore, serverID: server.id)
+
+        if deferNetworkRefresh {
+            Task {
+                await loader.loadFullLibrary()
+                if let favoritesSync {
+                    await favoritesSync.syncFromServer(client: client)
+                }
+            }
+            return
+        }
+
         await loader.loadFullLibrary()
         if let favoritesSync {
             await favoritesSync.syncFromServer(client: client)

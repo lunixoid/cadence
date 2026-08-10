@@ -328,7 +328,9 @@ struct IOSPlaybackSettingsView: View {
 
 struct IOSCacheSettingsView: View {
     @Environment(OfflineStore.self) private var offlineStore
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(LibraryStore.self) private var libraryStore
+    @Environment(AppUIState.self) private var uiState
 
     @AppStorage("cadence.cacheLimitGB") private var cacheLimitGB = 10
     @State private var cacheRevision = 0
@@ -337,6 +339,12 @@ struct IOSCacheSettingsView: View {
         let _ = cacheRevision
         let usedGb = Double(ArtworkCache.totalDiskUsageBytes() + AudioCache.totalDiskUsageBytes()) / 1_073_741_824
         let offlineGb = Double(offlineStore.totalBytes) / 1_073_741_824
+        let offlineCount = offlineStore.trackCount
+        let isBatch = offlineStore.isBatchDownloading
+        let batchDone = offlineStore.batchCompleted
+        let batchProgress = offlineStore.batchTotal > 0
+            ? Double(batchDone) / Double(offlineStore.batchTotal)
+            : 0
 
         Form {
             Section("Кеш (авто)") {
@@ -353,8 +361,35 @@ struct IOSCacheSettingsView: View {
             }
 
             Section {
-                LabeledContent("Треков", value: "\(offlineStore.trackCount)")
+                LabeledContent("Треков", value: "\(offlineCount)")
                 LabeledContent("Размер", value: String(format: "%.2f ГБ", offlineGb))
+
+                if isBatch {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Загрузка \(batchDone) из \(offlineStore.batchTotal)")
+                                .font(.system(size: 13).monospacedDigit())
+                            Spacer()
+                            Button("Отменить") {
+                                offlineStore.cancelBatchDownload()
+                            }
+                        }
+                        ProgressView(value: batchProgress)
+                    }
+                }
+
+                if !isBatch {
+                    Button("Загрузить избранное") {
+                        downloadFavoritesOffline()
+                    }
+                    .disabled(uiState.activeJellyfinClient == nil)
+                }
+
+                Button("Удалить все загрузки", role: .destructive) {
+                    offlineStore.clearAll()
+                    cacheRevision += 1
+                }
+                .disabled(offlineCount == 0)
             } header: {
                 Text("Оффлайн (явные загрузки)")
             } footer: {
@@ -362,6 +397,12 @@ struct IOSCacheSettingsView: View {
             }
         }
         .navigationTitle("Кеш и оффлайн")
+    }
+
+    private func downloadFavoritesOffline() {
+        guard let client = uiState.activeJellyfinClient else { return }
+        let favorites = libraryStore.allTracks().filter { favoritesStore.isFavorite(track: $0) }
+        offlineStore.downloadAll(tracks: favorites, client: client, origin: .favorite)
     }
 }
 

@@ -43,6 +43,21 @@ struct IOSMiniPlayerView: View {
             .buttonStyle(.plain)
 
             Button {
+                playbackController.toggleShuffle()
+            } label: {
+                Image(systemName: "shuffle")
+                    .font(.system(size: compact ? 14 : 15, weight: .semibold))
+                    .foregroundStyle(
+                        playbackController.shuffleOn
+                            ? CadenceTheme.accent(for: colorScheme)
+                            : CadenceTheme.primaryText(for: colorScheme)
+                    )
+                    .frame(width: 36, height: 36)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Перемешать")
+
+            Button {
                 playbackController.togglePlayPause()
             } label: {
                 Image(systemName: playbackController.isPlaying ? "pause.fill" : "play.fill")

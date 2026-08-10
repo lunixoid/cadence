@@ -74,7 +74,8 @@ final class AudioEngineService {
     private var scheduleGeneration = 0
     private var isProgressiveLoad = false
     private var isPaused = false
-    private var userVolume: Float = 0.72
+    /// Full app gain; loudness is controlled by the OS / system volume.
+    private let userVolume: Float = 1.0
 
     private let maxBuffersInFlight = 8
     private let prefetchAheadCount = 10
@@ -94,14 +95,6 @@ final class AudioEngineService {
     #if os(iOS)
     private var wasPlayingBeforeInterruption = false
     #endif
-
-    var volume: Double {
-        get { Double(userVolume) * 100 }
-        set {
-            userVolume = Float(newValue / 100)
-            engine.mainMixerNode.outputVolume = userVolume
-        }
-    }
 
     init() {
         #if os(iOS)
@@ -127,7 +120,7 @@ final class AudioEngineService {
         AudioUnitSetParameter(limiterAU, kLimiterParam_DecayTime, kAudioUnitScope_Global, 0, 0.020, 0)
         AudioUnitSetParameter(limiterAU, kLimiterParam_PreGain, kAudioUnitScope_Global, 0, 0, 0)
 
-        volume = 72
+        engine.mainMixerNode.outputVolume = userVolume
 
         NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange,

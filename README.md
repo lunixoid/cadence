@@ -64,7 +64,7 @@ AVAudioUnitEQ          ← 10-band parametric EQ (±12 dB per band)
 AVAudioUnitEffect      ← Peak Limiter (attack 2 ms / decay 20 ms)
       │
       ▼
-AVAudioEngine.mainMixerNode   ← volume control; spectrum analyzer tap
+AVAudioEngine.mainMixerNode   ← spectrum analyzer tap; output at full gain (OS volume)
       │
       ▼
       Output (system audio device)
@@ -75,7 +75,7 @@ Each stage:
 - **AVAudioPlayerNode** — receives pre-decoded PCM buffers in strict order and feeds them to the hardware clock. Does not do any signal processing.
 - **AVAudioUnitEQ** — applies the 10-band equalizer. Each band is a parametric filter (IIR biquad) centered at a fixed frequency. Bands are in bypass when the EQ is disabled.
 - **Peak Limiter** — transparent ceiling that prevents inter-sample clipping when EQ bands boost the signal above 0 dBFS. Attack 2 ms, decay 20 ms. No pre-gain by default; a negative global gain offset is applied automatically when any band exceeds +0 dB to keep the signal well below the limiter threshold.
-- **mainMixerNode** — final output volume (0–100 %, independent of the system volume). The spectrum analyzer installs a tap here to read the post-EQ, post-limiter signal for visualization.
+- **mainMixerNode** — final mix at full app gain; loudness is controlled by the OS / system volume. The spectrum analyzer installs a tap here to read the post-EQ, post-limiter signal for visualization.
 
 #### Decoding and Scheduling
 
@@ -88,7 +88,6 @@ Parallel prefetch of chunks (up to 10 ahead) speeds up decoding, but they always
 - Play / Pause
 - Next / Previous track
 - Seek with position display
-- Volume control (independent of system volume)
 - Playback queue: add, remove, drag to reorder in Up Next
 - "Play Next" / "Add to Queue" — from track context menu
 
@@ -248,7 +247,7 @@ No dedicated offline-only mode. Offline Jellyfin downloads live in `Application 
 │           │                              │                      │
 ├───────────┴──────────────────────────────┴──────────────────────┤
 │  Now Playing Bar: artwork, track/artist, controls, progress,     │
-│  volume, shuffle, repeat, queue, EQ                              │
+│  shuffle, repeat, queue, EQ                                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -280,7 +279,6 @@ Always visible when something is loaded:
 - Buttons: previous, play/pause, next
 - Progress bar (seekable) with current time and duration
 - Buffering indicator (during progressive streaming)
-- Volume slider
 - Buttons: shuffle, repeat (with current mode indicator)
 - Queue button (opens Queue Panel)
 - EQ button
@@ -297,10 +295,9 @@ Filters the local library by tracks, albums, and artists. Jellyfin server-side s
 ### Media Keys and Now Playing
 
 - Media key interception via `MPRemoteCommandCenter` + local `NSEvent` monitor (macOS)
-- `MPNowPlayingInfoCenter`: title, artist, album, duration, position
+- `MPNowPlayingInfoCenter`: title, artist, album, duration, position, artwork (via `ArtworkCache`)
 - Favorite (like) on lock screen / Control Center via `likeCommand` → same Jellyfin favorites sync as in-app
 - iOS: `AVAudioSession` `.playback` + `UIBackgroundModes=audio`; playback continues when backgrounded / screen locked; interruptions resume when appropriate
-- Artwork in the system Now Playing widget is not set
 
 ### App Menu
 
@@ -345,7 +342,6 @@ On app restart, the following are restored:
 - Playback queue (Up Next + autoplay)
 - Shuffle / repeat modes
 - Equalizer settings (gains, enabled state)
-- Volume
 
 Storage:
 - `UserDefaults`: playback state, favorites, recent tracks, servers, folder bookmarks

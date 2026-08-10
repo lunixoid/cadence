@@ -287,28 +287,12 @@ struct IOSAddServerView: View {
 }
 
 struct IOSPlaybackSettingsView: View {
-    @Environment(PlaybackController.self) private var playbackController
-
     @AppStorage("cadence.gaplessEnabled") private var gaplessEnabled = true
     @AppStorage("cadence.crossfadeEnabled") private var crossfadeEnabled = false
     @AppStorage("cadence.crossfadeLength") private var crossfadeLength = 3
 
     var body: some View {
-        @Bindable var playback = playbackController
         Form {
-            Section("Громкость") {
-                Slider(value: $playback.volume, in: 0...100) {
-                    Text("Громкость")
-                } minimumValueLabel: {
-                    Image(systemName: "speaker.fill")
-                } maximumValueLabel: {
-                    Image(systemName: "speaker.wave.3.fill")
-                }
-                Text("\(Int(playback.volume))%")
-                    .font(.system(size: 12).monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-
             Section {
                 Toggle("Бесшовное воспроизведение", isOn: $gaplessEnabled)
                     .disabled(true)

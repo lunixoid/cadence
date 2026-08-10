@@ -45,9 +45,6 @@ enum CadenceTheme {
     static let progressBarRadius: CGFloat = 3
     static let progressThumbSize: CGFloat = 10
 
-    static let volumeSliderWidth: CGFloat = 100
-    static let volumeSliderHeight: CGFloat = 4
-
     static let miniCoverSize: CGFloat = 56
     static let miniCoverRadius: CGFloat = 8
     static let playButtonSize: CGFloat = 56
@@ -117,10 +114,6 @@ enum CadenceTheme {
 
     static func trackBackground(for scheme: ColorScheme) -> Color {
         scheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.1)
-    }
-
-    static func volumeFill(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.55) : Color.black.opacity(0.45)
     }
 
     static func searchBackground(for scheme: ColorScheme, focused: Bool) -> Color {

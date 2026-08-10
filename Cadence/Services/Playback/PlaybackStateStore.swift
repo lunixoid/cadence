@@ -16,6 +16,7 @@ struct PlaybackStateSnapshot: Codable, Equatable {
     var isPlaying: Bool
     var shuffleOn: Bool
     var repeatMode: RepeatMode
+    /// Kept for Codable compatibility with older snapshots; ignored at restore (OS controls volume).
     var volume: Double
     var eqEnabled: Bool?
     var eqGains: [Double]?
@@ -48,7 +49,6 @@ final class PlaybackStateStore {
         isPlaying: Bool,
         shuffleOn: Bool,
         repeatMode: RepeatMode,
-        volume: Double,
         eqEnabled: Bool,
         eqGains: [Double]
     ) -> PlaybackStateSnapshot {
@@ -68,7 +68,7 @@ final class PlaybackStateStore {
             isPlaying: isPlaying,
             shuffleOn: shuffleOn,
             repeatMode: repeatMode,
-            volume: volume,
+            volume: 100,
             eqEnabled: eqEnabled,
             eqGains: eqGains
         )

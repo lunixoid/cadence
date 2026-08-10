@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-chmod +x scripts/swift-xcode-check.sh scripts/install-git-hooks.sh
+chmod +x scripts/swift-xcode-check.sh scripts/install-git-hooks.sh scripts/deploy-ios-device.sh
 
 if ! command -v pre-commit >/dev/null 2>&1; then
   echo "error: pre-commit not found. Install with: brew install pre-commit" >&2

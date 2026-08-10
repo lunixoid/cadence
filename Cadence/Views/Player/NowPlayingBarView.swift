@@ -184,6 +184,7 @@ struct NowPlayingBarView: View {
         ) {
             guard let track = playbackController.currentTrack else { return }
             jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+            playbackController.refreshNowPlayingInfo()
         } label: {
             Image(systemName: track.map { favoritesStore.isFavorite(track: $0) } == true ? "heart.fill" : "heart")
                 .font(.system(size: 17))

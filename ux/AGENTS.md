@@ -1,16 +1,18 @@
-# Дизайн-система: Cadence (macOS Audio Player)
+# Дизайн-система: Cadence (macOS + iOS Audio Player)
 
-Режим: приложение (desktop macOS)
-Назначение: нативный аудиоплеер для библиотеки и стриминга с сервера; макеты → handoff в Swift/AppKit или дальнейшие HTML-прототипы.
+Режим: приложение (desktop macOS + iPhone)
+Назначение: нативный аудиоплеер для библиотеки и стриминга с сервера; макеты → handoff в Swift/AppKit / SwiftUI или дальнейшие HTML-прототипы.
 
 Источник истины извлечён из живого прототипа `Cadence.html` + `cadence-*.jsx`. Не выдумывать новые hex.
 
 ## Формат полотна
-- App window: **1100×700** (основное полотно макетов)
+- App window (macOS): **1100×700** (основное полотно макетов)
 - Радиус окна: **12px**
 - Sidebar width: **220px** (default)
+- iPhone (iOS макеты): **390×844** (iPhone 13 Pro logical); safe area top **47** / bottom **34**; home indicator
+- iOS chrome: status bar + tab bar (~49 + safe) + mini player strip (~64) над tab bar; full-screen Now Playing и Queue — sheets
 - Фон сцены (за окном): light `#c8cdd3` + radial; dark `#1a1a1c` + radial
-- Эталоны ДС: artboard 1100×700 или компактный внутри stage
+- Эталоны ДС: artboard 1100×700 или компактный внутри stage; iOS — 390×844
 
 ## Палитра (только эти роли)
 

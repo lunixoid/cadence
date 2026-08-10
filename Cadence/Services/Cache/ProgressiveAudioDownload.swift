@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import Network
 import os.log
 
 private let logger = Logger(subsystem: "dev.personal.cadence", category: "ProgressiveDownload")
@@ -330,7 +331,7 @@ final class ProgressiveAudioAsset: Sendable {
     }
 }
 
-// MARK: - URLSession worker
+// MARK: - URLSession / insecure NW worker
 
 private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate, @unchecked Sendable {
     private let remoteURL: URL
@@ -340,6 +341,8 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
 
     private var urlSession: URLSession!
     private var dataTask: URLSessionDataTask?
+    private var insecureTask: Task<Void, Never>?
+    private var insecureConnection: NWConnection?
     private(set) var responseExt = "mp3"
     private var receivedValidatedResponse = false
     private var startOffset: Int64 = 0
@@ -368,6 +371,13 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
         if offset > 0 {
             request.setValue("bytes=\(offset)-", forHTTPHeaderField: "Range")
         }
+
+        // URLSession TLS overrides fail for private CAs (esp. on iOS) — use NWConnection.
+        if JellyfinTLSSettings.allowsUntrustedCertificates {
+            startInsecureStream(request)
+            return
+        }
+
         let task = urlSession.dataTask(with: request)
         dataTask = task
         task.resume()
@@ -376,24 +386,61 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
     func cancel() {
         dataTask?.cancel()
         dataTask = nil
+        insecureConnection?.cancel()
+        insecureConnection = nil
+        insecureTask?.cancel()
+        insecureTask = nil
     }
 
-    func urlSession(
-        _ session: URLSession,
-        dataTask: URLSessionDataTask,
-        didReceive response: URLResponse,
-        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
-    ) {
-        guard let http = response as? HTTPURLResponse else {
-            completionHandler(.cancel)
-            onComplete(ProgressiveDownloadError.invalidResponse)
-            return
+    private func startInsecureStream(_ request: URLRequest) {
+        // #region agent log
+        progressiveAgentLog(
+            "ProgressiveDownloadWorker.start",
+            "using insecure NW stream",
+            hypothesisId: "A",
+            data: ["host": remoteURL.host ?? "nil", "runId": "post-fix"]
+        )
+        // #endregion
+        insecureTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await JellyfinInsecureHTTPS.stream(
+                    for: request,
+                    onConnection: { [weak self] connection in
+                        self?.insecureConnection = connection
+                    },
+                    onResponse: { [weak self] response in
+                        try self?.handleHTTPResponse(response)
+                    },
+                    onData: { [weak self] data in
+                        self?.onData(data)
+                    }
+                )
+                guard !Task.isCancelled else { return }
+                self.onComplete(nil)
+            } catch is CancellationError {
+                return
+            } catch {
+                guard !Task.isCancelled else { return }
+                // #region agent log
+                progressiveAgentLog(
+                    "ProgressiveDownloadWorker.insecure",
+                    "insecure stream failed",
+                    hypothesisId: "A",
+                    data: [
+                        "error": error.localizedDescription,
+                        "runId": "post-fix",
+                    ]
+                )
+                // #endregion
+                self.onComplete(error)
+            }
         }
+    }
 
+    private func handleHTTPResponse(_ http: HTTPURLResponse) throws {
         guard (200...299).contains(http.statusCode) || http.statusCode == 206 else {
-            completionHandler(.cancel)
-            onComplete(ProgressiveDownloadError.invalidResponse)
-            return
+            throw ProgressiveDownloadError.invalidResponse
         }
 
         if let contentType = http.value(forHTTPHeaderField: "Content-Type"),
@@ -415,11 +462,39 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
 
         receivedValidatedResponse = true
         onResponse(expectedBytes, responseExt)
-        completionHandler(.allow)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        guard let http = response as? HTTPURLResponse else {
+            completionHandler(.cancel)
+            onComplete(ProgressiveDownloadError.invalidResponse)
+            return
+        }
+
+        do {
+            try handleHTTPResponse(http)
+            completionHandler(.allow)
+        } catch {
+            completionHandler(.cancel)
+            onComplete(error)
+        }
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         onData(data)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        JellyfinURLSessionFactory.handleServerTrustChallenge(challenge, completionHandler: completionHandler)
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -427,9 +502,48 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
             onComplete(ProgressiveDownloadError.invalidResponse)
             return
         }
+        // #region agent log
+        if let error {
+            progressiveAgentLog(
+                "ProgressiveDownloadWorker.urlSession",
+                "URLSession complete with error",
+                hypothesisId: "A",
+                data: [
+                    "error": error.localizedDescription,
+                    "code": "\((error as NSError).code)",
+                    "runId": "post-fix",
+                ]
+            )
+        }
+        // #endregion
         onComplete(error)
     }
 }
+
+// #region agent log
+private func progressiveAgentLog(
+    _ location: String,
+    _ message: String,
+    hypothesisId: String,
+    data: [String: String] = [:]
+) {
+    var payload: [String: Any] = [
+        "sessionId": "d608e4",
+        "location": location,
+        "message": message,
+        "hypothesisId": hypothesisId,
+        "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+        "data": data,
+    ]
+    guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
+    var req = URLRequest(url: URL(string: "http://127.0.0.1:7480/ingest/f416849f-e2ef-4af7-9095-8778cb4b671c")!)
+    req.httpMethod = "POST"
+    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    req.setValue("d608e4", forHTTPHeaderField: "X-Debug-Session-Id")
+    req.httpBody = body
+    URLSession.shared.dataTask(with: req).resume()
+}
+// #endregion
 
 private extension String {
     var nilIfEmpty: String? {

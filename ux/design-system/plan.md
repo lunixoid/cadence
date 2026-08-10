@@ -24,7 +24,10 @@ Display = тот же стек, weight 700; body 400–500; captions/section lab
 Vinyl-обложки (квадрат + «диск» в центре) + frosted glass sidebar (`blur(50px) saturate(180%)`) + system-blue progress/play. Один акцент на экране.
 
 ## Полотно
-App window: **1100×700**. Эталоны ДС: 1100×700 или компактные карточки внутри.
+App window (macOS): **1100×700**. iPhone (iOS): **390×844** (iPhone 13 Pro). Эталоны ДС: 1100×700 или компактные карточки внутри.
+
+## iOS (2026-08)
+Интерактивный shell `Экран — iOS Cadence.html`: Библиотека → Альбом → Mini player → Now Playing sheet → Queue sheet. Light+Dark. Те же токены Cadence; chrome = tab bar + frosted mini player вместо sidebar.
 
 ## Антипаттерны
 - Не web-SaaS: карточки с левой цветной полосой, фиолетовые градиенты, Inter/Roboto

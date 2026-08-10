@@ -28,3 +28,13 @@
 | FEAT4 | NEW | Кроссфейд | |
 | FEAT5 | DONE | Оффлайн треки загруженные с Jellyfin | |
 | FEAT6 | NEW | Раздельная индикация треков с Jellyfin, загруженных с Jellifyn и полность оффлайновых | |
+| FEAT7 | DONE | iOS: оболочка приложения по макету (iPhone, Light+Dark) | `ux/screens.md` ios-shell; tab bar: Библиотека · Недавнее · Избранное · Скачанное; референс `Экран — iOS Cadence.html` |
+| FEAT8 | DONE | iOS: вкладка Библиотека — сегменты Все треки / Альбомы / Артисты, поиск, ⚙ → настройки | ios-lib |
+| FEAT9 | DONE | iOS: страница альбома — обложка, Слушать, треклист | ios-album |
+| FEAT10 | DONE | iOS: mini player над tab bar + кнопка списка воспроизведения | ios-mini; тап mini → Now Playing |
+| FEAT11 | DONE | iOS: Сейчас играет (sheet) — vinyl cover, seek, transport, избранное | ios-np; закрытие свайпом / chevron |
+| FEAT12 | DONE | iOS: список воспроизведения (sheet) с mini или с Now Playing | ios-queue |
+| FEAT13 | DONE | iOS: вкладка Недавнее — список недавних альбомов | ios-recent |
+| FEAT14 | DONE | iOS: вкладка Избранное — треки с ♥ `#FF375F` | ios-fav |
+| FEAT15 | DONE | iOS: вкладка Скачанное — оффлайн-альбомы | ios-dl; связано с FEAT5 |
+| FEAT16 | DONE | iOS: настройки — корень + drill-down (Серверы / Воспроизведение / Кеш и оффлайн / Внешний вид) | ios-settings*; серверы: список + деталь + проверка связи; воспроизведение: gapless / кроссфейд / громкость (FEAT3/4); кеш ≠ оффлайн (FEAT5); тема Light/Dark |

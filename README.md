@@ -1,8 +1,8 @@
 # Cadence
 
-A native macOS audio player with Jellyfin server integration and local file support.
+A native **macOS** and **iOS** audio player with Jellyfin server integration (and local file folders on macOS).
 
-**Core values:** native macOS experience, stable playback, progressive Jellyfin track streaming without waiting for a full download.
+**Core values:** native Apple platforms experience, stable playback, progressive Jellyfin track streaming without waiting for a full download. Shared Models/Services API across platforms; platform-specific shells.
 
 ---
 
@@ -16,6 +16,8 @@ A native macOS audio player with Jellyfin server integration and local file supp
 | Networking | URLSession / async-await |
 | Persistence | UserDefaults + JSON in Application Support + FileManager (Caches) |
 | Minimum macOS | 14.0 (Sonoma) |
+| Minimum iOS | 26.0 |
+| Targets | `Cadence` (macOS), `CadenceiOS` (iPhone) |
 | External dependencies | None. Jellyfin API — custom client on top of REST API |
 
 ---
@@ -36,12 +38,12 @@ Not implemented:
 
 ### Local Files
 
-- Add via File → Open Music Folder… (⌘O)
+- **macOS:** Add via File → Open Music Folder… (⌘O)
 - Recursive scan of selected folder and subfolders
 - Supported formats: FLAC, ALAC, MP3, AAC, M4A, OGG, WAV, AIFF/AIF, Opus
 - Metadata read from file tags via AVFoundation
 - Security-scoped bookmarks for cross-session access restoration
-
+- **iOS:** local folder pick not exposed; sources are Jellyfin + explicit offline downloads
 ---
 
 ## Playback
@@ -393,13 +395,10 @@ Open **Console.app** → search field → enter `dev.personal.cadence` → selec
 
 ### Core Modules
 
-- **SwiftUI Views**: `MainWindowView`, `SidebarView`, `ContentAreaView`, `NowPlayingBarView`, `NowPlayingDetailView`, `QueuePanelView`, `EQWindowView`, `PreferencesWindowView`
-- **State / Stores**: `AppUIState`, `LibraryStore`, `PlaylistStore`, `FavoritesStore`, `RecentStore`, `PlaybackStateStore`
-- **Playback**: `PlaybackController` → `AudioEngineService` (+ `ChunkDecodePipeline`, `LazyChunkSource`)
-- **Cache**: `AudioCache` → `ProgressiveDownloadSession` / `ProgressiveAudioAsset`
-- **Jellyfin**: `JellyfinClient`, `JellyfinLibraryLoader`, `JellyfinFavoritesSync`
-- **Caches**: `ArtworkCache`, `JellyfinLibraryCache`
-- **System**: `MediaRemoteService`, `PlaybackKeyboardMonitor`
+- **Shared**: Models, `AppUIState`, `LibraryStore`, `PlaylistStore`, `FavoritesStore`, `RecentStore`, `OfflineStore`, `PlaybackController` → `AudioEngineService`, Jellyfin client/loader/sync, `ArtworkCache` (`CGImage`), audio/offline cache
+- **macOS UI**: `MainWindowView`, `SidebarView`, `ContentAreaView`, `NowPlayingBarView`, `NowPlayingDetailView`, `QueuePanelView`, `EQWindowView`, `PreferencesWindowView`
+- **iOS UI** (`CadenceiOS`, iOS 26+): `IOSRootView` (Tab + `tabViewBottomAccessory` mini), library/album/tabs, NP/Queue sheets, settings NavigationStack
+- **System**: `MediaRemoteService`; `PlaybackKeyboardMonitor` (macOS only)
 
 ### Data Flow
 
@@ -648,13 +647,11 @@ Implemented:
 Not implemented:
 
 - Jellyfin playlists, ratings, scrobbling
-- Offline mode and explicit downloads
-- Gapless / crossfade playback
+- Gapless / crossfade playback (UI prefs stub on iOS)
 - Jellyfin server-side search
-- Custom EQ presets and EQ curve visualization
+- EQ curve visualization on iOS
 - Drag & Drop from Finder, Dock menu
-- Mini player
-
+- Local music folders on iOS (macOS only)
 ---
 
 ## License

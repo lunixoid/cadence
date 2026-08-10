@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadence — iOS · лаунчер</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+<style>
+  body.artifact {
+    overflow: auto;
+    min-height: 100vh;
+  }
+  .stage {
+    position: relative;
+    inset: auto;
+    min-height: 100vh;
+    padding: 48px 32px 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+  .launch {
+    width: min(720px, 100%);
+    background: var(--window);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-window);
+    padding: 28px 32px 32px;
+  }
+  .launch h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+  }
+  .launch .lead {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: var(--ink-secondary);
+    max-width: 52ch;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  a.card {
+    display: block;
+    padding: 16px 18px;
+    border-radius: var(--radius-lg);
+    border: var(--hairline) solid var(--border);
+    background: var(--content);
+    color: inherit;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+  a.card:hover { background: var(--hover); }
+  a.card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  a.card strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  a.card span {
+    font-size: 12px;
+    color: var(--ink-secondary);
+    line-height: 1.35;
+  }
+  .primary-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 12px;
+    background: var(--play-btn);
+    color: var(--play-icon);
+    font: 600 14px/1 var(--font-sans);
+    text-decoration: none;
+  }
+  .primary-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .note {
+    margin-top: 18px;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+</style>
+</head>
+<body class="artifact" data-theme="light">
+  <div class="stage light-stage">
+    <div class="launch" data-od-id="ios-launcher">
+      <h1 data-od-id="launcher-title">Cadence iOS</h1>
+      <p class="lead">Интерактивный прототип плеера для iPhone 13 Pro (390×844): библиотека, альбом, mini player, Now Playing, очередь и настройки. Light + Dark.</p>
+      <div class="grid">
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=light#library" data-od-id="link-light-library">
+          <strong>Библиотека · Light</strong>
+          <span>Сегменты треки/альбомы/артисты, tab bar</span>
+        </a>
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=dark#library" data-od-id="link-dark-library">
+          <strong>Библиотека · Dark</strong>
+          <span>Та же сцена в тёмной теме</span>
+        </a>
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=light#album" data-od-id="link-album">
+          <strong>Страница альбома</strong>
+          <span>Обложка, Слушать, треклист</span>
+        </a>
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=light#settings" data-od-id="link-settings">
+          <strong>Настройки</strong>
+          <span>Серверы, воспроизведение, кеш, тема</span>
+        </a>
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=light#now-playing" data-od-id="link-np">
+          <strong>Сейчас играет</strong>
+          <span>Sheet с mini player (тап по полосе)</span>
+        </a>
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=light#queue" data-od-id="link-queue">
+          <strong>Список воспроизведения</strong>
+          <span>С кнопки на mini player или NP</span>
+        </a>
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=dark#now-playing" data-od-id="link-np-dark">
+          <strong>Now Playing · Dark</strong>
+          <span>Атмосферный фон из цветов обложки</span>
+        </a>
+        <a class="card" href="Экран%20—%20iOS%20Cadence.html?theme=dark#settings/cache" data-od-id="link-settings-cache">
+          <strong>Кеш и оффлайн · Dark</strong>
+          <span>Хранилище + оффлайн-альбомы</span>
+        </a>
+      </div>
+      <a class="primary-link" href="Экран%20—%20iOS%20Cadence.html" data-od-id="open-prototype">Открыть прототип</a>
+      <p class="note">Переключение темы — в панели макета или в Настройки → Внешний вид. Hash: #library · #album · #settings · #settings/servers · #now-playing · #queue · #recent · #favorites · #downloaded.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -28,7 +28,13 @@ final class SavedFoldersStore {
         guard !contains(path: path) else { return }
 
         let bookmarkData = try url.bookmarkData(
-            options: .withSecurityScope,
+            options: {
+                #if os(macOS)
+                return .withSecurityScope
+                #else
+                return []
+                #endif
+            }(),
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         )
@@ -51,7 +57,13 @@ final class SavedFoldersStore {
             do {
                 let url = try URL(
                     resolvingBookmarkData: folder.bookmarkData,
-                    options: .withSecurityScope,
+                    options: {
+                        #if os(macOS)
+                        return .withSecurityScope
+                        #else
+                        return []
+                        #endif
+                    }(),
                     relativeTo: nil,
                     bookmarkDataIsStale: &isStale
                 )

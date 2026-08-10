@@ -1,5 +1,6 @@
-import AppKit
+import CoreGraphics
 import Foundation
+import ImageIO
 import os.log
 
 private let logger = Logger(subsystem: "dev.personal.cadence", category: "ArtworkCache")
@@ -7,48 +8,47 @@ private let logger = Logger(subsystem: "dev.personal.cadence", category: "Artwor
 actor ArtworkCache {
     static let shared = ArtworkCache()
 
-    private let memoryCache = NSCache<NSString, NSImage>()
-    private let session: URLSession
+    private let memoryCache = NSCache<NSString, CGImageBox>()
 
     private init() {
         memoryCache.countLimit = 200
-        let config = URLSessionConfiguration.default
-        // Avoid sticky wrong HTTP responses across artwork URLs.
-        config.requestCachePolicy = .reloadIgnoringLocalCacheData
-        config.urlCache = nil
-        session = URLSession(configuration: config)
     }
 
     // MARK: - Public API
 
-    func image(for url: URL, itemID: String? = nil, maxWidth: Int = 300) async -> NSImage? {
+    func image(for url: URL, itemID: String? = nil, maxWidth: Int = 300) async -> CGImage? {
         if url.isFileURL {
-            return NSImage(contentsOf: url)
+            return Self.cgImage(contentsOf: url)
         }
 
         let resolvedItemID = itemID ?? Self.parseItemID(from: url)
         let cacheKey = Self.cacheKey(itemID: resolvedItemID, url: url, maxWidth: maxWidth)
 
-        if let cached = memoryCache.object(forKey: cacheKey as NSString) {
+        if let cached = memoryCache.object(forKey: cacheKey as NSString)?.image {
             return cached
         }
 
         if let itemID = resolvedItemID,
            let fileURL = Self.cachedFileURL(itemID: itemID, maxWidth: maxWidth),
-           let image = NSImage(contentsOf: fileURL) {
-            memoryCache.setObject(image, forKey: cacheKey as NSString)
+           let image = Self.cgImage(contentsOf: fileURL) {
+            memoryCache.setObject(CGImageBox(image), forKey: cacheKey as NSString)
             return image
         }
 
         do {
-            let (data, _) = try await session.data(from: url)
-            guard let image = NSImage(data: data) else { return nil }
+            var request = URLRequest(url: url)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            let (data, _) = try await JellyfinURLSessionFactory.data(
+                for: request,
+                allowUntrustedCertificate: JellyfinTLSSettings.allowsUntrustedCertificates
+            )
+            guard let image = Self.cgImage(from: data) else { return nil }
 
             if let itemID = resolvedItemID {
                 Self.writeToDisk(data: data, itemID: itemID, maxWidth: maxWidth)
             }
 
-            memoryCache.setObject(image, forKey: cacheKey as NSString)
+            memoryCache.setObject(CGImageBox(image), forKey: cacheKey as NSString)
             return image
         } catch {
             logger.debug("Artwork download failed: \(error.localizedDescription)")
@@ -69,7 +69,6 @@ actor ArtworkCache {
     func clearAll() {
         memoryCache.removeAllObjects()
         try? FileManager.default.removeItem(at: Self.artworkDirectory)
-        URLCache.shared.removeAllCachedResponses()
     }
 
     // MARK: - Static helpers
@@ -90,15 +89,13 @@ actor ArtworkCache {
 
     nonisolated static func parseMaxWidth(from url: URL) -> Int? {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let maxHeight = components.queryItems?.first(where: { $0.name == "maxHeight" })?.value
+              let value = components.queryItems?.first(where: { $0.name == "maxWidth" || $0.name == "maxHeight" })?.value
         else { return nil }
-        return Int(maxHeight)
+        return Int(value)
     }
 
     nonisolated static func totalDiskUsageBytes() -> Int64 {
         directorySize(at: artworkDirectory)
-            + JellyfinLibraryCache.diskUsageBytes()
-            + AudioCache.totalDiskUsageBytes()
     }
 
     // MARK: - Private
@@ -142,4 +139,19 @@ actor ArtworkCache {
         }
         return total
     }
+
+    private nonisolated static func cgImage(from data: Data) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    }
+
+    private nonisolated static func cgImage(contentsOf fileURL: URL) -> CGImage? {
+        guard let data = try? Data(contentsOf: fileURL) else { return nil }
+        return cgImage(from: data)
+    }
+}
+
+private final class CGImageBox: NSObject {
+    let image: CGImage
+    init(_ image: CGImage) { self.image = image }
 }

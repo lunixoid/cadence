@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import os
 import os.log
 
 private let engineLogger = Logger(subsystem: "dev.personal.cadence", category: "AudioEngine")
@@ -12,7 +13,7 @@ private func engineAgentLog(
     hypothesisId: String,
     data: [String: String] = [:]
 ) {
-    var payload: [String: Any] = [
+    let payload: [String: Any] = [
         "sessionId": "d608e4",
         "location": location,
         "message": message,
@@ -514,7 +515,6 @@ final class AudioEngineService {
                         buffer = sourceChunk
                     }
 
-                    let scheduledIndex = index
                     tracker.increment()
                     self.scheduledUpToIndex = index + 1
 
@@ -852,63 +852,58 @@ final class AudioEngineService {
 /// Thread-safe tracker for in-flight audio buffers. Called from the audio render
 /// thread (scheduleBuffer completion) without hopping through MainActor.
 private final class BufferFlightTracker: @unchecked Sendable {
-    private let lock = NSLock()
-    private var _count = 0
-    private var _finished = false
-    private var waiter: CheckedContinuation<Void, Never>?
+    private struct State: @unchecked Sendable {
+        var count = 0
+        var finished = false
+        var waiter: CheckedContinuation<Void, Never>?
+    }
+
+    private let lock = OSAllocatedUnfairLock(initialState: State())
 
     var count: Int {
-        lock.lock()
-        defer { lock.unlock() }
-        return _count
+        lock.withLock { $0.count }
     }
 
     var isFinished: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return _finished
+        lock.withLock { $0.finished }
     }
 
     func increment() {
-        lock.lock()
-        _count += 1
-        lock.unlock()
+        lock.withLock { $0.count += 1 }
     }
 
     /// Returns remaining count after decrement. Wakes the scheduler if it's waiting.
     @discardableResult
     func decrementAndSignal() -> Int {
-        lock.lock()
-        _count = max(0, _count - 1)
-        let remaining = _count
-        let w = waiter
-        waiter = nil
-        lock.unlock()
-        w?.resume()
+        let (remaining, waiter): (Int, CheckedContinuation<Void, Never>?) = lock.withLock { state in
+            state.count = max(0, state.count - 1)
+            let remaining = state.count
+            let waiter = state.waiter
+            state.waiter = nil
+            return (remaining, waiter)
+        }
+        waiter?.resume()
         return remaining
     }
 
     func markFinished() {
-        lock.lock()
-        _finished = true
-        lock.unlock()
+        lock.withLock { $0.finished = true }
     }
 
     func reset() {
-        lock.lock()
-        _count = 0
-        _finished = false
-        let w = waiter
-        waiter = nil
-        lock.unlock()
-        w?.resume()
+        let waiter = lock.withLock { state -> CheckedContinuation<Void, Never>? in
+            state.count = 0
+            state.finished = false
+            let waiter = state.waiter
+            state.waiter = nil
+            return waiter
+        }
+        waiter?.resume()
     }
 
     func waitForConsumption() async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            lock.lock()
-            waiter = continuation
-            lock.unlock()
+            lock.withLock { $0.waiter = continuation }
         }
     }
 }
@@ -916,23 +911,27 @@ private final class BufferFlightTracker: @unchecked Sendable {
 // MARK: - Decode pipeline
 
 private final class ChunkDecodePipeline: @unchecked Sendable {
+    private struct State: @unchecked Sendable {
+        var ready: [Int: AVAudioPCMBuffer] = [:]
+        var inFlight: Set<Int> = []
+        var waiters: [Int: [CheckedContinuation<AVAudioPCMBuffer, Error>]] = [:]
+    }
+
     private let source: LazyChunkSource
-    private let lock = NSLock()
-    private var ready: [Int: AVAudioPCMBuffer] = [:]
-    private var inFlight: Set<Int> = []
-    private var waiters: [Int: [CheckedContinuation<AVAudioPCMBuffer, Error>]] = [:]
+    private let lock = OSAllocatedUnfairLock(initialState: State())
 
     init(source: LazyChunkSource) {
         self.source = source
     }
 
     func reset() {
-        lock.lock()
-        ready.removeAll(keepingCapacity: true)
-        inFlight.removeAll()
-        let pending = waiters
-        waiters.removeAll()
-        lock.unlock()
+        let pending = lock.withLock { state -> [Int: [CheckedContinuation<AVAudioPCMBuffer, Error>]] in
+            state.ready.removeAll(keepingCapacity: true)
+            state.inFlight.removeAll()
+            let pending = state.waiters
+            state.waiters.removeAll()
+            return pending
+        }
 
         for continuations in pending.values {
             for continuation in continuations {
@@ -949,35 +948,35 @@ private final class ChunkDecodePipeline: @unchecked Sendable {
     }
 
     func buffer(for index: Int) async throws -> AVAudioPCMBuffer {
-        lock.lock()
-        if let cached = ready[index] {
-            lock.unlock()
+        if let cached = lock.withLock({ $0.ready[index] }) {
             return cached
         }
-        lock.unlock()
 
         startDecodeIfNeeded(index: index)
 
         return try await withCheckedThrowingContinuation { continuation in
-            lock.lock()
-            if let cached = ready[index] {
-                lock.unlock()
-                continuation.resume(returning: cached)
-                return
+            let cached: AVAudioPCMBuffer? = lock.withLock { state in
+                if let cached = state.ready[index] {
+                    return cached
+                }
+                state.waiters[index, default: []].append(continuation)
+                return nil
             }
-            waiters[index, default: []].append(continuation)
-            lock.unlock()
+            if let cached {
+                continuation.resume(returning: cached)
+            }
         }
     }
 
     private func startDecodeIfNeeded(index: Int) {
-        lock.lock()
-        if ready[index] != nil || inFlight.contains(index) {
-            lock.unlock()
-            return
+        let shouldStart = lock.withLock { state -> Bool in
+            if state.ready[index] != nil || state.inFlight.contains(index) {
+                return false
+            }
+            state.inFlight.insert(index)
+            return true
         }
-        inFlight.insert(index)
-        lock.unlock()
+        guard shouldStart else { return }
 
         engineLogger.debug("Chunk \(index) decode started")
 
@@ -993,20 +992,23 @@ private final class ChunkDecodePipeline: @unchecked Sendable {
 
     private func completeDecode(index: Int, result: Result<AVAudioPCMBuffer, Error>) {
         engineLogger.debug("Chunk \(index) decode complete")
-        lock.lock()
-        inFlight.remove(index)
+        let continuations: [CheckedContinuation<AVAudioPCMBuffer, Error>] = lock.withLock { state in
+            state.inFlight.remove(index)
+            switch result {
+            case .success(let buffer):
+                state.ready[index] = buffer
+            case .failure:
+                break
+            }
+            return state.waiters.removeValue(forKey: index) ?? []
+        }
 
         switch result {
         case .success(let buffer):
-            ready[index] = buffer
-            let continuations = waiters.removeValue(forKey: index) ?? []
-            lock.unlock()
             for continuation in continuations {
                 continuation.resume(returning: buffer)
             }
         case .failure(let error):
-            let continuations = waiters.removeValue(forKey: index) ?? []
-            lock.unlock()
             for continuation in continuations {
                 continuation.resume(throwing: error)
             }
@@ -1026,34 +1028,40 @@ private final class LazyChunkSource: @unchecked Sendable {
     private(set) var totalFrameCount: AVAudioFramePosition
     let chunkDurationFrames: AVAudioFrameCount
 
-    private let lock = NSLock()
-    private var fileURL: URL
-    private var audioFile: AVAudioFile?
-    private var chunkCache: [Int: AVAudioPCMBuffer] = [:]
+    private struct State: @unchecked Sendable {
+        var fileURL: URL
+        var audioFile: AVAudioFile?
+        var chunkCache: [Int: AVAudioPCMBuffer] = [:]
+        var downloadedBytes: Int64 = 0
+        var expectedTotalBytes: Int64?
+    }
+
+    private let lock: OSAllocatedUnfairLock<State>
     private let maxCachedChunks = 16
     private let isProgressive: Bool
-    private var downloadedBytes: Int64 = 0
-    private var expectedTotalBytes: Int64?
 
     init(url: URL, isProgressive: Bool) throws {
-        self.fileURL = url
         self.isProgressive = isProgressive
-        self.audioFile = try AVAudioFile(forReading: url)
-        guard let audioFile else { throw Error.allocationFailed }
+        let audioFile = try AVAudioFile(forReading: url)
         self.format = audioFile.processingFormat
         self.chunkDurationFrames = AVAudioFrameCount(format.sampleRate)
         self.totalFrameCount = audioFile.length
+        self.lock = OSAllocatedUnfairLock(initialState: State(fileURL: url, audioFile: audioFile))
     }
 
     func updateDownloadProgress(downloaded: Int64, total: Int64?) {
-        lock.lock()
-        defer { lock.unlock() }
-        downloadedBytes = downloaded
-        if let total { expectedTotalBytes = total }
+        lock.withLock { state in
+            state.downloadedBytes = downloaded
+            if let total { state.expectedTotalBytes = total }
+        }
     }
 
-    // Must be called while holding lock.
-    private func computeSafeLimit(fileLength: AVAudioFramePosition, isDownloadComplete: Bool) -> AVAudioFramePosition {
+    private func computeSafeLimit(
+        fileLength: AVAudioFramePosition,
+        isDownloadComplete: Bool,
+        downloadedBytes: Int64,
+        expectedTotalBytes: Int64?
+    ) -> AVAudioFramePosition {
         if !isProgressive || isDownloadComplete { return fileLength }
         if let total = expectedTotalBytes, total > 0, fileLength > 0 {
             let ratio = min(1.0, Double(downloadedBytes) / Double(total))
@@ -1064,100 +1072,103 @@ private final class LazyChunkSource: @unchecked Sendable {
     }
 
     func updateFileURL(_ url: URL) {
-        lock.lock()
-        defer { lock.unlock() }
-        fileURL = url
-        audioFile = nil
+        lock.withLock { state in
+            state.fileURL = url
+            state.audioFile = nil
+        }
     }
 
     func refreshFromDisk(isDownloadComplete: Bool) throws {
-        lock.lock()
-        defer { lock.unlock() }
+        try lock.withLock { state in
+            state.audioFile = try AVAudioFile(forReading: state.fileURL)
+            guard let audioFile = state.audioFile else { throw Error.allocationFailed }
+            totalFrameCount = audioFile.length
 
-        audioFile = try AVAudioFile(forReading: fileURL)
-        guard let audioFile else { throw Error.allocationFailed }
-        totalFrameCount = audioFile.length
+            let safeFrames = computeSafeLimit(
+                fileLength: totalFrameCount,
+                isDownloadComplete: isDownloadComplete,
+                downloadedBytes: state.downloadedBytes,
+                expectedTotalBytes: state.expectedTotalBytes
+            )
+            guard chunkDurationFrames > 0 else { return }
+            let safeChunkLimit = Int(safeFrames / AVAudioFramePosition(chunkDurationFrames))
 
-        let safeFrames = computeSafeLimit(fileLength: totalFrameCount, isDownloadComplete: isDownloadComplete)
-        guard chunkDurationFrames > 0 else { return }
-        let safeChunkLimit = Int(safeFrames / AVAudioFramePosition(chunkDurationFrames))
-
-        chunkCache = chunkCache.filter { key, _ in
-            key < max(0, safeChunkLimit - 1)
+            state.chunkCache = state.chunkCache.filter { key, _ in
+                key < max(0, safeChunkLimit - 1)
+            }
         }
     }
 
     func safeReadableFrameCount(isDownloadComplete: Bool) -> AVAudioFramePosition {
-        lock.lock()
-        defer { lock.unlock() }
-        return computeSafeLimit(fileLength: totalFrameCount, isDownloadComplete: isDownloadComplete)
+        lock.withLock { state in
+            computeSafeLimit(
+                fileLength: totalFrameCount,
+                isDownloadComplete: isDownloadComplete,
+                downloadedBytes: state.downloadedBytes,
+                expectedTotalBytes: state.expectedTotalBytes
+            )
+        }
     }
 
     func decodeChunk(at index: Int) throws -> AVAudioPCMBuffer {
-        lock.lock()
-        if let cached = chunkCache[index] {
-            engineLogger.debug("Chunk \(index) cache hit")
-            lock.unlock()
-            return cached
-        }
-
-        if audioFile == nil {
-            do {
-                audioFile = try AVAudioFile(forReading: fileURL)
-            } catch {
-                lock.unlock()
-                throw error
+        try lock.withLock { state in
+            if let cached = state.chunkCache[index] {
+                engineLogger.debug("Chunk \(index) cache hit")
+                return cached
             }
-        }
-        guard let file = audioFile else {
-            lock.unlock()
-            throw Error.allocationFailed
-        }
 
-        let startFrame = AVAudioFramePosition(index) * AVAudioFramePosition(chunkDurationFrames)
-        let safeLimit = computeSafeLimit(fileLength: file.length, isDownloadComplete: !isProgressive)
-        if startFrame >= safeLimit {
-            lock.unlock()
-            throw Error.readBeyondBoundary
-        }
+            if state.audioFile == nil {
+                state.audioFile = try AVAudioFile(forReading: state.fileURL)
+            }
+            guard let file = state.audioFile else {
+                throw Error.allocationFailed
+            }
 
-        file.framePosition = startFrame
-        let remaining = AVAudioFrameCount(min(
-            AVAudioFramePosition(chunkDurationFrames),
-            safeLimit - startFrame
-        ))
-        guard remaining > 0 else {
-            lock.unlock()
-            throw Error.readBeyondBoundary
-        }
-
-        engineLogger.debug("Chunk \(index) decoding frames \(startFrame)–\(startFrame + Int64(remaining))")
-
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: remaining) else {
-            lock.unlock()
-            throw Error.allocationFailed
-        }
-
-        do {
-            try file.read(into: buffer, frameCount: remaining)
-            buffer.frameLength = remaining
-        } catch {
-            lock.unlock()
-            if isProgressive {
+            let startFrame = AVAudioFramePosition(index) * AVAudioFramePosition(chunkDurationFrames)
+            let safeLimit = computeSafeLimit(
+                fileLength: file.length,
+                isDownloadComplete: !isProgressive,
+                downloadedBytes: state.downloadedBytes,
+                expectedTotalBytes: state.expectedTotalBytes
+            )
+            if startFrame >= safeLimit {
                 throw Error.readBeyondBoundary
             }
-            throw error
-        }
 
-        chunkCache[index] = buffer
-        if chunkCache.count > maxCachedChunks {
-            let keysToRemove = chunkCache.keys.sorted().prefix(chunkCache.count - maxCachedChunks)
-            for key in keysToRemove {
-                engineLogger.debug("Cache evict: chunk \(key)")
-                chunkCache.removeValue(forKey: key)
+            file.framePosition = startFrame
+            let remaining = AVAudioFrameCount(min(
+                AVAudioFramePosition(chunkDurationFrames),
+                safeLimit - startFrame
+            ))
+            guard remaining > 0 else {
+                throw Error.readBeyondBoundary
             }
+
+            engineLogger.debug("Chunk \(index) decoding frames \(startFrame)–\(startFrame + Int64(remaining))")
+
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: remaining) else {
+                throw Error.allocationFailed
+            }
+
+            do {
+                try file.read(into: buffer, frameCount: remaining)
+                buffer.frameLength = remaining
+            } catch {
+                if isProgressive {
+                    throw Error.readBeyondBoundary
+                }
+                throw error
+            }
+
+            state.chunkCache[index] = buffer
+            if state.chunkCache.count > maxCachedChunks {
+                let keysToRemove = state.chunkCache.keys.sorted().prefix(state.chunkCache.count - maxCachedChunks)
+                for key in keysToRemove {
+                    engineLogger.debug("Cache evict: chunk \(key)")
+                    state.chunkCache.removeValue(forKey: key)
+                }
+            }
+            return buffer
         }
-        lock.unlock()
-        return buffer
     }
 }

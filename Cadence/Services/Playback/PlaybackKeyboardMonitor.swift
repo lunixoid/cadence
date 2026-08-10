@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-final class PlaybackKeyboardMonitorService {
+final class PlaybackKeyboardMonitorService: @unchecked Sendable {
     static let shared = PlaybackKeyboardMonitorService()
 
     private weak var controller: PlaybackController?

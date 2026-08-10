@@ -13,25 +13,35 @@ struct LocalLibraryScanner {
     ]
 
     func scan(folder rootURL: URL) async throws -> LibraryScanResult {
-        let fileManager = FileManager.default
-        guard let enumerator = fileManager.enumerator(
-            at: rootURL,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return LibraryScanResult(albums: [], tracks: [], artists: [])
-        }
-
+        let fileURLs = collectAudioFiles(in: rootURL)
         var scannedTracks: [ScannedTrack] = []
 
-        for case let fileURL as URL in enumerator {
-            guard isAudioFile(fileURL) else { continue }
+        for fileURL in fileURLs {
             if let scanned = await scanFile(at: fileURL) {
                 scannedTracks.append(scanned)
             }
         }
 
         return buildLibrary(from: scannedTracks)
+    }
+
+    /// Directory enumeration must stay synchronous — `makeIterator` is unavailable from async contexts.
+    private func collectAudioFiles(in rootURL: URL) -> [URL] {
+        let fileManager = FileManager.default
+        guard let enumerator = fileManager.enumerator(
+            at: rootURL,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        var fileURLs: [URL] = []
+        for case let fileURL as URL in enumerator {
+            guard isAudioFile(fileURL) else { continue }
+            fileURLs.append(fileURL)
+        }
+        return fileURLs
     }
 
     private func isAudioFile(_ url: URL) -> Bool {
@@ -227,21 +237,22 @@ struct LocalLibraryScanner {
             guard let key = item.commonKey else { continue }
             switch key {
             case .commonKeyTitle:
-                result.title = stringValue(from: item)
+                result.title = await stringValue(from: item)
             case .commonKeyArtist:
-                result.artist = stringValue(from: item)
+                result.artist = await stringValue(from: item)
             case .commonKeyAlbumName:
-                result.album = stringValue(from: item)
+                result.album = await stringValue(from: item)
             case .commonKeyAuthor:
                 if result.albumArtist == nil {
-                    result.albumArtist = stringValue(from: item)
+                    result.albumArtist = await stringValue(from: item)
                 }
-            case .commonKeyType where item.value is NSNumber:
-                if result.trackNumber == nil, let number = item.numberValue?.intValue {
+            case .commonKeyType:
+                if result.trackNumber == nil,
+                   let number = try? await item.load(.numberValue)?.intValue {
                     result.trackNumber = number
                 }
             case .commonKeyCreationDate:
-                if let dateString = stringValue(from: item), let year = Int(dateString.prefix(4)) {
+                if let dateString = await stringValue(from: item), let year = Int(dateString.prefix(4)) {
                     result.year = year
                 }
             case .commonKeyArtwork:
@@ -258,13 +269,13 @@ struct LocalLibraryScanner {
                 guard let identifier = item.identifier else { continue }
                 let idString = identifier.rawValue.lowercased()
                 if idString.contains("albumartist") || idString.contains("band") {
-                    result.albumArtist = stringValue(from: item) ?? result.albumArtist
+                    result.albumArtist = await stringValue(from: item) ?? result.albumArtist
                 } else if idString.contains("tracknumber") || idString.contains("track") {
-                    result.trackNumber = parseTrackNumber(stringValue(from: item)) ?? result.trackNumber
+                    result.trackNumber = parseTrackNumber(await stringValue(from: item)) ?? result.trackNumber
                 } else if idString.contains("discnumber") || idString.contains("disc") {
-                    result.discNumber = parseTrackNumber(stringValue(from: item)) ?? result.discNumber
+                    result.discNumber = parseTrackNumber(await stringValue(from: item)) ?? result.discNumber
                 } else if idString.contains("date") || idString.contains("year") {
-                    if let value = stringValue(from: item), let year = Int(value.prefix(4)) {
+                    if let value = await stringValue(from: item), let year = Int(value.prefix(4)) {
                         result.year = year
                     }
                 }
@@ -274,14 +285,14 @@ struct LocalLibraryScanner {
         return result
     }
 
-    private func stringValue(from item: AVMetadataItem) -> String? {
-        if let string = item.stringValue { return string }
-        if let number = item.numberValue { return number.stringValue }
+    private func stringValue(from item: AVMetadataItem) async -> String? {
+        if let string = try? await item.load(.stringValue) { return string }
+        if let number = try? await item.load(.numberValue) { return number.stringValue }
         return nil
     }
 
     private func artworkData(from item: AVMetadataItem) async -> Data? {
-        if let data = item.dataValue { return data }
+        if let data = try? await item.load(.dataValue) { return data }
         if let value = try? await item.load(.value) as? Data { return value }
         return nil
     }

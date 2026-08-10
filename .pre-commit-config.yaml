@@ -1,0 +1,11 @@
+# https://pre-commit.com
+# Compiler-level Swift checks (same diagnostics as Xcode). Not SwiftLint.
+repos:
+  - repo: local
+    hooks:
+      - id: swift-xcode-check
+        name: Swift Xcode check (Cadence + CadenceiOS)
+        entry: scripts/swift-xcode-check.sh
+        language: system
+        pass_filenames: false
+        files: '(\.swift$|project\.pbxproj$)'

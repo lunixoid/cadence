@@ -213,24 +213,34 @@ enum JellyfinInsecureHTTPS {
 
     private static func waitUntilReady(_ connection: NWConnection) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let lock = NSLock()
-            var resumed = false
-            func resume(_ result: Result<Void, Error>) {
-                lock.lock()
-                defer { lock.unlock() }
-                guard !resumed else { return }
-                resumed = true
-                continuation.resume(with: result)
+            final class ResumeGate: @unchecked Sendable {
+                private let lock = NSLock()
+                private var resumed = false
+                private let continuation: CheckedContinuation<Void, Error>
+
+                init(_ continuation: CheckedContinuation<Void, Error>) {
+                    self.continuation = continuation
+                }
+
+                func resume(_ result: Result<Void, Error>) {
+                    lock.lock()
+                    defer { lock.unlock() }
+                    guard !resumed else { return }
+                    resumed = true
+                    continuation.resume(with: result)
+                }
             }
+
+            let gate = ResumeGate(continuation)
 
             connection.stateUpdateHandler = { state in
                 switch state {
                 case .ready:
-                    resume(.success(()))
+                    gate.resume(.success(()))
                 case .failed(let error):
-                    resume(.failure(error))
+                    gate.resume(.failure(error))
                 case .cancelled:
-                    resume(.failure(URLError(.cancelled)))
+                    gate.resume(.failure(URLError(.cancelled)))
                 default:
                     break
                 }

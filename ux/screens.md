@@ -30,7 +30,7 @@
 | ios-lib | Вкладка Библиотека | `#library` / `IOSLibraryView` | Swift | сегменты Все треки / Альбомы / Артисты; ⚙ → настройки |
 | ios-album | Страница альбома | `#album` / `IOSAlbumView` | Swift | треклист + play |
 | ios-mini | Mini player + tab bar | `tabViewBottomAccessory` | Swift | кнопка списка воспроизведения на mini |
-| ios-np | Сейчас играет | `#now-playing` / `IOSNowPlayingView` | Swift | vinyl cover + transport; открытие с mini |
+| ios-np | Сейчас играет | `#now-playing` / `IOSNowPlayingView` | Swift | барабан обложек −2…+2 + свайп ←/→; transport; vinyl-hint только в placeholder; открытие с mini |
 | ios-recent | Недавнее | `#recent` / `IOSRecentView` | Swift | список альбомов |
 | ios-fav | Избранное | `#favorites` / `IOSFavoritesView` | Swift | ♥ `#FF375F` |
 | ios-dl | Скачанное | `#downloaded` / `IOSDownloadedView` | Swift | оффлайн-альбомы |

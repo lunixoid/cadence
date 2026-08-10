@@ -151,16 +151,60 @@ struct PlaybackQueue: Equatable {
         autoplay = ctx
     }
 
+    /// Returns the previous track without stepping back in the queue.
+    func peekPrevious() -> Track? {
+        history.last
+    }
+
+    /// Up to `limit` history tracks nearest to current, oldest-first (left → right as prevN…prev1).
+    func peekHistory(limit: Int) -> [Track] {
+        guard limit > 0 else { return [] }
+        return Array(history.suffix(limit))
+    }
+
     /// Returns the next track without advancing the queue.
     func peekNext(repeatMode: RepeatMode) -> Track? {
-        if !upNext.isEmpty {
-            return upNext.first
-        } else if let ctx = autoplay, ctx.cursor < ctx.tracks.count {
-            return ctx.tracks[ctx.cursor]
-        } else if repeatMode == .queue, let ctx = autoplay, !ctx.tracks.isEmpty {
-            return ctx.tracks[0]
+        peekUpcoming(limit: 1, repeatMode: repeatMode).first
+    }
+
+    /// Up to `limit` upcoming tracks without advancing the queue.
+    func peekUpcoming(limit: Int, repeatMode: RepeatMode) -> [Track] {
+        guard limit > 0 else { return [] }
+
+        var result: [Track] = []
+        var seen = Set<UUID>()
+        if let currentID = current?.id {
+            seen.insert(currentID)
         }
-        return nil
+
+        func appendUnique(_ track: Track) {
+            guard result.count < limit, !seen.contains(track.id) else { return }
+            seen.insert(track.id)
+            result.append(track)
+        }
+
+        for track in upNext {
+            appendUnique(track)
+            if result.count >= limit { return result }
+        }
+
+        if let ctx = autoplay {
+            var index = ctx.cursor
+            while result.count < limit, index < ctx.tracks.count {
+                appendUnique(ctx.tracks[index])
+                index += 1
+            }
+
+            if result.count < limit, repeatMode == .queue, !ctx.tracks.isEmpty {
+                var wrapIndex = 0
+                while result.count < limit, wrapIndex < ctx.tracks.count {
+                    appendUnique(ctx.tracks[wrapIndex])
+                    wrapIndex += 1
+                }
+            }
+        }
+
+        return result
     }
 
     /// Advances to the next track. Returns nil when playback should stop.

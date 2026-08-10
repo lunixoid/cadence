@@ -376,6 +376,22 @@ final class PlaybackController {
         scheduleLoadedTrack(track)
     }
 
+    /// Unconditional step to the previous queue track (cover swipe). No seek-on-progress.
+    /// No-op when history is empty.
+    @discardableResult
+    func skipToPreviousTrack() -> Bool {
+        guard playbackQueue.hasActiveSession else { return false }
+
+        guard let track = playbackQueue.consumePrevious() else {
+            logger.info("Action: skipToPreviousTrack → no history")
+            return false
+        }
+
+        logger.info("Action: skipToPreviousTrack → '\(track.title)'")
+        scheduleLoadedTrack(track)
+        return true
+    }
+
     private func scheduleLoadedTrack(_ track: Track) {
         pendingLoadTrack = track
         loadSerialTask?.cancel()
@@ -439,6 +455,22 @@ final class PlaybackController {
 
     var upNextTracks: [Track] {
         playbackQueue.upNext
+    }
+
+    var previousQueueTrack: Track? {
+        playbackQueue.peekPrevious()
+    }
+
+    var nextQueueTrack: Track? {
+        playbackQueue.peekNext(repeatMode: repeatMode)
+    }
+
+    /// Neighbors for the Now Playing cover revolver: previous oldest→nearest, next nearest→further.
+    func coverStripTracks(before: Int = 2, after: Int = 2) -> (previous: [Track], next: [Track]) {
+        (
+            playbackQueue.peekHistory(limit: before),
+            playbackQueue.peekUpcoming(limit: after, repeatMode: repeatMode)
+        )
     }
 
     func removeFromUpNext(at index: Int) {

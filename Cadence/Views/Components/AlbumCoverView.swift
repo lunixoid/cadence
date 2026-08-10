@@ -37,11 +37,10 @@ struct AlbumCoverView: View {
             }
 
             Group {
-                if let image, imageAlbumID == album?.id {
+                if let image {
                     Image(decorative: image, scale: 1)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .id(imageAlbumID)
                 } else {
                     AlbumCoverPlaceholderView(
                         colors: album?.accentColors ?? CadenceTheme.placeholderGradientColors,
@@ -55,10 +54,12 @@ struct AlbumCoverView: View {
         }
         .frame(width: showVinylDisc ? size * 1.18 : size, height: size, alignment: .leading)
         .onChange(of: album?.id, initial: true) { _, newID in
-            if imageAlbumID != newID {
+            if newID == nil {
                 image = nil
                 imageAlbumID = nil
+                return
             }
+            if imageAlbumID == newID { return }
             reloadCover()
         }
     }

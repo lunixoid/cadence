@@ -18,8 +18,7 @@ struct IOSAlbumView: View {
                     AlbumCoverView(
                         album: album,
                         size: 220,
-                        cornerRadius: 14,
-                        showVinylDisc: true
+                        cornerRadius: 14
                     )
                     .frame(maxWidth: .infinity)
 

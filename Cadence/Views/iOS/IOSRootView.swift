@@ -10,6 +10,7 @@ enum IOSTab: Hashable {
 struct IOSRootView: View {
     @Environment(AppUIState.self) private var uiState
     @Environment(PlaybackController.self) private var playbackController
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var selectedTab: IOSTab = .library
     @State private var showNowPlaying = false
@@ -86,5 +87,10 @@ struct IOSRootView: View {
             }
         }
         .tint(CadenceTheme.accent(for: .light))
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background || phase == .inactive {
+                playbackController.persistStateNow()
+            }
+        }
     }
 }

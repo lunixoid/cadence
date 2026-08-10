@@ -200,8 +200,10 @@ final class PlaybackController {
         audioEngine.setGlobalGain(maxBoost > 0 ? Float(-maxBoost - 1.0) : 0)
     }
 
-    func restoreSavedState() {
-        guard let snapshot = stateStore.load() else { return }
+    /// Returns `false` when a snapshot exists but the queue could not be resolved (library still empty).
+    @discardableResult
+    func restoreSavedState() -> Bool {
+        guard let snapshot = stateStore.load() else { return true }
 
         if let savedEnabled = snapshot.eqEnabled {
             eqEnabled = savedEnabled
@@ -217,7 +219,7 @@ final class PlaybackController {
         }
 
         guard let queue = stateStore.restoreQueue(from: snapshot, library: libraryStore) else {
-            return
+            return false
         }
 
         playbackQueue = queue
@@ -227,6 +229,11 @@ final class PlaybackController {
         progress = snapshot.progress
 
         loadCurrentTrack(seekTo: snapshot.progress, shouldPlay: false)
+        return true
+    }
+
+    func persistStateNow() {
+        persistState()
     }
 
     func play(tracks: [Track], startAt index: Int = 0, source: AutoplaySource = .adHoc, originalTracks: [Track]? = nil) {

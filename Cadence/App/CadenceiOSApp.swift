@@ -53,8 +53,11 @@ struct CadenceiOSApp: App {
                     hasRestoredState = true
                     offlineStore.pruneMissingFiles()
                     await uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
-                    playbackController.restoreSavedState()
+                    let restored = playbackController.restoreSavedState()
                     uiState.restoreNavigationState(playlistStore: playlistStore)
+                    if !restored {
+                        await retryRestoreWhenLibraryReady()
+                    }
                 }
         }
     }
@@ -64,6 +67,18 @@ struct CadenceiOSApp: App {
         case .system: return nil
         case .light: return .light
         case .dark: return .dark
+        }
+    }
+
+    /// After a cold start without Jellyfin disk cache, library fills in via deferred network load.
+    private func retryRestoreWhenLibraryReady() async {
+        for _ in 0..<60 {
+            if playbackController.currentTrack != nil { return }
+            if !libraryStore.allTracks().isEmpty {
+                _ = playbackController.restoreSavedState()
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(500))
         }
     }
 }

@@ -128,7 +128,21 @@ struct IOSNowPlayingView: View {
     }
 
     private var transport: some View {
-        HStack(spacing: 36) {
+        HStack(spacing: 28) {
+            Button {
+                playbackController.toggleShuffle()
+            } label: {
+                Image(systemName: "shuffle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(
+                        playbackController.shuffleOn
+                            ? CadenceTheme.accent(for: colorScheme)
+                            : CadenceTheme.primaryText(for: colorScheme)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Перемешать")
+
             Button {
                 playbackController.previous()
             } label: {
@@ -155,6 +169,20 @@ struct IOSNowPlayingView: View {
                     .font(.system(size: 28))
             }
             .buttonStyle(.plain)
+
+            Button {
+                playbackController.toggleRepeat()
+            } label: {
+                Image(systemName: playbackController.repeatMode.iconName)
+                    .font(.system(size: 20))
+                    .foregroundStyle(
+                        playbackController.repeatMode != .off
+                            ? CadenceTheme.accent(for: colorScheme)
+                            : CadenceTheme.primaryText(for: colorScheme)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Повтор")
         }
         .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
     }

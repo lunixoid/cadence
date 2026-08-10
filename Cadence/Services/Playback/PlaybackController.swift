@@ -59,14 +59,6 @@ final class PlaybackController {
     var repeatMode: RepeatMode = .off
     var progress: TimeInterval = 0
     var duration: TimeInterval = 0
-    var volume: Double = 72 {
-        didSet {
-            let vol = Int(volume)
-            logger.info("Action: volume → \(vol)%")
-            audioEngine.volume = volume
-            persistState()
-        }
-    }
 
     var eqEnabled = true {
         didSet {
@@ -250,7 +242,6 @@ final class PlaybackController {
         playbackQueue = queue
         shuffleOn = snapshot.shuffleOn
         repeatMode = snapshot.repeatMode
-        volume = snapshot.volume
         progress = snapshot.progress
 
         loadCurrentTrack(seekTo: snapshot.progress, shouldPlay: false)
@@ -850,7 +841,6 @@ final class PlaybackController {
             isPlaying: isPlaying,
             shuffleOn: shuffleOn,
             repeatMode: repeatMode,
-            volume: volume,
             eqEnabled: eqEnabled,
             eqGains: eqGains
         )

@@ -14,7 +14,6 @@ struct PreferencesWindowView: View {
     @State private var activeTab: PreferencesTab = .servers
     @State private var selectedServerID: UUID?
     @State private var outputDevice = "Системное устройство"
-    @State private var defaultVolume = 80
     @State private var gaplessEnabled = true
     @State private var crossfadeEnabled = false
     @State private var crossfadeLength = 3
@@ -308,11 +307,8 @@ struct PreferencesWindowView: View {
         VStack(alignment: .leading, spacing: 0) {
             prefsSectionLabel("Аудио-устройство", first: true)
             PrefsCard {
-                PrefsCardRow(label: "Вывод звука") {
+                PrefsCardRow(label: "Вывод звука", isLast: true) {
                     PrefsPicker(selection: $outputDevice, options: outputDevices)
-                }
-                PrefsCardRow(label: "Громкость по умолчанию", isLast: true) {
-                    PrefsSlider(value: $defaultVolume, range: 0...100, unit: "%")
                 }
             }
 

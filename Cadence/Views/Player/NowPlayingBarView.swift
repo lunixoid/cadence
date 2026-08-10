@@ -10,7 +10,6 @@ struct NowPlayingBarView: View {
 
     @State private var isProgressHovered = false
     @State private var isPlayHovered = false
-    @State private var isVolumeHovered = false
     @State private var isStripHovered = false
     @State private var isScrubbing = false
     @State private var scrubPosition: TimeInterval = 0
@@ -330,55 +329,8 @@ struct NowPlayingBarView: View {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 18))
             }
-
-            HStack(spacing: 8) {
-                Image(systemName: playbackController.volume == 0 ? "speaker.slash" : "speaker.wave.2")
-                    .font(.system(size: 18))
-                    .foregroundStyle(CadenceTheme.iconColor(for: colorScheme))
-
-                volumeSlider
-            }
-            .padding(.leading, 6)
         }
-        .frame(width: 230, alignment: .trailing)
-    }
-
-    private var volumeSlider: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(CadenceTheme.trackBackground(for: colorScheme))
-                    .frame(height: isVolumeHovered ? 6 : CadenceTheme.volumeSliderHeight)
-
-                Capsule()
-                    .fill(CadenceTheme.volumeFill(for: colorScheme))
-                    .frame(
-                        width: geometry.size.width * CGFloat(playbackController.volume / 100),
-                        height: isVolumeHovered ? 6 : CadenceTheme.volumeSliderHeight
-                    )
-                    .overlay(alignment: .trailing) {
-                        if isVolumeHovered {
-                            Circle()
-                                .fill(CadenceTheme.volumeFill(for: colorScheme))
-                                .frame(width: 14, height: 14)
-                                .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
-                                .offset(x: 7)
-                        }
-                    }
-            }
-            .frame(maxHeight: .infinity, alignment: .center)
-            .contentShape(Rectangle())
-            .onHover { isVolumeHovered = $0 }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        let ratio = min(max(value.location.x / geometry.size.width, 0), 1)
-                        playbackController.volume = Double(ratio * 100)
-                    }
-            )
-            .animation(.easeOut(duration: 0.12), value: isVolumeHovered)
-        }
-        .frame(width: CadenceTheme.volumeSliderWidth, height: 20)
+        .frame(width: 90, alignment: .trailing)
     }
 
     // MARK: - Helpers

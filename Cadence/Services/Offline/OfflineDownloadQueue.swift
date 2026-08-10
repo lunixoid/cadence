@@ -93,7 +93,7 @@ actor OfflineDownloadQueue {
         runningCount += 1
     }
 
-    private func releaseSlot() {
+    private func releaseSlot() async {
         runningCount = max(0, runningCount - 1)
         if !waiters.isEmpty {
             let next = waiters.removeFirst()

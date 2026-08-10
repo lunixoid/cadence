@@ -527,7 +527,7 @@ private func progressiveAgentLog(
     hypothesisId: String,
     data: [String: String] = [:]
 ) {
-    var payload: [String: Any] = [
+    let payload: [String: Any] = [
         "sessionId": "d608e4",
         "location": location,
         "message": message,

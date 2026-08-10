@@ -5,6 +5,15 @@
 - Specification / README: [`README.md`](README.md)
 - Design: [`ux/`](ux/)
 
+## Pre-commit (Swift / Xcode)
+
+Compiler-level checks (same diagnostics as Xcode Issue Navigator), not SwiftLint. Uses the [pre-commit](https://pre-commit.com) framework:
+
+1. Once: `brew install pre-commit` (if needed), then `./scripts/install-git-hooks.sh`
+2. On commit of `*.swift` / `project.pbxproj`, runs [`scripts/swift-xcode-check.sh`](scripts/swift-xcode-check.sh) — builds **Cadence** (macOS) and **CadenceiOS** (Simulator) with warnings as errors
+3. Manual: `pre-commit run --all-files`
+4. Emergency skip: `SKIP_SWIFT_CHECK=1 git commit …`
+
 ## Versioning (SemVer)
 
 The project uses [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MINOR.PATCH` (`X.Y.Z`).

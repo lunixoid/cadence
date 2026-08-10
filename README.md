@@ -296,8 +296,10 @@ Filters the local library by tracks, albums, and artists. Jellyfin server-side s
 
 ### Media Keys and Now Playing
 
-- Media key interception via `MPRemoteCommandCenter` + local `NSEvent` monitor
+- Media key interception via `MPRemoteCommandCenter` + local `NSEvent` monitor (macOS)
 - `MPNowPlayingInfoCenter`: title, artist, album, duration, position
+- Favorite (like) on lock screen / Control Center via `likeCommand` → same Jellyfin favorites sync as in-app
+- iOS: `AVAudioSession` `.playback` + `UIBackgroundModes=audio`; playback continues when backgrounded / screen locked; interruptions resume when appropriate
 - Artwork in the system Now Playing widget is not set
 
 ### App Menu

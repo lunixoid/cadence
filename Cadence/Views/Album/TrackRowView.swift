@@ -125,6 +125,9 @@ struct TrackRowView: View {
         }
         Button(favoritesStore.isFavorite(track: track) ? "Убрать из избранного" : "В избранное") {
             jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+            if playbackController.currentTrack?.id == track.id {
+                playbackController.refreshNowPlayingInfo()
+            }
         }
         if canManageOffline {
             Divider()

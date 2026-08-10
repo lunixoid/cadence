@@ -198,5 +198,6 @@ struct IOSNowPlayingView: View {
     private func toggleFavorite() {
         guard let track else { return }
         jellyfinFavoritesSync.toggle(track: track, client: uiState.activeJellyfinClient)
+        playbackController.refreshNowPlayingInfo()
     }
 }

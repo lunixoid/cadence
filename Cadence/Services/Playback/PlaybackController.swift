@@ -139,12 +139,37 @@ final class PlaybackController {
             }
         }
 
+        audioEngine.onDidPauseBySystem = { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isPlaying = false
+                self.mediaRemote.publishNowPlayingInfo()
+                self.persistState()
+            }
+        }
+
         audioEngine.onGaplessAdvance = { [weak self] nextDuration in
             Task { @MainActor in
                 guard let self else { return }
                 self.handleGaplessAdvance(nextDuration: nextDuration)
             }
         }
+    }
+
+    func configureFavoriteRemote(
+        favoritesStore: FavoritesStore,
+        clientProvider: @escaping @MainActor () -> JellyfinClient?,
+        toggle: @escaping @MainActor (Track, JellyfinClient?) -> Void
+    ) {
+        mediaRemote.configureFavorites(
+            favoritesStore: favoritesStore,
+            clientProvider: clientProvider,
+            toggle: toggle
+        )
+    }
+
+    func refreshNowPlayingInfo() {
+        mediaRemote.publishNowPlayingInfo()
     }
 
     func setEQGain(at index: Int, gain: Double) {

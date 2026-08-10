@@ -51,6 +51,13 @@ struct CadenceiOSApp: App {
                 .task {
                     guard !hasRestoredState else { return }
                     hasRestoredState = true
+                    playbackController.configureFavoriteRemote(
+                        favoritesStore: favoritesStore,
+                        clientProvider: { [uiState] in uiState.activeJellyfinClient },
+                        toggle: { [jellyfinFavoritesSync] track, client in
+                            jellyfinFavoritesSync.toggle(track: track, client: client)
+                        }
+                    )
                     offlineStore.pruneMissingFiles()
                     await uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
                     let restored = playbackController.restoreSavedState()

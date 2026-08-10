@@ -88,7 +88,12 @@ final class AudioEngineService {
     var onTrackFinished: (() -> Void)?
     var onBuffering: ((Bool) -> Void)?
     var onDidStartPlayingBySystem: (() -> Void)?
+    var onDidPauseBySystem: (() -> Void)?
     var onGaplessAdvance: ((TimeInterval) -> Void)?
+
+    #if os(iOS)
+    private var wasPlayingBeforeInterruption = false
+    #endif
 
     var volume: Double {
         get { Double(userVolume) * 100 }
@@ -101,6 +106,7 @@ final class AudioEngineService {
     init() {
         #if os(iOS)
         Self.configureAudioSession()
+        installInterruptionObserver()
         #endif
 
         engine.attach(playerNode)
@@ -142,6 +148,57 @@ final class AudioEngineService {
             try session.setActive(true)
         } catch {
             engineLogger.error("AVAudioSession setup failed: \(error.localizedDescription)")
+        }
+    }
+
+    private static func activateAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            engineLogger.error("AVAudioSession activate failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func installInterruptionObserver() {
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: nil
+        ) { [weak self] notification in
+            Task { @MainActor [weak self] in
+                self?.handleAudioSessionInterruption(notification)
+            }
+        }
+    }
+
+    private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let info = notification.userInfo,
+              let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            wasPlayingBeforeInterruption = playerNode.isPlaying
+            guard wasPlayingBeforeInterruption else { return }
+            playerNode.pause()
+            stopProgressTimer()
+            isPaused = true
+            onDidPauseBySystem?()
+        case .ended:
+            let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            Self.activateAudioSession()
+            guard wasPlayingBeforeInterruption, options.contains(.shouldResume) else {
+                wasPlayingBeforeInterruption = false
+                return
+            }
+            wasPlayingBeforeInterruption = false
+            play()
+            onDidStartPlayingBySystem?()
+        @unknown default:
+            break
         }
     }
     #endif
@@ -223,6 +280,10 @@ final class AudioEngineService {
 
     func play() {
         guard chunkSource != nil else { return }
+
+        #if os(iOS)
+        Self.activateAudioSession()
+        #endif
 
         if !engine.isRunning {
             try? engine.start()
@@ -339,6 +400,9 @@ final class AudioEngineService {
         // Don't touch the graph — modifying nodes fires another AVAudioEngineConfigurationChange,
         // causing an infinite restart loop. The engine preserves player→eq→mixer connections;
         // restarting without reconnecting works for the common case (same-sample-rate device switch).
+        #if os(iOS)
+        Self.activateAudioSession()
+        #endif
         do {
             try engine.start()
             spectrumAnalyzer.start(on: engine.mainMixerNode, format: format)

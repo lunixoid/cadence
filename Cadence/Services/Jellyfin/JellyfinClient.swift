@@ -1,6 +1,8 @@
 import Foundation
 import SwiftUI
+import Network
 import os.log
+import Security
 
 private let logger = Logger(subsystem: "dev.personal.cadence", category: "Jellyfin")
 
@@ -103,6 +105,297 @@ enum JellyfinError: LocalizedError {
     }
 }
 
+// MARK: - TLS trust (private CA / self-signed)
+
+enum JellyfinTLSSettings {
+    /// Process-wide flag for artwork/stream downloaders that don't own server config.
+    nonisolated(unsafe) static var allowsUntrustedCertificates = false
+}
+
+/// HTTPS via Network.framework with disabled peer verification.
+/// URLSession custom trust overrides still fail on iOS with errSSLFatalAlert (-9802) for private CAs,
+/// even after SecTrust evaluates successfully — so untrusted servers use NWConnection instead.
+enum JellyfinInsecureHTTPS {
+    static func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let connection = try makeConnection(for: request)
+        do {
+            try await waitUntilReady(connection)
+            guard let host = request.url?.host else { throw URLError(.badURL) }
+            let wireRequest = try buildHTTPRequest(request, host: host)
+            try await send(wireRequest, on: connection)
+            let raw = try await receiveAll(on: connection)
+            connection.cancel()
+            guard let url = request.url else { throw URLError(.badURL) }
+            return try parseHTTPResponse(raw, url: url)
+        } catch {
+            connection.cancel()
+            throw error
+        }
+    }
+
+    /// Streams response body as it arrives (for progressive audio downloads).
+    /// Calls `onConnection` immediately so the caller can cancel the NWConnection.
+    static func stream(
+        for request: URLRequest,
+        onConnection: @escaping @Sendable (NWConnection) -> Void,
+        onResponse: @escaping @Sendable (HTTPURLResponse) throws -> Void,
+        onData: @escaping @Sendable (Data) -> Void
+    ) async throws {
+        guard let url = request.url, let host = url.host else {
+            throw URLError(.badURL)
+        }
+        let connection = try makeConnection(for: request)
+        onConnection(connection)
+
+        do {
+            try await waitUntilReady(connection)
+            let wireRequest = try buildHTTPRequest(request, host: host)
+            try await send(wireRequest, on: connection)
+
+            var buffer = Data()
+            var headersParsed = false
+            while true {
+                let (chunk, isComplete) = try await receiveChunk(on: connection)
+                if !headersParsed {
+                    buffer.append(chunk)
+                    guard let headerRange = buffer.range(of: Data("\r\n\r\n".utf8)) else {
+                        if isComplete { throw URLError(.badServerResponse) }
+                        continue
+                    }
+                    let headerData = buffer.subdata(in: buffer.startIndex..<headerRange.lowerBound)
+                    let bodyPrefix = buffer.subdata(in: headerRange.upperBound..<buffer.endIndex)
+                    buffer = Data()
+                    headersParsed = true
+
+                    let response = try parseHTTPURLResponse(headerData: headerData, url: url)
+                    try onResponse(response)
+                    if !bodyPrefix.isEmpty {
+                        onData(bodyPrefix)
+                    }
+                } else if !chunk.isEmpty {
+                    onData(chunk)
+                }
+                if isComplete { break }
+            }
+            connection.cancel()
+        } catch {
+            connection.cancel()
+            throw error
+        }
+    }
+
+    private static func makeConnection(for request: URLRequest) throws -> NWConnection {
+        guard let url = request.url, let host = url.host else {
+            throw URLError(.badURL)
+        }
+        let port = UInt16(url.port ?? (url.scheme == "http" ? 80 : 443))
+        let useTLS = (url.scheme ?? "https").lowercased() != "http"
+
+        let parameters: NWParameters
+        if useTLS {
+            let tls = NWProtocolTLS.Options()
+            let securityOptions = tls.securityProtocolOptions
+            sec_protocol_options_set_peer_authentication_required(securityOptions, false)
+            sec_protocol_options_set_verify_block(securityOptions, { _, _, complete in
+                complete(true)
+            }, DispatchQueue.global(qos: .userInitiated))
+            parameters = NWParameters(tls: tls, tcp: NWProtocolTCP.Options())
+        } else {
+            parameters = NWParameters.tcp
+        }
+
+        return NWConnection(
+            host: NWEndpoint.Host(host),
+            port: NWEndpoint.Port(rawValue: port)!,
+            using: parameters
+        )
+    }
+
+    private static func waitUntilReady(_ connection: NWConnection) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let lock = NSLock()
+            var resumed = false
+            func resume(_ result: Result<Void, Error>) {
+                lock.lock()
+                defer { lock.unlock() }
+                guard !resumed else { return }
+                resumed = true
+                continuation.resume(with: result)
+            }
+
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready:
+                    resume(.success(()))
+                case .failed(let error):
+                    resume(.failure(error))
+                case .cancelled:
+                    resume(.failure(URLError(.cancelled)))
+                default:
+                    break
+                }
+            }
+            connection.start(queue: DispatchQueue.global(qos: .userInitiated))
+        }
+    }
+
+    private static func send(_ data: Data, on connection: NWConnection) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            connection.send(content: data, completion: .contentProcessed { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            })
+        }
+    }
+
+    private static func receiveChunk(on connection: NWConnection) async throws -> (Data, Bool) {
+        try await withCheckedThrowingContinuation { continuation in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 1024 * 256) { content, _, isComplete, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: (content ?? Data(), isComplete))
+            }
+        }
+    }
+
+    private static func receiveAll(on connection: NWConnection) async throws -> Data {
+        var buffer = Data()
+        while true {
+            let (chunk, isComplete) = try await receiveChunk(on: connection)
+            buffer.append(chunk)
+            if isComplete { break }
+        }
+        return buffer
+    }
+
+    private static func buildHTTPRequest(_ request: URLRequest, host: String) throws -> Data {
+        guard let url = request.url else { throw URLError(.badURL) }
+        let method = request.httpMethod ?? "GET"
+        var path = url.path
+        if path.isEmpty { path = "/" }
+        if let query = url.query, !query.isEmpty {
+            path += "?\(query)"
+        }
+
+        var headerLines: [String] = [
+            "\(method) \(path) HTTP/1.1",
+            "Host: \(host)",
+            "Connection: close",
+            "Accept: */*",
+        ]
+
+        var hasContentLength = false
+        if let headers = request.allHTTPHeaderFields {
+            for (key, value) in headers {
+                let lower = key.lowercased()
+                if lower == "host" || lower == "connection" { continue }
+                if lower == "content-length" { hasContentLength = true }
+                headerLines.append("\(key): \(value)")
+            }
+        }
+
+        let body = request.httpBody ?? Data()
+        if !body.isEmpty, !hasContentLength {
+            headerLines.append("Content-Length: \(body.count)")
+        }
+
+        var message = headerLines.joined(separator: "\r\n")
+        message += "\r\n\r\n"
+        var data = Data(message.utf8)
+        data.append(body)
+        return data
+    }
+
+    private static func parseHTTPURLResponse(headerData: Data, url: URL) throws -> HTTPURLResponse {
+        guard let headerText = String(data: headerData, encoding: .utf8) else {
+            throw URLError(.badServerResponse)
+        }
+
+        let lines = headerText.split(separator: "\r\n", omittingEmptySubsequences: false)
+        guard let statusLine = lines.first else { throw URLError(.badServerResponse) }
+        let statusParts = statusLine.split(separator: " ")
+        guard statusParts.count >= 2, let statusCode = Int(statusParts[1]) else {
+            throw URLError(.badServerResponse)
+        }
+
+        var headers: [String: String] = [:]
+        for line in lines.dropFirst() {
+            guard let sep = line.firstIndex(of: ":") else { continue }
+            let name = String(line[..<sep]).trimmingCharacters(in: .whitespaces)
+            let value = String(line[line.index(after: sep)...]).trimmingCharacters(in: .whitespaces)
+            headers[name] = value
+        }
+
+        return HTTPURLResponse(
+            url: url,
+            statusCode: statusCode,
+            httpVersion: "HTTP/1.1",
+            headerFields: headers
+        )!
+    }
+
+    private static func parseHTTPResponse(_ raw: Data, url: URL) throws -> (Data, URLResponse) {
+        guard let headerRange = raw.range(of: Data("\r\n\r\n".utf8)) else {
+            throw URLError(.badServerResponse)
+        }
+        let headerData = raw.subdata(in: raw.startIndex..<headerRange.lowerBound)
+        let body = raw.subdata(in: headerRange.upperBound..<raw.endIndex)
+        let response = try parseHTTPURLResponse(headerData: headerData, url: url)
+        return (body, response)
+    }
+}
+
+enum JellyfinURLSessionFactory {
+    static func data(
+        for request: URLRequest,
+        allowUntrustedCertificate: Bool
+    ) async throws -> (Data, URLResponse) {
+        if allowUntrustedCertificate || JellyfinTLSSettings.allowsUntrustedCertificates {
+            return try await JellyfinInsecureHTTPS.data(for: request)
+        }
+        return try await URLSession.shared.data(for: request)
+    }
+
+    static func handleServerTrustChallenge(
+        _ challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        // Streaming downloaders still on URLSession — accept trust when allowed.
+        guard JellyfinTLSSettings.allowsUntrustedCertificates,
+              challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let trust = challenge.protectionSpace.serverTrust
+        else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        if let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate], let ca = chain.last {
+            SecTrustSetAnchorCertificates(trust, [ca] as CFArray)
+            SecTrustSetAnchorCertificatesOnly(trust, false)
+        }
+        if let exceptions = SecTrustCopyExceptions(trust) {
+            _ = SecTrustSetExceptions(trust, exceptions)
+        }
+        completionHandler(.useCredential, URLCredential(trust: trust))
+    }
+
+    static func normalizedServerURL(from raw: String) -> URL? {
+        var trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if URL(string: trimmed)?.scheme == nil {
+            trimmed = "https://\(trimmed)"
+        }
+        while trimmed.hasSuffix("/") {
+            trimmed.removeLast()
+        }
+        return URL(string: trimmed)
+    }
+}
+
 // MARK: - Client
 
 final class JellyfinClient: Sendable {
@@ -110,31 +403,36 @@ final class JellyfinClient: Sendable {
     private let token: String
     private let userID: String
     private let deviceID: String
-    private let session: URLSession
+    private let allowsUntrustedCertificate: Bool
 
     private static let clientName = "Cadence"
     private static let clientVersion = "1.0.0"
 
     init(server: JellyfinServer) throws {
-        guard let url = server.url else { throw JellyfinError.invalidURL }
+        guard let url = JellyfinURLSessionFactory.normalizedServerURL(from: server.urlString) ?? server.url else {
+            throw JellyfinError.invalidURL
+        }
         self.serverURL = url
         self.token = server.token
         self.userID = server.userID
         self.deviceID = Self.deviceID()
-
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 300
-        self.session = URLSession(configuration: config)
+        self.allowsUntrustedCertificate = server.allowsUntrustedCertificate
+        JellyfinTLSSettings.allowsUntrustedCertificates = server.allowsUntrustedCertificate
     }
 
     // MARK: - Authentication
 
-    static func authenticate(serverURLString: String, username: String, password: String) async throws -> JellyfinServer {
-        guard let serverURL = URL(string: serverURLString.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+    static func authenticate(
+        serverURLString: String,
+        username: String,
+        password: String,
+        allowsUntrustedCertificate: Bool = false
+    ) async throws -> JellyfinServer {
+        guard let serverURL = JellyfinURLSessionFactory.normalizedServerURL(from: serverURLString) else {
             throw JellyfinError.invalidURL
         }
 
+        let normalizedURLString = serverURL.absoluteString
         let deviceID = Self.deviceID()
         let endpoint = serverURL.appendingPathComponent("Users/AuthenticateByName")
         var request = URLRequest(url: endpoint)
@@ -145,44 +443,57 @@ final class JellyfinClient: Sendable {
         let body: [String: String] = ["Username": username, "Pw": password]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await JellyfinURLSessionFactory.data(
+            for: request,
+            allowUntrustedCertificate: allowsUntrustedCertificate
+        )
         try validateHTTPResponse(response)
 
         let auth = try JSONDecoder().decode(JellyfinAuthResponse.self, from: data)
 
         let server = JellyfinServer(
-            name: serverURL.host ?? serverURLString,
-            urlString: serverURLString.trimmingCharacters(in: .whitespacesAndNewlines),
+            name: serverURL.host ?? normalizedURLString,
+            urlString: normalizedURLString,
             userID: auth.user.id,
             username: username,
-            token: auth.accessToken
+            token: auth.accessToken,
+            allowsUntrustedCertificate: allowsUntrustedCertificate
         )
 
         KeychainHelper.save(token: auth.accessToken, account: "jellyfin-\(server.id)")
         return server
     }
 
-    static func authenticateWithAPIKey(serverURLString: String, apiKey: String) async throws -> JellyfinServer {
-        guard let serverURL = URL(string: serverURLString.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+    static func authenticateWithAPIKey(
+        serverURLString: String,
+        apiKey: String,
+        allowsUntrustedCertificate: Bool = false
+    ) async throws -> JellyfinServer {
+        guard let serverURL = JellyfinURLSessionFactory.normalizedServerURL(from: serverURLString) else {
             throw JellyfinError.invalidURL
         }
 
+        let normalizedURLString = serverURL.absoluteString
         let deviceID = Self.deviceID()
         let endpoint = serverURL.appendingPathComponent("Users/Me")
         var request = URLRequest(url: endpoint)
         request.setValue(authHeader(token: apiKey, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await JellyfinURLSessionFactory.data(
+            for: request,
+            allowUntrustedCertificate: allowsUntrustedCertificate
+        )
         try validateHTTPResponse(response)
 
         let user = try JSONDecoder().decode(JellyfinUser.self, from: data)
 
         let server = JellyfinServer(
-            name: serverURL.host ?? serverURLString,
-            urlString: serverURLString.trimmingCharacters(in: .whitespacesAndNewlines),
+            name: serverURL.host ?? normalizedURLString,
+            urlString: normalizedURLString,
             userID: user.id,
             username: "API Key",
-            token: apiKey
+            token: apiKey,
+            allowsUntrustedCertificate: allowsUntrustedCertificate
         )
 
         KeychainHelper.save(token: apiKey, account: "jellyfin-\(server.id)")
@@ -291,7 +602,7 @@ final class JellyfinClient: Sendable {
         request.httpMethod = "POST"
         request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
 
-        let (_, response) = try await session.data(for: request)
+        let (_, response) = try await data(for: request)
         try Self.validateHTTPResponse(response)
     }
 
@@ -307,7 +618,7 @@ final class JellyfinClient: Sendable {
         request.httpMethod = "DELETE"
         request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
 
-        let (_, response) = try await session.data(for: request)
+        let (_, response) = try await data(for: request)
         try Self.validateHTTPResponse(response)
     }
 
@@ -409,7 +720,7 @@ final class JellyfinClient: Sendable {
         let body: [String: Any] = ["ItemId": itemID, "CanSeek": true]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        _ = try? await session.data(for: request)
+        _ = try? await data(for: request)
     }
 
     func reportPlaybackProgress(itemID: String, position: TimeInterval, isPaused: Bool = false) async {
@@ -429,7 +740,7 @@ final class JellyfinClient: Sendable {
         let body: [String: Any] = ["ItemId": itemID, "PositionTicks": ticks, "IsPaused": isPaused]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        _ = try? await session.data(for: request)
+        _ = try? await data(for: request)
     }
 
     func reportPlaybackStopped(itemID: String, position: TimeInterval) async {
@@ -449,10 +760,17 @@ final class JellyfinClient: Sendable {
         let body: [String: Any] = ["ItemId": itemID, "PositionTicks": ticks]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        _ = try? await session.data(for: request)
+        _ = try? await data(for: request)
     }
 
     // MARK: - Helpers
+
+    private func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        try await JellyfinURLSessionFactory.data(
+            for: request,
+            allowUntrustedCertificate: allowsUntrustedCertificate
+        )
+    }
 
     private func itemsURLComponents() -> URLComponents {
         var components = URLComponents(
@@ -472,7 +790,7 @@ final class JellyfinClient: Sendable {
         var request = URLRequest(url: url)
         request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await data(for: request)
         try Self.validateHTTPResponse(response)
 
         do {

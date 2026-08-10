@@ -4,6 +4,32 @@ import os.log
 
 private let engineLogger = Logger(subsystem: "dev.personal.cadence", category: "AudioEngine")
 
+// #region agent log
+@MainActor
+private func engineAgentLog(
+    _ location: String,
+    _ message: String,
+    hypothesisId: String,
+    data: [String: String] = [:]
+) {
+    var payload: [String: Any] = [
+        "sessionId": "d608e4",
+        "location": location,
+        "message": message,
+        "hypothesisId": hypothesisId,
+        "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+        "data": data,
+    ]
+    guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
+    var req = URLRequest(url: URL(string: "http://127.0.0.1:7480/ingest/f416849f-e2ef-4af7-9095-8778cb4b671c")!)
+    req.httpMethod = "POST"
+    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    req.setValue("d608e4", forHTTPHeaderField: "X-Debug-Session-Id")
+    req.httpBody = body
+    URLSession.shared.dataTask(with: req).resume()
+}
+// #endregion
+
 @MainActor
 final class AudioEngineService {
     private let engine = AVAudioEngine()
@@ -72,6 +98,10 @@ final class AudioEngineService {
     }
 
     init() {
+        #if os(iOS)
+        Self.configureAudioSession()
+        #endif
+
         engine.attach(playerNode)
         engine.attach(eqNode)
         engine.attach(limiterNode)
@@ -102,6 +132,18 @@ final class AudioEngineService {
             }
         }
     }
+
+    #if os(iOS)
+    private static func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playback, mode: .default, options: [])
+            try session.setActive(true)
+        } catch {
+            engineLogger.error("AVAudioSession setup failed: \(error.localizedDescription)")
+        }
+    }
+    #endif
 
     func load(url: URL) async throws {
         stopInternal(resetProgress: true)
@@ -330,6 +372,14 @@ final class AudioEngineService {
             ? Int((totalFrameCount + Int64(chunkDurationFrames) - 1) / Int64(chunkDurationFrames))
             : 0
         engineLogger.info("Loaded: \(totalChunks) chunks, \(Int(source.format.sampleRate))Hz, progressive=\(self.isProgressiveLoad)")
+        // #region agent log
+        engineAgentLog("AudioEngine.applyChunkSource", "chunk source applied", hypothesisId: "D", data: [
+            "totalFrames": "\(totalFrameCount)",
+            "totalChunks": "\(totalChunks)",
+            "sampleRate": "\(Int(source.format.sampleRate))",
+            "progressive": "\(isProgressiveLoad)",
+        ])
+        // #endregion
 
         engine.disconnectNodeOutput(playerNode)
         engine.disconnectNodeOutput(eqNode)
@@ -386,6 +436,13 @@ final class AudioEngineService {
         guard remainingFrames > 0 else {
             stopProgressTimer()
             engineLogger.info("Track finished (no frames remaining)")
+            // #region agent log
+            engineAgentLog("AudioEngine.scheduleFromCurrentPosition", "finished: no frames remaining", hypothesisId: "B", data: [
+                "endFrame": "\(playbackEndFrame())",
+                "segmentStart": "\(segmentStartFrame)",
+                "progressive": "\(isProgressiveLoad)",
+            ])
+            // #endregion
             onTrackFinished?()
             return
         }
@@ -468,6 +525,13 @@ final class AudioEngineService {
                                 guard let self, generation == self.scheduleGeneration else { return }
                                 self.stopProgressTimer()
                                 engineLogger.info("Track finished (gen=\(generation))")
+                                // #region agent log
+                                engineAgentLog("AudioEngine.bufferConsumed", "finished: last buffer consumed", hypothesisId: "B", data: [
+                                    "gen": "\(generation)",
+                                    "currentTime": String(format: "%.2f", self.currentTime()),
+                                    "duration": String(format: "%.2f", self.duration()),
+                                ])
+                                // #endregion
                                 self.onTrackFinished?()
                             }
                         }
@@ -513,6 +577,15 @@ final class AudioEngineService {
                 if tracker.count == 0 {
                     self.stopProgressTimer()
                     engineLogger.info("Track finished (gen=\(generation))")
+                    // #region agent log
+                    engineAgentLog("AudioEngine.startScheduler", "finished: zero buffers scheduled", hypothesisId: "B", data: [
+                        "gen": "\(generation)",
+                        "scheduledUpTo": "\(self.scheduledUpToIndex)",
+                        "availableChunks": "\(self.availableChunkCount())",
+                        "progressive": "\(self.isProgressiveLoad)",
+                        "totalFrames": "\(self.totalFrameCount)",
+                    ])
+                    // #endregion
                     self.onTrackFinished?()
                 }
                 break trackLoop

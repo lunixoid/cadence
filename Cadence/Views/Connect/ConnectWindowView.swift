@@ -1,25 +1,5 @@
 import SwiftUI
 
-enum ConnectStep {
-    case form
-    case checking
-    case success
-}
-
-enum ConnectAuthMethod: String, CaseIterable, Identifiable {
-    case password
-    case apiKey
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .password: return "Логин / Пароль"
-        case .apiKey: return "API Key"
-        }
-    }
-}
-
 struct ConnectWindowView: View {
     @Environment(AppUIState.self) private var uiState
     @Environment(JellyfinFavoritesSync.self) private var jellyfinFavoritesSync
@@ -36,6 +16,7 @@ struct ConnectWindowView: View {
     @State private var apiKey = ""
     @State private var errorMessage = ""
     @State private var connectedServer: JellyfinServer?
+    @State private var allowsUntrustedCertificate = true
 
     var body: some View {
         if isOpen {
@@ -114,6 +95,18 @@ struct ConnectWindowView: View {
                 } else {
                     ConnectField(label: "API Key", text: $apiKey, placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
                 }
+
+                Toggle(isOn: $allowsUntrustedCertificate) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Доверять сертификату сервера")
+                            .font(.system(size: 13))
+                            .foregroundStyle(CadenceTheme.primaryText(for: colorScheme))
+                        Text("Для самоподписанных и корпоративных CA")
+                            .font(.system(size: 11))
+                            .foregroundStyle(CadenceTheme.secondaryText(for: colorScheme))
+                    }
+                }
+                .toggleStyle(.switch)
             }
 
             HStack(spacing: 10) {
@@ -221,12 +214,14 @@ struct ConnectWindowView: View {
                     server = try await JellyfinClient.authenticate(
                         serverURLString: serverURL.trimmingCharacters(in: .whitespacesAndNewlines),
                         username: username.trimmingCharacters(in: .whitespacesAndNewlines),
-                        password: password
+                        password: password,
+                        allowsUntrustedCertificate: allowsUntrustedCertificate
                     )
                 } else {
                     server = try await JellyfinClient.authenticateWithAPIKey(
                         serverURLString: serverURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                        apiKey: apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                        apiKey: apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
+                        allowsUntrustedCertificate: allowsUntrustedCertificate
                     )
                 }
                 await MainActor.run {

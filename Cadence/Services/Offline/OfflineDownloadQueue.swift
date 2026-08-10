@@ -253,6 +253,14 @@ private final class OfflineFileDownloader: NSObject, URLSessionDownloadDelegate,
         continuation = nil
     }
 
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        JellyfinURLSessionFactory.handleServerTrustChallenge(challenge, completionHandler: completionHandler)
+    }
+
     private static func fileExtension(from response: HTTPURLResponse) -> String? {
         if let contentType = response.value(forHTTPHeaderField: "Content-Type"),
            let ext = AudioEngineService.ext(forContentType: contentType) {

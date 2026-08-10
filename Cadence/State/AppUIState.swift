@@ -204,6 +204,7 @@ final class AppUIState {
               let servers = try? JSONDecoder().decode([JellyfinServer].self, from: data) else { return }
         jellyfinServers = servers
         if let active = servers.first(where: { $0.isActive }) {
+            JellyfinTLSSettings.allowsUntrustedCertificates = active.allowsUntrustedCertificate
             await activateClient(
                 for: active,
                 favoritesSync: favoritesSync,

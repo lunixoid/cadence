@@ -7,866 +7,1185 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-	30E5CD9575884EE28F2B374C /* CadenceTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */; };
-	44EEA235EDFB494BBB61F7D3 /* CadenceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBAE2B924974FE7B5929C69 /* CadenceApp.swift */; };
-	FA7406B3F4D74FA2A378E418 /* Album.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F2787290194F9E9E64F8CC /* Album.swift */; };
-	D4BE284D61CE4094994F364B /* ContentRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF630A99CAAC476599ABBA5E /* ContentRoute.swift */; };
-	75452E16B88F4A628682F07D /* SidebarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6224B01B44704CB08A6F4B7C /* SidebarItem.swift */; };
-	FBC00D664D864D9BB8A257C4 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE182CDEDE174B72BF8FE9A1 /* Track.swift */; };
-	1A7649FF8B3D492B86E39A0A /* AppUIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */; };
-	AC4C579361524C2DB919E9C4 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6F37B4FF6640FABFC9A48F /* PreviewHelpers.swift */; };
-	B56826B8EB1B4AA58D01246E /* SidebarItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F631988CA1457AAC795797 /* SidebarItemView.swift */; };
-	70FDCF16CB9C4CD6A2886DA3 /* SidebarSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1197CB67A66D43028CE69687 /* SidebarSectionHeader.swift */; };
-	BC9CD668404243699A81BF9B /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5487C7878DED425589E8F50F /* SidebarView.swift */; };
-	D496A1B0D5AB4FD0BD208ED6 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BFDC05F0F344AA8168362A /* MainWindowView.swift */; };
-	F30B72E92F90478E88E1BDA5 /* AlbumCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA40D55EB0C423DA5C5C2E6 /* AlbumCardView.swift */; };
-	2CBFC799CFD840E28018E41A /* AlbumGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF8604F015249A6814F176B /* AlbumGridView.swift */; };
-	0A083D62191E41CB87F42A10 /* ContentAreaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D7EAD3F8A549DA97615024 /* ContentAreaView.swift */; };
-	463EAD6D8E3E40E091DC127D /* ContentToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */; };
-	0180027AD8C146688E6A659D /* AlbumCoverPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */; };
-	87F6BFE9308843038CD54A4C /* EqualizerBarsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */; };
-	C50000010000000000000001 /* OfflineDownloadButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50000010000000000000011 /* OfflineDownloadButton.swift */; };
-	4B112FB122D343BD912FBF71 /* VisualEffectBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D515D596B749AC96306FFB /* VisualEffectBackground.swift */; };
-	5D1DBDE0F4D24C01944C4A28 /* AlbumPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */; };
-	7FDED7D3815D40909AD076C9 /* TrackRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */; };
-	A38FFC3DC6674CBA9D058748 /* NowPlayingBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1138C4324B6740BC86DCF11D /* NowPlayingBarView.swift */; };
-	62371AF4AA18474E84E8BA85 /* PlayerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5467B54A224745F0801D3FEF /* PlayerButton.swift */; };
-	A10000010000000000000001 /* RepeatMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000001 /* RepeatMode.swift */; };
-	A10000010000000000000002 /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000002 /* Artist.swift */; };
-	A10000010000000000000004 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000004 /* Playlist.swift */; };
-	A10000010000000000000005 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000005 /* LibraryStore.swift */; };
+		002F707E97C9EFAC68BB2115 /* MediaRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000016 /* MediaRemoteService.swift */; };
+		0180027AD8C146688E6A659D /* AlbumCoverPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */; };
+		0247A452D45EBF803E3174A1 /* IOSTabsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09D6CEF13911478CF4BCFED /* IOSTabsViews.swift */; };
+		075EE343DB25F7922A426C2C /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000004 /* Playlist.swift */; };
+		07C13E90EFA7ACDE3AF2359D /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000005 /* LibraryStore.swift */; };
+		0A083D62191E41CB87F42A10 /* ContentAreaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D7EAD3F8A549DA97615024 /* ContentAreaView.swift */; };
+		0D4366B04A924F9039F705AD /* JellyfinIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000015 /* JellyfinIdentity.swift */; };
+		0DAA2EDD98A31DC0D512F531 /* CadenceTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */; };
+		12690E098688BA31025E913A /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE182CDEDE174B72BF8FE9A1 /* Track.swift */; };
+		17D72FCF1F4934C096EE165A /* ConnectAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635AE24D7FEEB718FB5CA480 /* ConnectAuth.swift */; };
+		1A7649FF8B3D492B86E39A0A /* AppUIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */; };
+		1E785E373051774C18789E54 /* AlbumCoverPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */; };
+		243604D7AAFA9C11A6785F0C /* AudioEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000008 /* AudioEngineService.swift */; };
+		2CBFC799CFD840E28018E41A /* AlbumGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF8604F015249A6814F176B /* AlbumGridView.swift */; };
+		30E5CD9575884EE28F2B374C /* CadenceTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */; };
+		38A98AE352DED83B5B8EE25B /* JellyfinLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000012 /* JellyfinLibraryLoader.swift */; };
+		3A98C430B5B848FB865129FA /* ProgressiveAudioDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000014 /* ProgressiveAudioDownload.swift */; };
+		3AD776940E5A4E44E806744D /* SpectrumAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000022 /* SpectrumAnalyzer.swift */; };
+		3CCFC5A9A5218CB00B726E06 /* UserEQPresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000021 /* UserEQPresetStore.swift */; };
+		3E4FBB8F532C4B0151D83B75 /* JellyfinClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000011 /* JellyfinClient.swift */; };
+		3F46AA10EB750B7C0A5D4170 /* IOSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDE3BDBD3EA8C9A71ED769D /* IOSSettingsView.swift */; };
+		3F933B60735B9EEFD662A66E /* EQPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A3A8EBA706BF736BEA4293 /* EQPreset.swift */; };
+		43ABDBA9E6F96C4F714110F8 /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000A /* FavoritesStore.swift */; };
+		44EEA235EDFB494BBB61F7D3 /* CadenceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBAE2B924974FE7B5929C69 /* CadenceApp.swift */; };
+		463EAD6D8E3E40E091DC127D /* ContentToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */; };
+		4724088D1769C38E344A5E5C /* SidebarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6224B01B44704CB08A6F4B7C /* SidebarItem.swift */; };
+		4B112FB122D343BD912FBF71 /* VisualEffectBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D515D596B749AC96306FFB /* VisualEffectBackground.swift */; };
+		50BAE71D69B750C06920A414 /* AudioCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000013 /* AudioCache.swift */; };
+		550F1D138FE33F1B47638449 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000009 /* PlaybackController.swift */; };
+		5B8F85B2EB1A7FA6559DB6E0 /* OfflineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000011 /* OfflineStore.swift */; };
+		5D1DBDE0F4D24C01944C4A28 /* AlbumPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */; };
+		5D57BED6D6E454C4AAC22A74 /* RecentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000B /* RecentStore.swift */; };
+		61666285171FC2AD88624AB1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10000010000000000000001 /* Assets.xcassets */; };
+		62371AF4AA18474E84E8BA85 /* PlayerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5467B54A224745F0801D3FEF /* PlayerButton.swift */; };
+		64667D049893AE49BCC01295 /* PlaylistStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000C /* PlaylistStore.swift */; };
+		6938FDD98863824E70CCAC47 /* AlbumCoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000D /* AlbumCoverView.swift */; };
+		6A8DB7C1338E1F2B7CC0D94C /* ServerEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94AF6224DB6C26D04C1CD97D /* ServerEntry.swift */; };
+		70FDCF16CB9C4CD6A2886DA3 /* SidebarSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1197CB67A66D43028CE69687 /* SidebarSectionHeader.swift */; };
+		71CFB0E26128006777AA6D0B /* IOSLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D19EFB2C643E7A6E03C665 /* IOSLibraryView.swift */; };
+		75452E16B88F4A628682F07D /* SidebarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6224B01B44704CB08A6F4B7C /* SidebarItem.swift */; };
+		7AC6C858E8C92F8E0E12B676 /* LocalLibraryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000006 /* LocalLibraryScanner.swift */; };
+		7FDED7D3815D40909AD076C9 /* TrackRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */; };
+		7FE47292EDF52262155FED98 /* StableIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000018 /* StableIdentity.swift */; };
+		8653027EBEE0610889692156 /* RepeatMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000001 /* RepeatMode.swift */; };
+		87F6BFE9308843038CD54A4C /* EqualizerBarsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */; };
+		8826B1A68F9F35AEBA365BF7 /* IOSMiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C17782C0F2BCFD184F8C1F0 /* IOSMiniPlayerView.swift */; };
+		8E6241185589608E1D2CB64C /* IOSNowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A61D35AD84FA1C8228495B /* IOSNowPlayingView.swift */; };
+		949276DBB68807EA5A9AB862 /* PlayerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5467B54A224745F0801D3FEF /* PlayerButton.swift */; };
+		9C8716AA5A7EF2DD26D1F4A0 /* IOSAlbumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB30FD10CB649E1C90625A3E /* IOSAlbumView.swift */; };
+		9E6356F9C5797FA1FC055E18 /* ConnectAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635AE24D7FEEB718FB5CA480 /* ConnectAuth.swift */; };
+		9EE7013BB35122FA96A784C4 /* Album.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F2787290194F9E9E64F8CC /* Album.swift */; };
+		A10000010000000000000001 /* RepeatMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000001 /* RepeatMode.swift */; };
+		A10000010000000000000002 /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000002 /* Artist.swift */; };
+		A10000010000000000000004 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000004 /* Playlist.swift */; };
+		A10000010000000000000005 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000005 /* LibraryStore.swift */; };
 		A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000006 /* LocalLibraryScanner.swift */; };
-	A10000010000000000000007 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000007 /* FolderPicker.swift */; };
-	A10000010000000000000017 /* SavedFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000017 /* SavedFoldersStore.swift */; };
-	A10000010000000000000018 /* StableIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000018 /* StableIdentity.swift */; };
-	A10000010000000000000008 /* AudioEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000008 /* AudioEngineService.swift */; };
-		A10000010000000000000022 /* SpectrumAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000022 /* SpectrumAnalyzer.swift */; };
-		A10000010000000000000023 /* SpectrumVisualizerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000023 /* SpectrumVisualizerView.swift */; };
-	A10000010000000000000009 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000009 /* PlaybackController.swift */; };
-	A1000001000000000000000A /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000A /* FavoritesStore.swift */; };
-	A1000001000000000000000B /* RecentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000B /* RecentStore.swift */; };
-	A1000001000000000000000C /* PlaylistStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000C /* PlaylistStore.swift */; };
-	A1000001000000000000000D /* AlbumCoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000D /* AlbumCoverView.swift */; };
-	A1000001000000000000000E /* LibraryContentShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000E /* LibraryContentShell.swift */; };
-	A1000001000000000000000F /* TrackListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000F /* TrackListView.swift */; };
-	A10000010000000000000010 /* ArtistGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000010 /* ArtistGridView.swift */; };
-	A10000010000000000000012 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000012 /* FavoritesView.swift */; };
-	A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000013 /* NowPlayingDetailView.swift */; };
-	A10000010000000000000014 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000014 /* PlaylistDetailView.swift */; };
-	A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */; };
+		A10000010000000000000007 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000007 /* FolderPicker.swift */; };
+		A10000010000000000000008 /* AudioEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000008 /* AudioEngineService.swift */; };
+		A10000010000000000000009 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000009 /* PlaybackController.swift */; };
+		A1000001000000000000000A /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000A /* FavoritesStore.swift */; };
+		A1000001000000000000000B /* RecentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000B /* RecentStore.swift */; };
+		A1000001000000000000000C /* PlaylistStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000C /* PlaylistStore.swift */; };
+		A1000001000000000000000D /* AlbumCoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000D /* AlbumCoverView.swift */; };
+		A1000001000000000000000E /* LibraryContentShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000E /* LibraryContentShell.swift */; };
+		A1000001000000000000000F /* TrackListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000F /* TrackListView.swift */; };
+		A10000010000000000000010 /* ArtistGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000010 /* ArtistGridView.swift */; };
+		A10000010000000000000012 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000012 /* FavoritesView.swift */; };
+		A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000013 /* NowPlayingDetailView.swift */; };
+		A10000010000000000000014 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000014 /* PlaylistDetailView.swift */; };
+		A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */; };
 		A10000010000000000000016 /* MediaRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000016 /* MediaRemoteService.swift */; };
+		A10000010000000000000017 /* SavedFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000017 /* SavedFoldersStore.swift */; };
+		A10000010000000000000018 /* StableIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000018 /* StableIdentity.swift */; };
 		A10000010000000000000019 /* OverlayWindowChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000019 /* OverlayWindowChrome.swift */; };
 		A1000001000000000000001A /* QueuePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001A /* QueuePanelView.swift */; };
 		A1000001000000000000001B /* EQWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001B /* EQWindowView.swift */; };
 		A1000001000000000000001C /* PreferencesWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001C /* PreferencesWindowView.swift */; };
 		A1000001000000000000001D /* ConnectWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001D /* ConnectWindowView.swift */; };
-	C20000010000000000000021 /* JellyfinClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000011 /* JellyfinClient.swift */; };
-	C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000012 /* JellyfinLibraryLoader.swift */; };
-	C20000010000000000000023 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000013 /* KeychainHelper.swift */; };
-	C20000010000000000000024 /* JellyfinServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000014 /* JellyfinServer.swift */; };
-	C20000010000000000000025 /* JellyfinIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000015 /* JellyfinIdentity.swift */; };
-	C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000016 /* JellyfinFavoritesSync.swift */; };
-	C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000011 /* JellyfinLibraryCache.swift */; };
-	C30000010000000000000002 /* ArtworkCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000012 /* ArtworkCache.swift */; };
-	C30000010000000000000003 /* AudioCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000013 /* AudioCache.swift */; };
-	C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000014 /* ProgressiveAudioDownload.swift */; };
-	C40000010000000000000001 /* OfflineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000011 /* OfflineStore.swift */; };
-	C40000010000000000000002 /* OfflineDownloadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000012 /* OfflineDownloadQueue.swift */; };
 		A1000001000000000000001E /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
 		A1000001000000000000001F /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
 		A10000010000000000000020 /* NavigationStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000020 /* NavigationStateStore.swift */; };
 		A10000010000000000000021 /* UserEQPresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000021 /* UserEQPresetStore.swift */; };
+		A10000010000000000000022 /* SpectrumAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000022 /* SpectrumAnalyzer.swift */; };
+		A10000010000000000000023 /* SpectrumVisualizerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000023 /* SpectrumVisualizerView.swift */; };
+		A35013AD60557E6528AF5045 /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000002 /* Artist.swift */; };
+		A38FFC3DC6674CBA9D058748 /* NowPlayingBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1138C4324B6740BC86DCF11D /* NowPlayingBarView.swift */; };
+		A929E13693F008275C8A5858 /* EqualizerBarsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */; };
+		AC4C579361524C2DB919E9C4 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6F37B4FF6640FABFC9A48F /* PreviewHelpers.swift */; };
+		AE7EED11CE64C47187150C15 /* EQPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A3A8EBA706BF736BEA4293 /* EQPreset.swift */; };
+		AE9BCEAD33122C8F25D93CF3 /* JellyfinServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000014 /* JellyfinServer.swift */; };
+		B329CDCA116D5C4B6BC729C1 /* IOSQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C888D12B9DFFA58FD49D7663 /* IOSQueueView.swift */; };
+		B354A45E8FF313EA715D5C5A /* NavigationStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000020 /* NavigationStateStore.swift */; };
+		B52EA4C45B7B8B70E2178630 /* ContentRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF630A99CAAC476599ABBA5E /* ContentRoute.swift */; };
+		B56826B8EB1B4AA58D01246E /* SidebarItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F631988CA1457AAC795797 /* SidebarItemView.swift */; };
+		BC9CD668404243699A81BF9B /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5487C7878DED425589E8F50F /* SidebarView.swift */; };
+		C20000010000000000000021 /* JellyfinClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000011 /* JellyfinClient.swift */; };
+		C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000012 /* JellyfinLibraryLoader.swift */; };
+		C20000010000000000000023 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000013 /* KeychainHelper.swift */; };
+		C20000010000000000000024 /* JellyfinServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000014 /* JellyfinServer.swift */; };
+		C20000010000000000000025 /* JellyfinIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000015 /* JellyfinIdentity.swift */; };
+		C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000016 /* JellyfinFavoritesSync.swift */; };
+		C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000011 /* JellyfinLibraryCache.swift */; };
+		C30000010000000000000002 /* ArtworkCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000012 /* ArtworkCache.swift */; };
+		C30000010000000000000003 /* AudioCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000013 /* AudioCache.swift */; };
+		C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000014 /* ProgressiveAudioDownload.swift */; };
+		C40000010000000000000001 /* OfflineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000011 /* OfflineStore.swift */; };
+		C40000010000000000000002 /* OfflineDownloadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000012 /* OfflineDownloadQueue.swift */; };
+		C50000010000000000000001 /* OfflineDownloadButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50000010000000000000011 /* OfflineDownloadButton.swift */; };
+		CEBE3B1294C5DF5A3AEFA9A5 /* OfflineDownloadButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50000010000000000000011 /* OfflineDownloadButton.swift */; };
+		D496A1B0D5AB4FD0BD208ED6 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BFDC05F0F344AA8168362A /* MainWindowView.swift */; };
+		D4BE284D61CE4094994F364B /* ContentRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF630A99CAAC476599ABBA5E /* ContentRoute.swift */; };
+		D513B9AB8733FAC0CB241CCA /* PlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001F /* PlaybackStateStore.swift */; };
+		D8542CD760E3FF0E1CCB2851 /* ServerEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94AF6224DB6C26D04C1CD97D /* ServerEntry.swift */; };
+		DADE0103D7897035E318157F /* ArtworkCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000012 /* ArtworkCache.swift */; };
+		DC3841908DA5891CB912BCC4 /* AppUIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */; };
+		DCFF7460BFCF36EB4EF7923F /* SavedFoldersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000017 /* SavedFoldersStore.swift */; };
 		E10000010000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10000010000000000000001 /* Assets.xcassets */; };
+		E1363BC344F4C0D319840E04 /* OfflineDownloadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40000010000000000000012 /* OfflineDownloadQueue.swift */; };
+		E242ED9196D395D78BDA7519 /* JellyfinFavoritesSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000016 /* JellyfinFavoritesSync.swift */; };
+		E861AE52EB809C44BD04DC4F /* PlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000001E /* PlaybackQueue.swift */; };
+		F30B72E92F90478E88E1BDA5 /* AlbumCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA40D55EB0C423DA5C5C2E6 /* AlbumCardView.swift */; };
+		F3E97387CD9A740C35E94A83 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000013 /* KeychainHelper.swift */; };
+		F71C58CE200CBCC947A93697 /* JellyfinLibraryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000010000000000000011 /* JellyfinLibraryCache.swift */; };
+		F893D5A937322CE462B489CB /* CadenceiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F19134CD9477B5D0EF23D0B /* CadenceiOSApp.swift */; };
+		FA7406B3F4D74FA2A378E418 /* Album.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F2787290194F9E9E64F8CC /* Album.swift */; };
+		FBC00D664D864D9BB8A257C4 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE182CDEDE174B72BF8FE9A1 /* Track.swift */; };
+		FE431BDB886CAEC875D5D997 /* IOSRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D307594147837B116E680D30 /* IOSRootView.swift */; };
 		T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000004 /* JellyfinFavoritesTests.swift */; };
 		T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000020 /* AudioEngineTestHelpers.swift */; };
 		T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000021 /* AudioEngineServiceTests.swift */; };
 		T10000010000000000000024 /* OfflineStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000025 /* OfflineStoreTests.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		T10000010000000000000009 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F442EFF0A0EF4D20BD0C70E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5C3537C056A049FC8522164B;
+			remoteInfo = Cadence;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-	65EFA0FDD80E4C388994AF6C /* Cadence.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cadence.app; sourceTree = BUILT_PRODUCTS_DIR; };
-	46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CadenceTheme.swift; sourceTree = "<group>"; };
-	7BBAE2B924974FE7B5929C69 /* CadenceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CadenceApp.swift; sourceTree = "<group>"; };
-	54F2787290194F9E9E64F8CC /* Album.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Album.swift; sourceTree = "<group>"; };
-	AF630A99CAAC476599ABBA5E /* ContentRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentRoute.swift; sourceTree = "<group>"; };
-	6224B01B44704CB08A6F4B7C /* SidebarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarItem.swift; sourceTree = "<group>"; };
-	DE182CDEDE174B72BF8FE9A1 /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
-	17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUIState.swift; sourceTree = "<group>"; };
-	CE6F37B4FF6640FABFC9A48F /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
-	26F631988CA1457AAC795797 /* SidebarItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarItemView.swift; sourceTree = "<group>"; };
-	1197CB67A66D43028CE69687 /* SidebarSectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSectionHeader.swift; sourceTree = "<group>"; };
-	5487C7878DED425589E8F50F /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
-	A7BFDC05F0F344AA8168362A /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
-	FBA40D55EB0C423DA5C5C2E6 /* AlbumCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCardView.swift; sourceTree = "<group>"; };
-	EAF8604F015249A6814F176B /* AlbumGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumGridView.swift; sourceTree = "<group>"; };
-	C5D7EAD3F8A549DA97615024 /* ContentAreaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentAreaView.swift; sourceTree = "<group>"; };
-	18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentToolbarView.swift; sourceTree = "<group>"; };
-	FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCoverPlaceholderView.swift; sourceTree = "<group>"; };
-	2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EqualizerBarsView.swift; sourceTree = "<group>"; };
-	C50000010000000000000011 /* OfflineDownloadButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadButton.swift; sourceTree = "<group>"; };
-	11D515D596B749AC96306FFB /* VisualEffectBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectBackground.swift; sourceTree = "<group>"; };
-	32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumPageView.swift; sourceTree = "<group>"; };
-	9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRowView.swift; sourceTree = "<group>"; };
-	1138C4324B6740BC86DCF11D /* NowPlayingBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingBarView.swift; sourceTree = "<group>"; };
-	5467B54A224745F0801D3FEF /* PlayerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerButton.swift; sourceTree = "<group>"; };
-	B10000010000000000000001 /* RepeatMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatMode.swift; sourceTree = "<group>"; };
-	B10000010000000000000002 /* Artist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
-	B10000010000000000000004 /* Playlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playlist.swift; sourceTree = "<group>"; };
-	B10000010000000000000005 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		1138C4324B6740BC86DCF11D /* NowPlayingBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingBarView.swift; sourceTree = "<group>"; };
+		1197CB67A66D43028CE69687 /* SidebarSectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSectionHeader.swift; sourceTree = "<group>"; };
+		11D515D596B749AC96306FFB /* VisualEffectBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectBackground.swift; sourceTree = "<group>"; };
+		17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUIState.swift; sourceTree = "<group>"; };
+		18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentToolbarView.swift; sourceTree = "<group>"; };
+		18646C3494E04914B698E7C8 /* Cadence.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cadence.entitlements; sourceTree = "<group>"; };
+		26F631988CA1457AAC795797 /* SidebarItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarItemView.swift; sourceTree = "<group>"; };
+		2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EqualizerBarsView.swift; sourceTree = "<group>"; };
+		2C17782C0F2BCFD184F8C1F0 /* IOSMiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSMiniPlayerView.swift; sourceTree = "<group>"; };
+		32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumPageView.swift; sourceTree = "<group>"; };
+		36A61D35AD84FA1C8228495B /* IOSNowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSNowPlayingView.swift; sourceTree = "<group>"; };
+		3F19134CD9477B5D0EF23D0B /* CadenceiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CadenceiOSApp.swift; sourceTree = "<group>"; };
+		46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CadenceTheme.swift; sourceTree = "<group>"; };
+		5467B54A224745F0801D3FEF /* PlayerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerButton.swift; sourceTree = "<group>"; };
+		5487C7878DED425589E8F50F /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		54F2787290194F9E9E64F8CC /* Album.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Album.swift; sourceTree = "<group>"; };
+		6224B01B44704CB08A6F4B7C /* SidebarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarItem.swift; sourceTree = "<group>"; };
+		635AE24D7FEEB718FB5CA480 /* ConnectAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectAuth.swift; sourceTree = "<group>"; };
+		65EFA0FDD80E4C388994AF6C /* Cadence.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cadence.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7BBAE2B924974FE7B5929C69 /* CadenceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CadenceApp.swift; sourceTree = "<group>"; };
+		814DBBD35C0D766C3E35806B /* CadenceiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CadenceiOS.entitlements; sourceTree = "<group>"; };
+		84A3A8EBA706BF736BEA4293 /* EQPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQPreset.swift; sourceTree = "<group>"; };
+		94AF6224DB6C26D04C1CD97D /* ServerEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerEntry.swift; sourceTree = "<group>"; };
+		9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRowView.swift; sourceTree = "<group>"; };
+		A6D19EFB2C643E7A6E03C665 /* IOSLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSLibraryView.swift; sourceTree = "<group>"; };
+		A7BFDC05F0F344AA8168362A /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
+		AF630A99CAAC476599ABBA5E /* ContentRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentRoute.swift; sourceTree = "<group>"; };
+		B10000010000000000000001 /* RepeatMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatMode.swift; sourceTree = "<group>"; };
+		B10000010000000000000002 /* Artist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
+		B10000010000000000000004 /* Playlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playlist.swift; sourceTree = "<group>"; };
+		B10000010000000000000005 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
 		B10000010000000000000006 /* LocalLibraryScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryScanner.swift; sourceTree = "<group>"; };
-	B10000010000000000000007 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
-	B10000010000000000000017 /* SavedFoldersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFoldersStore.swift; sourceTree = "<group>"; };
-	B10000010000000000000018 /* StableIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StableIdentity.swift; sourceTree = "<group>"; };
-	B10000010000000000000008 /* AudioEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineService.swift; sourceTree = "<group>"; };
-	B10000010000000000000009 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
+		B10000010000000000000007 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
+		B10000010000000000000008 /* AudioEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineService.swift; sourceTree = "<group>"; };
+		B10000010000000000000009 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
+		B1000001000000000000000A /* FavoritesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStore.swift; sourceTree = "<group>"; };
+		B1000001000000000000000B /* RecentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentStore.swift; sourceTree = "<group>"; };
+		B1000001000000000000000C /* PlaylistStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistStore.swift; sourceTree = "<group>"; };
+		B1000001000000000000000D /* AlbumCoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCoverView.swift; sourceTree = "<group>"; };
+		B1000001000000000000000E /* LibraryContentShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryContentShell.swift; sourceTree = "<group>"; };
+		B1000001000000000000000F /* TrackListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackListView.swift; sourceTree = "<group>"; };
+		B10000010000000000000010 /* ArtistGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistGridView.swift; sourceTree = "<group>"; };
+		B10000010000000000000012 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
+		B10000010000000000000013 /* NowPlayingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingDetailView.swift; sourceTree = "<group>"; };
+		B10000010000000000000014 /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
+		B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackKeyboardMonitor.swift; sourceTree = "<group>"; };
+		B10000010000000000000016 /* MediaRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteService.swift; sourceTree = "<group>"; };
+		B10000010000000000000017 /* SavedFoldersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFoldersStore.swift; sourceTree = "<group>"; };
+		B10000010000000000000018 /* StableIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StableIdentity.swift; sourceTree = "<group>"; };
+		B10000010000000000000019 /* OverlayWindowChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowChrome.swift; sourceTree = "<group>"; };
+		B1000001000000000000001A /* QueuePanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueuePanelView.swift; sourceTree = "<group>"; };
+		B1000001000000000000001B /* EQWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQWindowView.swift; sourceTree = "<group>"; };
+		B1000001000000000000001C /* PreferencesWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesWindowView.swift; sourceTree = "<group>"; };
+		B1000001000000000000001D /* ConnectWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectWindowView.swift; sourceTree = "<group>"; };
+		B1000001000000000000001E /* PlaybackQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackQueue.swift; sourceTree = "<group>"; };
+		B1000001000000000000001F /* PlaybackStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackStateStore.swift; sourceTree = "<group>"; };
+		B10000010000000000000020 /* NavigationStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStateStore.swift; sourceTree = "<group>"; };
+		B10000010000000000000021 /* UserEQPresetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserEQPresetStore.swift; sourceTree = "<group>"; };
 		B10000010000000000000022 /* SpectrumAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectrumAnalyzer.swift; sourceTree = "<group>"; };
 		B10000010000000000000023 /* SpectrumVisualizerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectrumVisualizerView.swift; sourceTree = "<group>"; };
-	B1000001000000000000000A /* FavoritesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStore.swift; sourceTree = "<group>"; };
-	B1000001000000000000000B /* RecentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentStore.swift; sourceTree = "<group>"; };
-	B1000001000000000000000C /* PlaylistStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistStore.swift; sourceTree = "<group>"; };
-	B1000001000000000000000D /* AlbumCoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCoverView.swift; sourceTree = "<group>"; };
-	B1000001000000000000000E /* LibraryContentShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryContentShell.swift; sourceTree = "<group>"; };
-	B1000001000000000000000F /* TrackListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackListView.swift; sourceTree = "<group>"; };
-	B10000010000000000000010 /* ArtistGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistGridView.swift; sourceTree = "<group>"; };
-	B10000010000000000000012 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
-	B10000010000000000000013 /* NowPlayingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingDetailView.swift; sourceTree = "<group>"; };
-	B10000010000000000000014 /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
-	B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackKeyboardMonitor.swift; sourceTree = "<group>"; };
-	B10000010000000000000016 /* MediaRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteService.swift; sourceTree = "<group>"; };
-	18646C3494E04914B698E7C8 /* Cadence.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cadence.entitlements; sourceTree = "<group>"; };
-	B10000010000000000000019 /* OverlayWindowChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowChrome.swift; sourceTree = "<group>"; };
-	B1000001000000000000001A /* QueuePanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueuePanelView.swift; sourceTree = "<group>"; };
-	B1000001000000000000001B /* EQWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQWindowView.swift; sourceTree = "<group>"; };
-	B1000001000000000000001C /* PreferencesWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesWindowView.swift; sourceTree = "<group>"; };
-	B1000001000000000000001D /* ConnectWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectWindowView.swift; sourceTree = "<group>"; };
-	B1000001000000000000001E /* PlaybackQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackQueue.swift; sourceTree = "<group>"; };
-	B1000001000000000000001F /* PlaybackStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackStateStore.swift; sourceTree = "<group>"; };
-	B10000010000000000000020 /* NavigationStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStateStore.swift; sourceTree = "<group>"; };
-	B10000010000000000000021 /* UserEQPresetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserEQPresetStore.swift; sourceTree = "<group>"; };
-	C20000010000000000000011 /* JellyfinClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinClient.swift; sourceTree = "<group>"; };
-	C20000010000000000000012 /* JellyfinLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryLoader.swift; sourceTree = "<group>"; };
-	C20000010000000000000013 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-	C20000010000000000000014 /* JellyfinServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinServer.swift; sourceTree = "<group>"; };
-	C20000010000000000000015 /* JellyfinIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinIdentity.swift; sourceTree = "<group>"; };
-	C20000010000000000000016 /* JellyfinFavoritesSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesSync.swift; sourceTree = "<group>"; };
-	C30000010000000000000011 /* JellyfinLibraryCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryCache.swift; sourceTree = "<group>"; };
-	C30000010000000000000012 /* ArtworkCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkCache.swift; sourceTree = "<group>"; };
-	C30000010000000000000013 /* AudioCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCache.swift; sourceTree = "<group>"; };
-	C30000010000000000000014 /* ProgressiveAudioDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveAudioDownload.swift; sourceTree = "<group>"; };
-	C40000010000000000000011 /* OfflineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStore.swift; sourceTree = "<group>"; };
-	C40000010000000000000012 /* OfflineDownloadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadQueue.swift; sourceTree = "<group>"; };
-	D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-	T10000010000000000000003 /* CadenceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CadenceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-	T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
-	T10000010000000000000020 /* AudioEngineTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTestHelpers.swift; sourceTree = "<group>"; };
-	T10000010000000000000021 /* AudioEngineServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineServiceTests.swift; sourceTree = "<group>"; };
-	T10000010000000000000025 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
+		C09D6CEF13911478CF4BCFED /* IOSTabsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSTabsViews.swift; sourceTree = "<group>"; };
+		C20000010000000000000011 /* JellyfinClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinClient.swift; sourceTree = "<group>"; };
+		C20000010000000000000012 /* JellyfinLibraryLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryLoader.swift; sourceTree = "<group>"; };
+		C20000010000000000000013 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		C20000010000000000000014 /* JellyfinServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinServer.swift; sourceTree = "<group>"; };
+		C20000010000000000000015 /* JellyfinIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinIdentity.swift; sourceTree = "<group>"; };
+		C20000010000000000000016 /* JellyfinFavoritesSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesSync.swift; sourceTree = "<group>"; };
+		C30000010000000000000011 /* JellyfinLibraryCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryCache.swift; sourceTree = "<group>"; };
+		C30000010000000000000012 /* ArtworkCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkCache.swift; sourceTree = "<group>"; };
+		C30000010000000000000013 /* AudioCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCache.swift; sourceTree = "<group>"; };
+		C30000010000000000000014 /* ProgressiveAudioDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveAudioDownload.swift; sourceTree = "<group>"; };
+		C40000010000000000000011 /* OfflineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStore.swift; sourceTree = "<group>"; };
+		C40000010000000000000012 /* OfflineDownloadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadQueue.swift; sourceTree = "<group>"; };
+		C50000010000000000000011 /* OfflineDownloadButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadButton.swift; sourceTree = "<group>"; };
+		C5D7EAD3F8A549DA97615024 /* ContentAreaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentAreaView.swift; sourceTree = "<group>"; };
+		C888D12B9DFFA58FD49D7663 /* IOSQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSQueueView.swift; sourceTree = "<group>"; };
+		CE6F37B4FF6640FABFC9A48F /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
+		D10000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D307594147837B116E680D30 /* IOSRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSRootView.swift; sourceTree = "<group>"; };
+		DB30FD10CB649E1C90625A3E /* IOSAlbumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAlbumView.swift; sourceTree = "<group>"; };
+		DE182CDEDE174B72BF8FE9A1 /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
+		E0E36DBEB76F046F4A698D62 /* Cadence.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cadence.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EAF8604F015249A6814F176B /* AlbumGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumGridView.swift; sourceTree = "<group>"; };
+		FBA40D55EB0C423DA5C5C2E6 /* AlbumCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCardView.swift; sourceTree = "<group>"; };
+		FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCoverPlaceholderView.swift; sourceTree = "<group>"; };
+		FFDE3BDBD3EA8C9A71ED769D /* IOSSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSSettingsView.swift; sourceTree = "<group>"; };
+		T10000010000000000000003 /* CadenceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CadenceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
+		T10000010000000000000020 /* AudioEngineTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTestHelpers.swift; sourceTree = "<group>"; };
+		T10000010000000000000021 /* AudioEngineServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineServiceTests.swift; sourceTree = "<group>"; };
+		T10000010000000000000025 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-	4DF644D4774B4BB0B3E6D13E /* Frameworks */ = {
-		isa = PBXFrameworksBuildPhase;
-		buildActionMask = 2147483647;
-		files = (
-		);
-		runOnlyForDeploymentPostprocessing = 0;
-	};
-	T10000010000000000000008 /* Frameworks */ = {
-		isa = PBXFrameworksBuildPhase;
-		buildActionMask = 2147483647;
-		files = (
-		);
-		runOnlyForDeploymentPostprocessing = 0;
-	};
+		4DF644D4774B4BB0B3E6D13E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		75CAB7E1467AB78D8325A3CC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T10000010000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-	5D5B2F4DDA1845928146DD2A /* Products */ = {
-		isa = PBXGroup;
-		children = (
-			65EFA0FDD80E4C388994AF6C /* Cadence.app */,
-			T10000010000000000000003 /* CadenceTests.xctest */,
-		);
-		name = Products;
-		sourceTree = "<group>";
-	};
-	480938F7E2774E9CB603A815 /* Cadence */ = {
-		isa = PBXGroup;
-		children = (
-			5DCAEF2CCE05411AA55B1714 /* Models */,
-			C10000010000000000000001 /* Services */,
-			853A64393CB04C15AF6007D0 /* State */,
-			C532A38F1D6E457585E844FC /* Design */,
-			E873D6061BA44732B83D06E2 /* App */,
-			EBFCE09F2FEA4932B8AE0EA9 /* Preview */,
-			EDD4A1AEA8D44E3494620F7B /* Views */,
-			D10000010000000000000001 /* Assets.xcassets */,
-			18646C3494E04914B698E7C8 /* Cadence.entitlements */,
-		);
-		path = Cadence;
-		sourceTree = "<group>";
-	};
-	E873D6061BA44732B83D06E2 /* App */ = {
-		isa = PBXGroup;
-		children = (
-			7BBAE2B924974FE7B5929C69 /* CadenceApp.swift */,
-		);
-		path = App;
-		sourceTree = "<group>";
-	};
-	C532A38F1D6E457585E844FC /* Design */ = {
-		isa = PBXGroup;
-		children = (
-			46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */,
-		);
-		path = Design;
-		sourceTree = "<group>";
-	};
-	5DCAEF2CCE05411AA55B1714 /* Models */ = {
-		isa = PBXGroup;
-		children = (
-			54F2787290194F9E9E64F8CC /* Album.swift */,
-			B10000010000000000000002 /* Artist.swift */,
-			AF630A99CAAC476599ABBA5E /* ContentRoute.swift */,
-			C20000010000000000000014 /* JellyfinServer.swift */,
-			B10000010000000000000004 /* Playlist.swift */,
-			B10000010000000000000001 /* RepeatMode.swift */,
-			6224B01B44704CB08A6F4B7C /* SidebarItem.swift */,
-			DE182CDEDE174B72BF8FE9A1 /* Track.swift */,
-		);
-		path = Models;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000001 /* Services */ = {
-		isa = PBXGroup;
-		children = (
-			C30000010000000000000010 /* Cache */,
-			C20000010000000000000010 /* Jellyfin */,
-			C10000010000000000000002 /* Library */,
-			C1000001000000000000000B /* Navigation */,
-			C40000010000000000000010 /* Offline */,
-			C10000010000000000000003 /* Playback */,
-			C10000010000000000000004 /* UserData */,
-		);
-		path = Services;
-		sourceTree = "<group>";
-	};
-	C1000001000000000000000B /* Navigation */ = {
-		isa = PBXGroup;
-		children = (
-			B10000010000000000000020 /* NavigationStateStore.swift */,
-		);
-		path = Navigation;
-		sourceTree = "<group>";
-	};
-	C30000010000000000000010 /* Cache */ = {
-		isa = PBXGroup;
-		children = (
-			C30000010000000000000011 /* JellyfinLibraryCache.swift */,
-			C30000010000000000000012 /* ArtworkCache.swift */,
-			C30000010000000000000013 /* AudioCache.swift */,
-			C30000010000000000000014 /* ProgressiveAudioDownload.swift */,
-		);
-		path = Cache;
-		sourceTree = "<group>";
-	};
-	C40000010000000000000010 /* Offline */ = {
-		isa = PBXGroup;
-		children = (
-			C40000010000000000000011 /* OfflineStore.swift */,
-			C40000010000000000000012 /* OfflineDownloadQueue.swift */,
-		);
-		path = Offline;
-		sourceTree = "<group>";
-	};
-	C20000010000000000000010 /* Jellyfin */ = {
-		isa = PBXGroup;
-		children = (
-			C20000010000000000000011 /* JellyfinClient.swift */,
-			C20000010000000000000012 /* JellyfinLibraryLoader.swift */,
-			C20000010000000000000015 /* JellyfinIdentity.swift */,
-			C20000010000000000000016 /* JellyfinFavoritesSync.swift */,
-			C20000010000000000000013 /* KeychainHelper.swift */,
-		);
-		path = Jellyfin;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000002 /* Library */ = {
-		isa = PBXGroup;
-		children = (
-			B10000010000000000000007 /* FolderPicker.swift */,
-			B10000010000000000000005 /* LibraryStore.swift */,
-			B10000010000000000000017 /* SavedFoldersStore.swift */,
-			B10000010000000000000018 /* StableIdentity.swift */,
-			B10000010000000000000006 /* LocalLibraryScanner.swift */,
-		);
-		path = Library;
-		sourceTree = "<group>";
-	};
+		177418CCADA34111A6EDC0AD /* Content */ = {
+			isa = PBXGroup;
+			children = (
+				FBA40D55EB0C423DA5C5C2E6 /* AlbumCardView.swift */,
+				EAF8604F015249A6814F176B /* AlbumGridView.swift */,
+				B10000010000000000000010 /* ArtistGridView.swift */,
+				C5D7EAD3F8A549DA97615024 /* ContentAreaView.swift */,
+				18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */,
+				B10000010000000000000012 /* FavoritesView.swift */,
+				B1000001000000000000000E /* LibraryContentShell.swift */,
+				B1000001000000000000000F /* TrackListView.swift */,
+			);
+			path = Content;
+			sourceTree = "<group>";
+		};
+		420D16CA5CBD4CAA95D1E6D8 /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				26F631988CA1457AAC795797 /* SidebarItemView.swift */,
+				1197CB67A66D43028CE69687 /* SidebarSectionHeader.swift */,
+				5487C7878DED425589E8F50F /* SidebarView.swift */,
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
+		480938F7E2774E9CB603A815 /* Cadence */ = {
+			isa = PBXGroup;
+			children = (
+				5DCAEF2CCE05411AA55B1714 /* Models */,
+				C10000010000000000000001 /* Services */,
+				853A64393CB04C15AF6007D0 /* State */,
+				C532A38F1D6E457585E844FC /* Design */,
+				E873D6061BA44732B83D06E2 /* App */,
+				EBFCE09F2FEA4932B8AE0EA9 /* Preview */,
+				EDD4A1AEA8D44E3494620F7B /* Views */,
+				D10000010000000000000001 /* Assets.xcassets */,
+				18646C3494E04914B698E7C8 /* Cadence.entitlements */,
+				814DBBD35C0D766C3E35806B /* CadenceiOS.entitlements */,
+			);
+			path = Cadence;
+			sourceTree = "<group>";
+		};
+		5D5B2F4DDA1845928146DD2A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				65EFA0FDD80E4C388994AF6C /* Cadence.app */,
+				E0E36DBEB76F046F4A698D62 /* Cadence.app */,
+				T10000010000000000000003 /* CadenceTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5DCAEF2CCE05411AA55B1714 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				54F2787290194F9E9E64F8CC /* Album.swift */,
+				635AE24D7FEEB718FB5CA480 /* ConnectAuth.swift */,
+				84A3A8EBA706BF736BEA4293 /* EQPreset.swift */,
+				94AF6224DB6C26D04C1CD97D /* ServerEntry.swift */,
+				B10000010000000000000002 /* Artist.swift */,
+				AF630A99CAAC476599ABBA5E /* ContentRoute.swift */,
+				C20000010000000000000014 /* JellyfinServer.swift */,
+				B10000010000000000000004 /* Playlist.swift */,
+				B10000010000000000000001 /* RepeatMode.swift */,
+				6224B01B44704CB08A6F4B7C /* SidebarItem.swift */,
+				DE182CDEDE174B72BF8FE9A1 /* Track.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		853A64393CB04C15AF6007D0 /* State */ = {
+			isa = PBXGroup;
+			children = (
+				17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */,
+			);
+			path = State;
+			sourceTree = "<group>";
+		};
+		8D13ADBD688D4414879C3685 /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				1138C4324B6740BC86DCF11D /* NowPlayingBarView.swift */,
+				5467B54A224745F0801D3FEF /* PlayerButton.swift */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+		A119926AFFDB41C68C8D86AC /* Album */ = {
+			isa = PBXGroup;
+			children = (
+				32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */,
+				9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */,
+			);
+			path = Album;
+			sourceTree = "<group>";
+		};
+		A79500CEE05C477F86E19D0A /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001000000000000000D /* AlbumCoverView.swift */,
+				FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */,
+				2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */,
+				C50000010000000000000011 /* OfflineDownloadButton.swift */,
+				B10000010000000000000019 /* OverlayWindowChrome.swift */,
+				11D515D596B749AC96306FFB /* VisualEffectBackground.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		B0BF060F80594CCA95F409DD /* MainWindow */ = {
+			isa = PBXGroup;
+			children = (
+				A7BFDC05F0F344AA8168362A /* MainWindowView.swift */,
+			);
+			path = MainWindow;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				C30000010000000000000010 /* Cache */,
+				C20000010000000000000010 /* Jellyfin */,
+				C10000010000000000000002 /* Library */,
+				C1000001000000000000000B /* Navigation */,
+				C40000010000000000000010 /* Offline */,
+				C10000010000000000000003 /* Playback */,
+				C10000010000000000000004 /* UserData */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000002 /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				B10000010000000000000007 /* FolderPicker.swift */,
+				B10000010000000000000005 /* LibraryStore.swift */,
+				B10000010000000000000017 /* SavedFoldersStore.swift */,
+				B10000010000000000000018 /* StableIdentity.swift */,
+				B10000010000000000000006 /* LocalLibraryScanner.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
 		C10000010000000000000003 /* Playback */ = {
-		isa = PBXGroup;
-		children = (
-			B10000010000000000000008 /* AudioEngineService.swift */,
-			B10000010000000000000009 /* PlaybackController.swift */,
-			B10000010000000000000022 /* SpectrumAnalyzer.swift */,
-			B1000001000000000000001E /* PlaybackQueue.swift */,
-			B1000001000000000000001F /* PlaybackStateStore.swift */,
-			B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */,
-			B10000010000000000000016 /* MediaRemoteService.swift */,
-		);
-		path = Playback;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000004 /* UserData */ = {
-		isa = PBXGroup;
-		children = (
-			B1000001000000000000000A /* FavoritesStore.swift */,
-			B1000001000000000000000C /* PlaylistStore.swift */,
-			B1000001000000000000000B /* RecentStore.swift */,
-			B10000010000000000000021 /* UserEQPresetStore.swift */,
-		);
-		path = UserData;
-		sourceTree = "<group>";
-	};
-	EBFCE09F2FEA4932B8AE0EA9 /* Preview */ = {
-		isa = PBXGroup;
-		children = (
-			CE6F37B4FF6640FABFC9A48F /* PreviewHelpers.swift */,
-		);
-		path = Preview;
-		sourceTree = "<group>";
-	};
-	853A64393CB04C15AF6007D0 /* State */ = {
-		isa = PBXGroup;
-		children = (
-			17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */,
-		);
-		path = State;
-		sourceTree = "<group>";
-	};
-	EDD4A1AEA8D44E3494620F7B /* Views */ = {
-		isa = PBXGroup;
-		children = (
-			A119926AFFDB41C68C8D86AC /* Album */,
-			C10000010000000000000007 /* Connect */,
-			A79500CEE05C477F86E19D0A /* Components */,
-			177418CCADA34111A6EDC0AD /* Content */,
-			C10000010000000000000008 /* Equalizer */,
-			B0BF060F80594CCA95F409DD /* MainWindow */,
-			C10000010000000000000005 /* NowPlaying */,
-			8D13ADBD688D4414879C3685 /* Player */,
-			C10000010000000000000009 /* Preferences */,
-			C10000010000000000000006 /* Playlist */,
-			C1000001000000000000000A /* Queue */,
-			420D16CA5CBD4CAA95D1E6D8 /* Sidebar */,
-		);
-		path = Views;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000007 /* Connect */ = {
-		isa = PBXGroup;
-		children = (
-			B1000001000000000000001D /* ConnectWindowView.swift */,
-		);
-		path = Connect;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000008 /* Equalizer */ = {
-		isa = PBXGroup;
-		children = (
-			B1000001000000000000001B /* EQWindowView.swift */,
-		);
-		path = Equalizer;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000009 /* Preferences */ = {
-		isa = PBXGroup;
-		children = (
-			B1000001000000000000001C /* PreferencesWindowView.swift */,
-		);
-		path = Preferences;
-		sourceTree = "<group>";
-	};
-	C1000001000000000000000A /* Queue */ = {
-		isa = PBXGroup;
-		children = (
-			B1000001000000000000001A /* QueuePanelView.swift */,
-		);
-		path = Queue;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000005 /* NowPlaying */ = {
-		isa = PBXGroup;
-		children = (
-			B10000010000000000000013 /* NowPlayingDetailView.swift */,
-			B10000010000000000000023 /* SpectrumVisualizerView.swift */,
-		);
-		path = NowPlaying;
-		sourceTree = "<group>";
-	};
-	C10000010000000000000006 /* Playlist */ = {
-		isa = PBXGroup;
-		children = (
-			B10000010000000000000014 /* PlaylistDetailView.swift */,
-		);
-		path = Playlist;
-		sourceTree = "<group>";
-	};
-	A119926AFFDB41C68C8D86AC /* Album */ = {
-		isa = PBXGroup;
-		children = (
-			32B79AD1FEFE48A9BCCFC6AE /* AlbumPageView.swift */,
-			9B55BB8430C74FE6A9344E42 /* TrackRowView.swift */,
-		);
-		path = Album;
-		sourceTree = "<group>";
-	};
-	A79500CEE05C477F86E19D0A /* Components */ = {
-		isa = PBXGroup;
-		children = (
-			B1000001000000000000000D /* AlbumCoverView.swift */,
-			FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */,
-			2A35C1A610664080A10C6BA6 /* EqualizerBarsView.swift */,
-			C50000010000000000000011 /* OfflineDownloadButton.swift */,
-			B10000010000000000000019 /* OverlayWindowChrome.swift */,
-			11D515D596B749AC96306FFB /* VisualEffectBackground.swift */,
-		);
-		path = Components;
-		sourceTree = "<group>";
-	};
-	177418CCADA34111A6EDC0AD /* Content */ = {
-		isa = PBXGroup;
-		children = (
-			FBA40D55EB0C423DA5C5C2E6 /* AlbumCardView.swift */,
-			EAF8604F015249A6814F176B /* AlbumGridView.swift */,
-			B10000010000000000000010 /* ArtistGridView.swift */,
-			C5D7EAD3F8A549DA97615024 /* ContentAreaView.swift */,
-			18131968EC2E46F48BA64ED2 /* ContentToolbarView.swift */,
-			B10000010000000000000012 /* FavoritesView.swift */,
-			B1000001000000000000000E /* LibraryContentShell.swift */,
-			B1000001000000000000000F /* TrackListView.swift */,
-		);
-		path = Content;
-		sourceTree = "<group>";
-	};
-	B0BF060F80594CCA95F409DD /* MainWindow */ = {
-		isa = PBXGroup;
-		children = (
-			A7BFDC05F0F344AA8168362A /* MainWindowView.swift */,
-		);
-		path = MainWindow;
-		sourceTree = "<group>";
-	};
-	8D13ADBD688D4414879C3685 /* Player */ = {
-		isa = PBXGroup;
-		children = (
-			1138C4324B6740BC86DCF11D /* NowPlayingBarView.swift */,
-			5467B54A224745F0801D3FEF /* PlayerButton.swift */,
-		);
-		path = Player;
-		sourceTree = "<group>";
-	};
-	420D16CA5CBD4CAA95D1E6D8 /* Sidebar */ = {
-		isa = PBXGroup;
-		children = (
-			26F631988CA1457AAC795797 /* SidebarItemView.swift */,
-			1197CB67A66D43028CE69687 /* SidebarSectionHeader.swift */,
-			5487C7878DED425589E8F50F /* SidebarView.swift */,
-		);
-		path = Sidebar;
-		sourceTree = "<group>";
-	};
-	F5EF039E13074066BB878394 = {
-		isa = PBXGroup;
-		children = (
-			480938F7E2774E9CB603A815 /* Cadence */,
-			T10000010000000000000005 /* CadenceTests */,
-			5D5B2F4DDA1845928146DD2A /* Products */,
-		);
-		sourceTree = "<group>";
-	};
-	T10000010000000000000005 /* CadenceTests */ = {
-		isa = PBXGroup;
-		children = (
-			T10000010000000000000004 /* JellyfinFavoritesTests.swift */,
-			T10000010000000000000020 /* AudioEngineTestHelpers.swift */,
-			T10000010000000000000021 /* AudioEngineServiceTests.swift */,
-			T10000010000000000000025 /* OfflineStoreTests.swift */,
-		);
-		path = CadenceTests;
-		sourceTree = "<group>";
-	};
+			isa = PBXGroup;
+			children = (
+				B10000010000000000000008 /* AudioEngineService.swift */,
+				B10000010000000000000009 /* PlaybackController.swift */,
+				B10000010000000000000022 /* SpectrumAnalyzer.swift */,
+				B1000001000000000000001E /* PlaybackQueue.swift */,
+				B1000001000000000000001F /* PlaybackStateStore.swift */,
+				B10000010000000000000015 /* PlaybackKeyboardMonitor.swift */,
+				B10000010000000000000016 /* MediaRemoteService.swift */,
+			);
+			path = Playback;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000004 /* UserData */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001000000000000000A /* FavoritesStore.swift */,
+				B1000001000000000000000C /* PlaylistStore.swift */,
+				B1000001000000000000000B /* RecentStore.swift */,
+				B10000010000000000000021 /* UserEQPresetStore.swift */,
+			);
+			path = UserData;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000005 /* NowPlaying */ = {
+			isa = PBXGroup;
+			children = (
+				B10000010000000000000013 /* NowPlayingDetailView.swift */,
+				B10000010000000000000023 /* SpectrumVisualizerView.swift */,
+			);
+			path = NowPlaying;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000006 /* Playlist */ = {
+			isa = PBXGroup;
+			children = (
+				B10000010000000000000014 /* PlaylistDetailView.swift */,
+			);
+			path = Playlist;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000007 /* Connect */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001000000000000001D /* ConnectWindowView.swift */,
+			);
+			path = Connect;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000008 /* Equalizer */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001000000000000001B /* EQWindowView.swift */,
+			);
+			path = Equalizer;
+			sourceTree = "<group>";
+		};
+		C10000010000000000000009 /* Preferences */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001000000000000001C /* PreferencesWindowView.swift */,
+			);
+			path = Preferences;
+			sourceTree = "<group>";
+		};
+		C1000001000000000000000A /* Queue */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001000000000000001A /* QueuePanelView.swift */,
+			);
+			path = Queue;
+			sourceTree = "<group>";
+		};
+		C1000001000000000000000B /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				B10000010000000000000020 /* NavigationStateStore.swift */,
+			);
+			path = Navigation;
+			sourceTree = "<group>";
+		};
+		C20000010000000000000010 /* Jellyfin */ = {
+			isa = PBXGroup;
+			children = (
+				C20000010000000000000011 /* JellyfinClient.swift */,
+				C20000010000000000000012 /* JellyfinLibraryLoader.swift */,
+				C20000010000000000000015 /* JellyfinIdentity.swift */,
+				C20000010000000000000016 /* JellyfinFavoritesSync.swift */,
+				C20000010000000000000013 /* KeychainHelper.swift */,
+			);
+			path = Jellyfin;
+			sourceTree = "<group>";
+		};
+		C30000010000000000000010 /* Cache */ = {
+			isa = PBXGroup;
+			children = (
+				C30000010000000000000011 /* JellyfinLibraryCache.swift */,
+				C30000010000000000000012 /* ArtworkCache.swift */,
+				C30000010000000000000013 /* AudioCache.swift */,
+				C30000010000000000000014 /* ProgressiveAudioDownload.swift */,
+			);
+			path = Cache;
+			sourceTree = "<group>";
+		};
+		C40000010000000000000010 /* Offline */ = {
+			isa = PBXGroup;
+			children = (
+				C40000010000000000000011 /* OfflineStore.swift */,
+				C40000010000000000000012 /* OfflineDownloadQueue.swift */,
+			);
+			path = Offline;
+			sourceTree = "<group>";
+		};
+		C532A38F1D6E457585E844FC /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		CA4E708FF7EDFA8EE424A085 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				D307594147837B116E680D30 /* IOSRootView.swift */,
+				A6D19EFB2C643E7A6E03C665 /* IOSLibraryView.swift */,
+				DB30FD10CB649E1C90625A3E /* IOSAlbumView.swift */,
+				C09D6CEF13911478CF4BCFED /* IOSTabsViews.swift */,
+				2C17782C0F2BCFD184F8C1F0 /* IOSMiniPlayerView.swift */,
+				36A61D35AD84FA1C8228495B /* IOSNowPlayingView.swift */,
+				C888D12B9DFFA58FD49D7663 /* IOSQueueView.swift */,
+				FFDE3BDBD3EA8C9A71ED769D /* IOSSettingsView.swift */,
+			);
+			path = iOS;
+			sourceTree = "<group>";
+		};
+		E873D6061BA44732B83D06E2 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7BBAE2B924974FE7B5929C69 /* CadenceApp.swift */,
+				3F19134CD9477B5D0EF23D0B /* CadenceiOSApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		EBFCE09F2FEA4932B8AE0EA9 /* Preview */ = {
+			isa = PBXGroup;
+			children = (
+				CE6F37B4FF6640FABFC9A48F /* PreviewHelpers.swift */,
+			);
+			path = Preview;
+			sourceTree = "<group>";
+		};
+		EDD4A1AEA8D44E3494620F7B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CA4E708FF7EDFA8EE424A085 /* iOS */,
+				A119926AFFDB41C68C8D86AC /* Album */,
+				C10000010000000000000007 /* Connect */,
+				A79500CEE05C477F86E19D0A /* Components */,
+				177418CCADA34111A6EDC0AD /* Content */,
+				C10000010000000000000008 /* Equalizer */,
+				B0BF060F80594CCA95F409DD /* MainWindow */,
+				C10000010000000000000005 /* NowPlaying */,
+				8D13ADBD688D4414879C3685 /* Player */,
+				C10000010000000000000009 /* Preferences */,
+				C10000010000000000000006 /* Playlist */,
+				C1000001000000000000000A /* Queue */,
+				420D16CA5CBD4CAA95D1E6D8 /* Sidebar */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F5EF039E13074066BB878394 = {
+			isa = PBXGroup;
+			children = (
+				480938F7E2774E9CB603A815 /* Cadence */,
+				T10000010000000000000005 /* CadenceTests */,
+				5D5B2F4DDA1845928146DD2A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		T10000010000000000000005 /* CadenceTests */ = {
+			isa = PBXGroup;
+			children = (
+				T10000010000000000000004 /* JellyfinFavoritesTests.swift */,
+				T10000010000000000000020 /* AudioEngineTestHelpers.swift */,
+				T10000010000000000000021 /* AudioEngineServiceTests.swift */,
+				T10000010000000000000025 /* OfflineStoreTests.swift */,
+			);
+			path = CadenceTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-	5C3537C056A049FC8522164B /* Cadence */ = {
-		isa = PBXNativeTarget;
-		buildConfigurationList = 3CE7555542F94979A8F0C76F /* Build configuration list for PBXNativeTarget "Cadence" */;
-		buildPhases = (
-			8FEE498F4F8448D78512E0EC /* Sources */,
-			4DF644D4774B4BB0B3E6D13E /* Frameworks */,
-			0DF0123FBD41403C9BAAE135 /* Resources */,
-		);
-		buildRules = (
-		);
-		dependencies = (
-		);
-		name = Cadence;
-		productName = Cadence;
-		productReference = 65EFA0FDD80E4C388994AF6C /* Cadence.app */;
-		productType = "com.apple.product-type.application";
-	};
-	T10000010000000000000006 /* CadenceTests */ = {
-		isa = PBXNativeTarget;
-		buildConfigurationList = T1000001000000000000000D /* Build configuration list for PBXNativeTarget "CadenceTests" */;
-		buildPhases = (
-			T10000010000000000000007 /* Sources */,
-			T10000010000000000000008 /* Frameworks */,
-		);
-		buildRules = (
-		);
-		dependencies = (
-			T1000001000000000000000A /* PBXTargetDependency */,
-		);
-		name = CadenceTests;
-		productName = CadenceTests;
-		productReference = T10000010000000000000003 /* CadenceTests.xctest */;
-		productType = "com.apple.product-type.bundle.unit-test";
-	};
+		5C3537C056A049FC8522164B /* Cadence */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3CE7555542F94979A8F0C76F /* Build configuration list for PBXNativeTarget "Cadence" */;
+			buildPhases = (
+				8FEE498F4F8448D78512E0EC /* Sources */,
+				4DF644D4774B4BB0B3E6D13E /* Frameworks */,
+				0DF0123FBD41403C9BAAE135 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Cadence;
+			productName = Cadence;
+			productReference = 65EFA0FDD80E4C388994AF6C /* Cadence.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7F0822EF8B0C9F5E861A2425 /* CadenceiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4CE566F690AB57C2C3F1F775 /* Build configuration list for PBXNativeTarget "CadenceiOS" */;
+			buildPhases = (
+				4A2CE8D691B13122F8F22986 /* Sources */,
+				75CAB7E1467AB78D8325A3CC /* Frameworks */,
+				BBE6CA9EC4D1BD3E62C90C1F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CadenceiOS;
+			productName = CadenceiOS;
+			productReference = E0E36DBEB76F046F4A698D62 /* Cadence.app */;
+			productType = "com.apple.product-type.application";
+		};
+		T10000010000000000000006 /* CadenceTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = T1000001000000000000000D /* Build configuration list for PBXNativeTarget "CadenceTests" */;
+			buildPhases = (
+				T10000010000000000000007 /* Sources */,
+				T10000010000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				T1000001000000000000000A /* PBXTargetDependency */,
+			);
+			name = CadenceTests;
+			productName = CadenceTests;
+			productReference = T10000010000000000000003 /* CadenceTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
-/* Begin PBXContainerItemProxy section */
-	T10000010000000000000009 /* PBXContainerItemProxy */ = {
-		isa = PBXContainerItemProxy;
-		containerPortal = F442EFF0A0EF4D20BD0C70E5 /* Project object */;
-		proxyType = 1;
-		remoteGlobalIDString = 5C3537C056A049FC8522164B;
-		remoteInfo = Cadence;
-	};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-	T1000001000000000000000A /* PBXTargetDependency */ = {
-		isa = PBXTargetDependency;
-		target = 5C3537C056A049FC8522164B /* Cadence */;
-		targetProxy = T10000010000000000000009 /* PBXContainerItemProxy */;
-	};
-/* End PBXTargetDependency section */
-
 /* Begin PBXProject section */
-	F442EFF0A0EF4D20BD0C70E5 /* Project object */ = {
-		isa = PBXProject;
-		attributes = {
-			BuildIndependentTargetsInParallel = 1;
-			LastSwiftUpdateCheck = 1500;
-			LastUpgradeCheck = 1500;
-			TargetAttributes = {
-				5C3537C056A049FC8522164B = {
-					CreatedOnToolsVersion = 15.0;
-				};
-				T10000010000000000000006 = {
-					CreatedOnToolsVersion = 15.0;
-					TestTargetID = 5C3537C056A049FC8522164B;
+		F442EFF0A0EF4D20BD0C70E5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					5C3537C056A049FC8522164B = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					7F0822EF8B0C9F5E861A2425 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					T10000010000000000000006 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 5C3537C056A049FC8522164B;
+					};
 				};
 			};
+			buildConfigurationList = 9A1C1A41297B437583778C13 /* Build configuration list for PBXProject "Cadence" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = ru;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				ru,
+				Base,
+			);
+			mainGroup = F5EF039E13074066BB878394;
+			productRefGroup = 5D5B2F4DDA1845928146DD2A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5C3537C056A049FC8522164B /* Cadence */,
+				7F0822EF8B0C9F5E861A2425 /* CadenceiOS */,
+				T10000010000000000000006 /* CadenceTests */,
+			);
 		};
-		buildConfigurationList = 9A1C1A41297B437583778C13 /* Build configuration list for PBXProject "Cadence" */;
-		compatibilityVersion = "Xcode 14.0";
-		developmentRegion = ru;
-		hasScannedForEncodings = 0;
-		knownRegions = (
-			ru,
-			Base,
-		);
-		mainGroup = F5EF039E13074066BB878394;
-		productRefGroup = 5D5B2F4DDA1845928146DD2A /* Products */;
-		projectDirPath = "";
-		projectRoot = "";
-		targets = (
-			5C3537C056A049FC8522164B /* Cadence */,
-			T10000010000000000000006 /* CadenceTests */,
-		);
-	};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-	0DF0123FBD41403C9BAAE135 /* Resources */ = {
-		isa = PBXResourcesBuildPhase;
-		buildActionMask = 2147483647;
-		files = (
-			E10000010000000000000001 /* Assets.xcassets in Resources */,
-		);
-		runOnlyForDeploymentPostprocessing = 0;
-	};
+		0DF0123FBD41403C9BAAE135 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E10000010000000000000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BBE6CA9EC4D1BD3E62C90C1F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				61666285171FC2AD88624AB1 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-	8FEE498F4F8448D78512E0EC /* Sources */ = {
-		isa = PBXSourcesBuildPhase;
-		buildActionMask = 2147483647;
-		files = (
-			30E5CD9575884EE28F2B374C /* CadenceTheme.swift in Sources */,
-			44EEA235EDFB494BBB61F7D3 /* CadenceApp.swift in Sources */,
-			FA7406B3F4D74FA2A378E418 /* Album.swift in Sources */,
-			D4BE284D61CE4094994F364B /* ContentRoute.swift in Sources */,
-			75452E16B88F4A628682F07D /* SidebarItem.swift in Sources */,
-			FBC00D664D864D9BB8A257C4 /* Track.swift in Sources */,
-			1A7649FF8B3D492B86E39A0A /* AppUIState.swift in Sources */,
-			AC4C579361524C2DB919E9C4 /* PreviewHelpers.swift in Sources */,
-			B56826B8EB1B4AA58D01246E /* SidebarItemView.swift in Sources */,
-			70FDCF16CB9C4CD6A2886DA3 /* SidebarSectionHeader.swift in Sources */,
-			BC9CD668404243699A81BF9B /* SidebarView.swift in Sources */,
-			D496A1B0D5AB4FD0BD208ED6 /* MainWindowView.swift in Sources */,
-			F30B72E92F90478E88E1BDA5 /* AlbumCardView.swift in Sources */,
-			2CBFC799CFD840E28018E41A /* AlbumGridView.swift in Sources */,
-			0A083D62191E41CB87F42A10 /* ContentAreaView.swift in Sources */,
-			463EAD6D8E3E40E091DC127D /* ContentToolbarView.swift in Sources */,
-			0180027AD8C146688E6A659D /* AlbumCoverPlaceholderView.swift in Sources */,
-			87F6BFE9308843038CD54A4C /* EqualizerBarsView.swift in Sources */,
-			C50000010000000000000001 /* OfflineDownloadButton.swift in Sources */,
-			4B112FB122D343BD912FBF71 /* VisualEffectBackground.swift in Sources */,
-			5D1DBDE0F4D24C01944C4A28 /* AlbumPageView.swift in Sources */,
-			7FDED7D3815D40909AD076C9 /* TrackRowView.swift in Sources */,
-			A38FFC3DC6674CBA9D058748 /* NowPlayingBarView.swift in Sources */,
-			62371AF4AA18474E84E8BA85 /* PlayerButton.swift in Sources */,
-			A10000010000000000000001 /* RepeatMode.swift in Sources */,
-			A10000010000000000000002 /* Artist.swift in Sources */,
-			A10000010000000000000004 /* Playlist.swift in Sources */,
-			A10000010000000000000005 /* LibraryStore.swift in Sources */,
-			A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */,
-			A10000010000000000000007 /* FolderPicker.swift in Sources */,
-			A10000010000000000000017 /* SavedFoldersStore.swift in Sources */,
-			A10000010000000000000018 /* StableIdentity.swift in Sources */,
-			A10000010000000000000008 /* AudioEngineService.swift in Sources */,
-			A10000010000000000000009 /* PlaybackController.swift in Sources */,
+		4A2CE8D691B13122F8F22986 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F893D5A937322CE462B489CB /* CadenceiOSApp.swift in Sources */,
+				9E6356F9C5797FA1FC055E18 /* ConnectAuth.swift in Sources */,
+				3F933B60735B9EEFD662A66E /* EQPreset.swift in Sources */,
+				6A8DB7C1338E1F2B7CC0D94C /* ServerEntry.swift in Sources */,
+				FE431BDB886CAEC875D5D997 /* IOSRootView.swift in Sources */,
+				71CFB0E26128006777AA6D0B /* IOSLibraryView.swift in Sources */,
+				9C8716AA5A7EF2DD26D1F4A0 /* IOSAlbumView.swift in Sources */,
+				0247A452D45EBF803E3174A1 /* IOSTabsViews.swift in Sources */,
+				8826B1A68F9F35AEBA365BF7 /* IOSMiniPlayerView.swift in Sources */,
+				8E6241185589608E1D2CB64C /* IOSNowPlayingView.swift in Sources */,
+				B329CDCA116D5C4B6BC729C1 /* IOSQueueView.swift in Sources */,
+				3F46AA10EB750B7C0A5D4170 /* IOSSettingsView.swift in Sources */,
+				9EE7013BB35122FA96A784C4 /* Album.swift in Sources */,
+				1E785E373051774C18789E54 /* AlbumCoverPlaceholderView.swift in Sources */,
+				6938FDD98863824E70CCAC47 /* AlbumCoverView.swift in Sources */,
+				DC3841908DA5891CB912BCC4 /* AppUIState.swift in Sources */,
+				A35013AD60557E6528AF5045 /* Artist.swift in Sources */,
+				DADE0103D7897035E318157F /* ArtworkCache.swift in Sources */,
+				50BAE71D69B750C06920A414 /* AudioCache.swift in Sources */,
+				243604D7AAFA9C11A6785F0C /* AudioEngineService.swift in Sources */,
+				0DAA2EDD98A31DC0D512F531 /* CadenceTheme.swift in Sources */,
+				B52EA4C45B7B8B70E2178630 /* ContentRoute.swift in Sources */,
+				A929E13693F008275C8A5858 /* EqualizerBarsView.swift in Sources */,
+				43ABDBA9E6F96C4F714110F8 /* FavoritesStore.swift in Sources */,
+				3E4FBB8F532C4B0151D83B75 /* JellyfinClient.swift in Sources */,
+				E242ED9196D395D78BDA7519 /* JellyfinFavoritesSync.swift in Sources */,
+				0D4366B04A924F9039F705AD /* JellyfinIdentity.swift in Sources */,
+				F71C58CE200CBCC947A93697 /* JellyfinLibraryCache.swift in Sources */,
+				38A98AE352DED83B5B8EE25B /* JellyfinLibraryLoader.swift in Sources */,
+				AE9BCEAD33122C8F25D93CF3 /* JellyfinServer.swift in Sources */,
+				F3E97387CD9A740C35E94A83 /* KeychainHelper.swift in Sources */,
+				07C13E90EFA7ACDE3AF2359D /* LibraryStore.swift in Sources */,
+				7AC6C858E8C92F8E0E12B676 /* LocalLibraryScanner.swift in Sources */,
+				002F707E97C9EFAC68BB2115 /* MediaRemoteService.swift in Sources */,
+				B354A45E8FF313EA715D5C5A /* NavigationStateStore.swift in Sources */,
+				CEBE3B1294C5DF5A3AEFA9A5 /* OfflineDownloadButton.swift in Sources */,
+				E1363BC344F4C0D319840E04 /* OfflineDownloadQueue.swift in Sources */,
+				5B8F85B2EB1A7FA6559DB6E0 /* OfflineStore.swift in Sources */,
+				550F1D138FE33F1B47638449 /* PlaybackController.swift in Sources */,
+				E861AE52EB809C44BD04DC4F /* PlaybackQueue.swift in Sources */,
+				D513B9AB8733FAC0CB241CCA /* PlaybackStateStore.swift in Sources */,
+				949276DBB68807EA5A9AB862 /* PlayerButton.swift in Sources */,
+				075EE343DB25F7922A426C2C /* Playlist.swift in Sources */,
+				64667D049893AE49BCC01295 /* PlaylistStore.swift in Sources */,
+				3A98C430B5B848FB865129FA /* ProgressiveAudioDownload.swift in Sources */,
+				5D57BED6D6E454C4AAC22A74 /* RecentStore.swift in Sources */,
+				8653027EBEE0610889692156 /* RepeatMode.swift in Sources */,
+				DCFF7460BFCF36EB4EF7923F /* SavedFoldersStore.swift in Sources */,
+				4724088D1769C38E344A5E5C /* SidebarItem.swift in Sources */,
+				3AD776940E5A4E44E806744D /* SpectrumAnalyzer.swift in Sources */,
+				7FE47292EDF52262155FED98 /* StableIdentity.swift in Sources */,
+				12690E098688BA31025E913A /* Track.swift in Sources */,
+				3CCFC5A9A5218CB00B726E06 /* UserEQPresetStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8FEE498F4F8448D78512E0EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				30E5CD9575884EE28F2B374C /* CadenceTheme.swift in Sources */,
+				44EEA235EDFB494BBB61F7D3 /* CadenceApp.swift in Sources */,
+				FA7406B3F4D74FA2A378E418 /* Album.swift in Sources */,
+				17D72FCF1F4934C096EE165A /* ConnectAuth.swift in Sources */,
+				AE7EED11CE64C47187150C15 /* EQPreset.swift in Sources */,
+				D8542CD760E3FF0E1CCB2851 /* ServerEntry.swift in Sources */,
+				D4BE284D61CE4094994F364B /* ContentRoute.swift in Sources */,
+				75452E16B88F4A628682F07D /* SidebarItem.swift in Sources */,
+				FBC00D664D864D9BB8A257C4 /* Track.swift in Sources */,
+				1A7649FF8B3D492B86E39A0A /* AppUIState.swift in Sources */,
+				AC4C579361524C2DB919E9C4 /* PreviewHelpers.swift in Sources */,
+				B56826B8EB1B4AA58D01246E /* SidebarItemView.swift in Sources */,
+				70FDCF16CB9C4CD6A2886DA3 /* SidebarSectionHeader.swift in Sources */,
+				BC9CD668404243699A81BF9B /* SidebarView.swift in Sources */,
+				D496A1B0D5AB4FD0BD208ED6 /* MainWindowView.swift in Sources */,
+				F30B72E92F90478E88E1BDA5 /* AlbumCardView.swift in Sources */,
+				2CBFC799CFD840E28018E41A /* AlbumGridView.swift in Sources */,
+				0A083D62191E41CB87F42A10 /* ContentAreaView.swift in Sources */,
+				463EAD6D8E3E40E091DC127D /* ContentToolbarView.swift in Sources */,
+				0180027AD8C146688E6A659D /* AlbumCoverPlaceholderView.swift in Sources */,
+				87F6BFE9308843038CD54A4C /* EqualizerBarsView.swift in Sources */,
+				C50000010000000000000001 /* OfflineDownloadButton.swift in Sources */,
+				4B112FB122D343BD912FBF71 /* VisualEffectBackground.swift in Sources */,
+				5D1DBDE0F4D24C01944C4A28 /* AlbumPageView.swift in Sources */,
+				7FDED7D3815D40909AD076C9 /* TrackRowView.swift in Sources */,
+				A38FFC3DC6674CBA9D058748 /* NowPlayingBarView.swift in Sources */,
+				62371AF4AA18474E84E8BA85 /* PlayerButton.swift in Sources */,
+				A10000010000000000000001 /* RepeatMode.swift in Sources */,
+				A10000010000000000000002 /* Artist.swift in Sources */,
+				A10000010000000000000004 /* Playlist.swift in Sources */,
+				A10000010000000000000005 /* LibraryStore.swift in Sources */,
+				A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */,
+				A10000010000000000000007 /* FolderPicker.swift in Sources */,
+				A10000010000000000000017 /* SavedFoldersStore.swift in Sources */,
+				A10000010000000000000018 /* StableIdentity.swift in Sources */,
+				A10000010000000000000008 /* AudioEngineService.swift in Sources */,
+				A10000010000000000000009 /* PlaybackController.swift in Sources */,
 				A10000010000000000000022 /* SpectrumAnalyzer.swift in Sources */,
-			A1000001000000000000001E /* PlaybackQueue.swift in Sources */,
-			A1000001000000000000001F /* PlaybackStateStore.swift in Sources */,
-			A10000010000000000000020 /* NavigationStateStore.swift in Sources */,
-			A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */,
-			A10000010000000000000016 /* MediaRemoteService.swift in Sources */,
-			A1000001000000000000000A /* FavoritesStore.swift in Sources */,
-			A1000001000000000000000B /* RecentStore.swift in Sources */,
-			A1000001000000000000000C /* PlaylistStore.swift in Sources */,
-			A10000010000000000000021 /* UserEQPresetStore.swift in Sources */,
-			A1000001000000000000000D /* AlbumCoverView.swift in Sources */,
-			A1000001000000000000000E /* LibraryContentShell.swift in Sources */,
-			A1000001000000000000000F /* TrackListView.swift in Sources */,
-			A10000010000000000000010 /* ArtistGridView.swift in Sources */,
-			A10000010000000000000012 /* FavoritesView.swift in Sources */,
-			A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */,
+				A1000001000000000000001E /* PlaybackQueue.swift in Sources */,
+				A1000001000000000000001F /* PlaybackStateStore.swift in Sources */,
+				A10000010000000000000020 /* NavigationStateStore.swift in Sources */,
+				A10000010000000000000015 /* PlaybackKeyboardMonitor.swift in Sources */,
+				A10000010000000000000016 /* MediaRemoteService.swift in Sources */,
+				A1000001000000000000000A /* FavoritesStore.swift in Sources */,
+				A1000001000000000000000B /* RecentStore.swift in Sources */,
+				A1000001000000000000000C /* PlaylistStore.swift in Sources */,
+				A10000010000000000000021 /* UserEQPresetStore.swift in Sources */,
+				A1000001000000000000000D /* AlbumCoverView.swift in Sources */,
+				A1000001000000000000000E /* LibraryContentShell.swift in Sources */,
+				A1000001000000000000000F /* TrackListView.swift in Sources */,
+				A10000010000000000000010 /* ArtistGridView.swift in Sources */,
+				A10000010000000000000012 /* FavoritesView.swift in Sources */,
+				A10000010000000000000013 /* NowPlayingDetailView.swift in Sources */,
 				A10000010000000000000023 /* SpectrumVisualizerView.swift in Sources */,
-			A10000010000000000000014 /* PlaylistDetailView.swift in Sources */,
-			A10000010000000000000019 /* OverlayWindowChrome.swift in Sources */,
-			A1000001000000000000001A /* QueuePanelView.swift in Sources */,
-			A1000001000000000000001B /* EQWindowView.swift in Sources */,
-			A1000001000000000000001C /* PreferencesWindowView.swift in Sources */,
-			A1000001000000000000001D /* ConnectWindowView.swift in Sources */,
-			C20000010000000000000021 /* JellyfinClient.swift in Sources */,
-			C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */,
-			C20000010000000000000023 /* KeychainHelper.swift in Sources */,
-			C20000010000000000000024 /* JellyfinServer.swift in Sources */,
-			C20000010000000000000025 /* JellyfinIdentity.swift in Sources */,
-			C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */,
-			C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */,
-			C30000010000000000000002 /* ArtworkCache.swift in Sources */,
-			C30000010000000000000003 /* AudioCache.swift in Sources */,
-			C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */,
-			C40000010000000000000001 /* OfflineStore.swift in Sources */,
-			C40000010000000000000002 /* OfflineDownloadQueue.swift in Sources */,
-		);
-		runOnlyForDeploymentPostprocessing = 0;
-	};
-	T10000010000000000000007 /* Sources */ = {
-		isa = PBXSourcesBuildPhase;
-		buildActionMask = 2147483647;
-		files = (
-			T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */,
-			T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */,
-			T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */,
-			T10000010000000000000024 /* OfflineStoreTests.swift in Sources */,
-		);
-		runOnlyForDeploymentPostprocessing = 0;
-	};
+				A10000010000000000000014 /* PlaylistDetailView.swift in Sources */,
+				A10000010000000000000019 /* OverlayWindowChrome.swift in Sources */,
+				A1000001000000000000001A /* QueuePanelView.swift in Sources */,
+				A1000001000000000000001B /* EQWindowView.swift in Sources */,
+				A1000001000000000000001C /* PreferencesWindowView.swift in Sources */,
+				A1000001000000000000001D /* ConnectWindowView.swift in Sources */,
+				C20000010000000000000021 /* JellyfinClient.swift in Sources */,
+				C20000010000000000000022 /* JellyfinLibraryLoader.swift in Sources */,
+				C20000010000000000000023 /* KeychainHelper.swift in Sources */,
+				C20000010000000000000024 /* JellyfinServer.swift in Sources */,
+				C20000010000000000000025 /* JellyfinIdentity.swift in Sources */,
+				C20000010000000000000026 /* JellyfinFavoritesSync.swift in Sources */,
+				C30000010000000000000001 /* JellyfinLibraryCache.swift in Sources */,
+				C30000010000000000000002 /* ArtworkCache.swift in Sources */,
+				C30000010000000000000003 /* AudioCache.swift in Sources */,
+				C30000010000000000000004 /* ProgressiveAudioDownload.swift in Sources */,
+				C40000010000000000000001 /* OfflineStore.swift in Sources */,
+				C40000010000000000000002 /* OfflineDownloadQueue.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T10000010000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */,
+				T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */,
+				T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */,
+				T10000010000000000000024 /* OfflineStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		T1000001000000000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5C3537C056A049FC8522164B /* Cadence */;
+			targetProxy = T10000010000000000000009 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-	2E8E433CF62341CE8F4C014E /* Debug */ = {
-		isa = XCBuildConfiguration;
-		buildSettings = {
-
-			ALWAYS_SEARCH_USER_PATHS = NO;
-			CLANG_ENABLE_MODULES = YES;
-			CLANG_ENABLE_OBJC_ARC = YES;
-			COPY_PHASE_STRIP = NO;
-			DEBUG_INFORMATION_FORMAT = dwarf;
-			ENABLE_STRICT_OBJC_MSGSEND = YES;
-			ENABLE_TESTABILITY = YES;
-			GCC_DYNAMIC_NO_PIC = NO;
-			GCC_OPTIMIZATION_LEVEL = 0;
-			GCC_PREPROCESSOR_DEFINITIONS = (
-				"DEBUG=1",
-				"$(inherited)",
-			);
-			MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-			ONLY_ACTIVE_ARCH = YES;
-			SDKROOT = macosx;
-			SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-			SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-
+		0681A36F38B2EABCF3B0E037 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Cadence/CadenceiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = E8NPEH88XB;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Cadence/Info-iOS.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Cadence;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIBackgroundModes = audio;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.roman;
+				PRODUCT_NAME = Cadence;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
 		};
-		name = Debug;
-	};
-	1E8BECF52CB54BD7B50791EB /* Release */ = {
-		isa = XCBuildConfiguration;
-		buildSettings = {
-
-			ALWAYS_SEARCH_USER_PATHS = NO;
-			CLANG_ENABLE_MODULES = YES;
-			CLANG_ENABLE_OBJC_ARC = YES;
-			COPY_PHASE_STRIP = NO;
-			DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-			ENABLE_NS_ASSERTIONS = NO;
-			ENABLE_STRICT_OBJC_MSGSEND = YES;
-			MTL_ENABLE_DEBUG_INFO = NO;
-			SDKROOT = macosx;
-			SWIFT_COMPILATION_MODE = wholemodule;
-
+		1E8BECF52CB54BD7B50791EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
 		};
-		name = Release;
-	};
-	6CC4BC77051D4FD491046231 /* Debug */ = {
-		isa = XCBuildConfiguration;
-		buildSettings = {
-
-			ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-			CODE_SIGN_ENTITLEMENTS = Cadence/Cadence.entitlements;
-			CODE_SIGN_STYLE = Automatic;
-			COMBINE_HIDPI_IMAGES = YES;
-			CURRENT_PROJECT_VERSION = 1;
-			DEVELOPMENT_TEAM = "";
-			ENABLE_HARDENED_RUNTIME = YES;
-			GENERATE_INFOPLIST_FILE = YES;
-			INFOPLIST_KEY_CFBundleDisplayName = Cadence;
-			INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-			INFOPLIST_KEY_NSHumanReadableCopyright = "";
-			INFOPLIST_KEY_NSPrincipalClass = NSApplication;
-			LD_RUNPATH_SEARCH_PATHS = (
-				"$(inherited)",
-				"@executable_path/../Frameworks",
-			);
-			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.12.0;
-			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SWIFT_EMIT_LOC_STRINGS = YES;
-			SWIFT_VERSION = 5.0;
-
+		2E8E433CF62341CE8F4C014E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
 		};
-		name = Debug;
-	};
-	53C59567ED50450E840AB450 /* Release */ = {
-		isa = XCBuildConfiguration;
-		buildSettings = {
-
-			ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-			CODE_SIGN_ENTITLEMENTS = Cadence/Cadence.entitlements;
-			CODE_SIGN_STYLE = Automatic;
-			COMBINE_HIDPI_IMAGES = YES;
-			CURRENT_PROJECT_VERSION = 1;
-			DEVELOPMENT_TEAM = "";
-			ENABLE_HARDENED_RUNTIME = YES;
-			GENERATE_INFOPLIST_FILE = YES;
-			INFOPLIST_KEY_CFBundleDisplayName = Cadence;
-			INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-			INFOPLIST_KEY_NSHumanReadableCopyright = "";
-			INFOPLIST_KEY_NSPrincipalClass = NSApplication;
-			LD_RUNPATH_SEARCH_PATHS = (
-				"$(inherited)",
-				"@executable_path/../Frameworks",
-			);
-			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.12.0;
-			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SWIFT_EMIT_LOC_STRINGS = YES;
-			SWIFT_VERSION = 5.0;
-
+		53C59567ED50450E840AB450 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Cadence/Cadence.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Cadence;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
 		};
-		name = Release;
-	};
-	T1000001000000000000000B /* Debug */ = {
-		isa = XCBuildConfiguration;
-		buildSettings = {
-			BUNDLE_LOADER = "$(TEST_HOST)";
-			CODE_SIGN_STYLE = Automatic;
-			CURRENT_PROJECT_VERSION = 1;
-			GENERATE_INFOPLIST_FILE = YES;
-			LD_RUNPATH_SEARCH_PATHS = (
-				"$(inherited)",
-				"@executable_path/../Frameworks",
-				"@loader_path/../Frameworks",
-			);
-			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.12.0;
-			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SWIFT_VERSION = 5.0;
-			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cadence.app/Contents/MacOS/Cadence";
+		6CC4BC77051D4FD491046231 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Cadence/Cadence.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Cadence;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
 		};
-		name = Debug;
-	};
-	T1000001000000000000000C /* Release */ = {
-		isa = XCBuildConfiguration;
-		buildSettings = {
-			BUNDLE_LOADER = "$(TEST_HOST)";
-			CODE_SIGN_STYLE = Automatic;
-			CURRENT_PROJECT_VERSION = 1;
-			GENERATE_INFOPLIST_FILE = YES;
-			LD_RUNPATH_SEARCH_PATHS = (
-				"$(inherited)",
-				"@executable_path/../Frameworks",
-				"@loader_path/../Frameworks",
-			);
-			MACOSX_DEPLOYMENT_TARGET = 14.0;
-			MARKETING_VERSION = 1.12.0;
-			PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SWIFT_VERSION = 5.0;
-			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cadence.app/Contents/MacOS/Cadence";
+		A27717A4D6B4FD6BBA553861 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Cadence/CadenceiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = E8NPEH88XB;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Cadence/Info-iOS.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Cadence;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIBackgroundModes = audio;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.roman;
+				PRODUCT_NAME = Cadence;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
 		};
-		name = Release;
-	};
+		T1000001000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cadence.app/Contents/MacOS/Cadence";
+			};
+			name = Debug;
+		};
+		T1000001000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cadence.app/Contents/MacOS/Cadence";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-	9A1C1A41297B437583778C13 /* Build configuration list for PBXProject "Cadence" */ = {
-		isa = XCConfigurationList;
-		buildConfigurations = (
-			2E8E433CF62341CE8F4C014E /* Debug */,
-			1E8BECF52CB54BD7B50791EB /* Release */,
-		);
-		defaultConfigurationIsVisible = 0;
-		defaultConfigurationName = Release;
-	};
-	3CE7555542F94979A8F0C76F /* Build configuration list for PBXNativeTarget "Cadence" */ = {
-		isa = XCConfigurationList;
-		buildConfigurations = (
-			6CC4BC77051D4FD491046231 /* Debug */,
-			53C59567ED50450E840AB450 /* Release */,
-		);
-		defaultConfigurationIsVisible = 0;
-		defaultConfigurationName = Release;
-	};
-	T1000001000000000000000D /* Build configuration list for PBXNativeTarget "CadenceTests" */ = {
-		isa = XCConfigurationList;
-		buildConfigurations = (
-			T1000001000000000000000B /* Debug */,
-			T1000001000000000000000C /* Release */,
-		);
-		defaultConfigurationIsVisible = 0;
-		defaultConfigurationName = Release;
-	};
+		3CE7555542F94979A8F0C76F /* Build configuration list for PBXNativeTarget "Cadence" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6CC4BC77051D4FD491046231 /* Debug */,
+				53C59567ED50450E840AB450 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4CE566F690AB57C2C3F1F775 /* Build configuration list for PBXNativeTarget "CadenceiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0681A36F38B2EABCF3B0E037 /* Debug */,
+				A27717A4D6B4FD6BBA553861 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9A1C1A41297B437583778C13 /* Build configuration list for PBXProject "Cadence" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2E8E433CF62341CE8F4C014E /* Debug */,
+				1E8BECF52CB54BD7B50791EB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		T1000001000000000000000D /* Build configuration list for PBXNativeTarget "CadenceTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				T1000001000000000000000B /* Debug */,
+				T1000001000000000000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 	};
 	rootObject = F442EFF0A0EF4D20BD0C70E5 /* Project object */;

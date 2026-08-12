@@ -36,6 +36,7 @@ struct IOSRecentView: View {
         }
         .listStyle(.plain)
         .navigationTitle("Недавнее")
+        .iosSettingsToolbar()
         .overlay {
             if albums.isEmpty {
                 ContentUnavailableView("Нет недавних альбомов", systemImage: "clock")
@@ -73,6 +74,7 @@ struct IOSFavoritesView: View {
         }
         .listStyle(.plain)
         .navigationTitle("Избранное")
+        .iosSettingsToolbar()
         .overlay {
             if tracks.isEmpty {
                 ContentUnavailableView("Нет избранного", systemImage: "heart")
@@ -120,10 +122,36 @@ struct IOSDownloadedView: View {
         }
         .listStyle(.plain)
         .navigationTitle("Скачанное")
+        .iosSettingsToolbar()
         .overlay {
             if albums.isEmpty {
                 ContentUnavailableView("Нет скачанных альбомов", systemImage: "arrow.down.circle")
             }
         }
+    }
+}
+
+// MARK: - Shared settings toolbar
+
+struct IOSSettingsToolbarModifier: ViewModifier {
+    @Environment(AppUIState.self) private var uiState
+
+    func body(content: Content) -> some View {
+        content.toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    uiState.openPreferences()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("Настройки")
+            }
+        }
+    }
+}
+
+extension View {
+    func iosSettingsToolbar() -> some View {
+        modifier(IOSSettingsToolbarModifier())
     }
 }

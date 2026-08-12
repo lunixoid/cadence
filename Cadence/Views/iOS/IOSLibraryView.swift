@@ -56,16 +56,7 @@ struct IOSLibraryView: View {
         .navigationTitle("Библиотека")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $ui.searchQuery, prompt: "Поиск")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    uiState.openPreferences()
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .accessibilityLabel("Настройки")
-            }
-        }
+        .iosSettingsToolbar()
         .safeAreaInset(edge: .top, spacing: 0) {
             Picker("Раздел", selection: $segment) {
                 ForEach(IOSLibrarySegment.allCases) { item in

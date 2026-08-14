@@ -51,6 +51,8 @@ final class AudioEngineService {
     private var pausedForBuffering = false
     /// Consecutive progress ticks where currentTime exceeded duration (BUG3 watchdog).
     private var pastDurationTickCount = 0
+    /// Last valid playback position before engine restart invalidates `lastRenderTime` (BUG16).
+    private var lastKnownPlaybackTime: TimeInterval = 0
     /// Full app gain; loudness is controlled by the OS / system volume.
     private let userVolume: Float = 1.0
 
@@ -72,6 +74,7 @@ final class AudioEngineService {
     var onGaplessAdvance: ((TimeInterval) -> Void)?
 
     #if os(iOS)
+    private var isInterrupted = false
     private var wasPlayingBeforeInterruption = false
     #endif
 
@@ -79,6 +82,7 @@ final class AudioEngineService {
         #if os(iOS)
         Self.configureAudioSession()
         installInterruptionObserver()
+        installRouteChangeObserver()
         #endif
 
         engine.attach(playerNode)
@@ -143,6 +147,29 @@ final class AudioEngineService {
         }
     }
 
+    private func installRouteChangeObserver() {
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: nil
+        ) { [weak self] notification in
+            Task { @MainActor [weak self] in
+                self?.handleAudioSessionRouteChange(notification)
+            }
+        }
+    }
+
+    private func handleAudioSessionRouteChange(_ notification: Notification) {
+        guard let info = notification.userInfo,
+              let reasonValue = info[AVAudioSessionRouteChangeReasonKey] as? UInt else {
+            return
+        }
+        guard AudioRouteInterruptionPolicy.shouldPauseForRouteChange(reasonRawValue: reasonValue) else {
+            return
+        }
+        pauseBySystem()
+    }
+
     private func handleAudioSessionInterruption(_ notification: Notification) {
         guard let info = notification.userInfo,
               let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -152,17 +179,20 @@ final class AudioEngineService {
 
         switch type {
         case .began:
+            isInterrupted = true
             wasPlayingBeforeInterruption = playerNode.isPlaying
             guard wasPlayingBeforeInterruption else { return }
-            playerNode.pause()
-            stopProgressTimer()
-            isPaused = true
-            onDidPauseBySystem?()
+            pauseBySystem()
         case .ended:
+            isInterrupted = false
             let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
             let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            let shouldResume = options.contains(.shouldResume)
             Self.activateAudioSession()
-            guard wasPlayingBeforeInterruption, options.contains(.shouldResume) else {
+            guard AudioRouteInterruptionPolicy.shouldResumeAfterInterruption(
+                wasPlayingBeforeInterruption: wasPlayingBeforeInterruption,
+                shouldResume: shouldResume
+            ) else {
                 wasPlayingBeforeInterruption = false
                 return
             }
@@ -174,6 +204,15 @@ final class AudioEngineService {
         }
     }
     #endif
+
+    /// Immediate pause for route loss / call interruption — no fade (config change may follow within ~15 ms).
+    private func pauseBySystem() {
+        lastKnownPlaybackTime = max(lastKnownPlaybackTime, currentTime())
+        playerNode.pause()
+        stopProgressTimer()
+        isPaused = true
+        onDidPauseBySystem?()
+    }
 
     func load(url: URL) async throws {
         stopInternal(resetProgress: true)
@@ -254,7 +293,9 @@ final class AudioEngineService {
         guard chunkSource != nil else { return }
 
         #if os(iOS)
-        Self.activateAudioSession()
+        if !isInterrupted {
+            Self.activateAudioSession()
+        }
         #endif
 
         if !engine.isRunning {
@@ -373,18 +414,30 @@ final class AudioEngineService {
 
     private func handleEngineConfigurationChange() {
         guard let format = processingFormat, chunkSource != nil, schedulerTask != nil else { return }
-        let resumeTime = currentTime()
-        // Don't touch the graph — modifying nodes fires another AVAudioEngineConfigurationChange,
-        // causing an infinite restart loop. The engine preserves player→eq→mixer connections;
-        // restarting without reconnecting works for the common case (same-sample-rate device switch).
         #if os(iOS)
-        Self.activateAudioSession()
+        let interrupted = isInterrupted
+        #else
+        let interrupted = false
+        #endif
+        let shouldPlay = AudioRouteInterruptionPolicy.shouldPlayAfterConfigurationChange(
+            isPlayerPlaying: playerNode.isPlaying,
+            isPaused: isPaused,
+            isInterrupted: interrupted
+        )
+        let resumeTime = max(currentTime(), lastKnownPlaybackTime)
+
+        #if os(iOS)
+        if !isInterrupted {
+            Self.activateAudioSession()
+        }
         #endif
         do {
             try engine.start()
             spectrumAnalyzer.start(on: engine.mainMixerNode, format: format)
-            applySeek(to: resumeTime, format: format)
-            onDidStartPlayingBySystem?()
+            rescheduleBuffers(at: resumeTime, format: format, shouldPlay: shouldPlay)
+            if shouldPlay {
+                onDidStartPlayingBySystem?()
+            }
         } catch {
             engineLogger.error("Engine restart after configuration change failed: \(error.localizedDescription)")
         }
@@ -427,9 +480,18 @@ final class AudioEngineService {
     }
 
     private func applySeek(to time: TimeInterval, format: AVAudioFormat) {
+        rescheduleBuffers(at: time, format: format, shouldPlay: true)
+    }
+
+    /// Re-schedule buffers from the current playback position without always resuming play (BUG16).
+    private func rescheduleBuffersAtCurrentTime(shouldPlay: Bool) {
+        guard let format = processingFormat else { return }
+        rescheduleBuffers(at: currentTime(), format: format, shouldPlay: shouldPlay)
+    }
+
+    private func rescheduleBuffers(at time: TimeInterval, format: AVAudioFormat, shouldPlay: Bool) {
         commitPendingGaplessAdvance()
-        let wasPlaying = playerNode.isPlaying
-        if wasPlaying {
+        if shouldPlay && playerNode.isPlaying {
             engine.mainMixerNode.outputVolume = 0
         }
 
@@ -442,14 +504,16 @@ final class AudioEngineService {
 
         let seekChunk = scheduledUpToIndex
         let seekOffset = segmentOffsetInFirstChunk
-        engineLogger.info("Seek → \(String(format: "%.2f", time))s (chunk=\(seekChunk), offset=\(seekOffset))")
+        engineLogger.info("Seek → \(String(format: "%.2f", time))s (chunk=\(seekChunk), offset=\(seekOffset), play=\(shouldPlay))")
 
-        isPaused = false
+        if shouldPlay {
+            isPaused = false
+        }
         playerTimeBase = 0
         decodePipeline?.reset()
         playerNode.stop()
         scheduleFromCurrentPosition()
-        if engine.isRunning, segmentStartFrame < playbackEndFrame() {
+        if shouldPlay, engine.isRunning, segmentStartFrame < playbackEndFrame() {
             playerNode.play()
             startProgressTimer()
             Task { await fadeIn() }
@@ -872,6 +936,7 @@ final class AudioEngineService {
         pendingGaplessAdvance = nil
         pausedForBuffering = false
         pastDurationTickCount = 0
+        lastKnownPlaybackTime = 0
         if resetProgress {
             segmentStartFrame = 0
         }
@@ -912,6 +977,7 @@ final class AudioEngineService {
             pastDurationTickCount = 0
         }
 
+        lastKnownPlaybackTime = max(lastKnownPlaybackTime, current)
         onProgress?(current, total)
     }
 

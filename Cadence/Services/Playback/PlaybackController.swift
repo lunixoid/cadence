@@ -17,6 +17,7 @@ final class PlaybackController {
     private var loadTask: Task<Void, Never>?
     private var loadSerialTask: Task<Void, Never>?
     private var pendingLoadTrack: Track?
+    private var pendingLoadAutoplay = true
     private var prefetchTask: Task<Void, Never>?
     private var prefetchTrackID: UUID?
     private var prefetchedCache: (trackID: UUID, fileURL: URL)?
@@ -294,8 +295,9 @@ final class PlaybackController {
         persistState()
     }
 
-    func next() {
+    func next(autoplay: Bool? = nil) {
         guard playbackQueue.hasActiveSession else { return }
+        let shouldAutoplay = autoplay ?? isPlaying
 
         guard let track = playbackQueue.consumeNext(repeatMode: repeatMode) else {
             logger.info("Action: next → end of queue, stopping")
@@ -304,14 +306,15 @@ final class PlaybackController {
             return
         }
 
-        logger.info("Action: next → '\(track.title)'")
-        scheduleLoadedTrack(track)
+        logger.info("Action: next → '\(track.title)' autoplay=\(shouldAutoplay)")
+        scheduleLoadedTrack(track, autoplay: shouldAutoplay)
     }
 
     func previous() {
         guard playbackQueue.hasActiveSession else { return }
 
         let prevProgress = progress
+        let shouldAutoplay = isPlaying
         logger.info("Action: previous (progress=\(String(format: "%.1f", prevProgress))s)")
         if progress > 3 {
             seek(to: 0)
@@ -323,7 +326,7 @@ final class PlaybackController {
             return
         }
 
-        scheduleLoadedTrack(track)
+        scheduleLoadedTrack(track, autoplay: shouldAutoplay)
     }
 
     /// Unconditional step to the previous queue track (cover swipe). No seek-on-progress.
@@ -331,25 +334,28 @@ final class PlaybackController {
     @discardableResult
     func skipToPreviousTrack() -> Bool {
         guard playbackQueue.hasActiveSession else { return false }
+        let shouldAutoplay = isPlaying
 
         guard let track = playbackQueue.consumePrevious() else {
             logger.info("Action: skipToPreviousTrack → no history")
             return false
         }
 
-        logger.info("Action: skipToPreviousTrack → '\(track.title)'")
-        scheduleLoadedTrack(track)
+        logger.info("Action: skipToPreviousTrack → '\(track.title)' autoplay=\(shouldAutoplay)")
+        scheduleLoadedTrack(track, autoplay: shouldAutoplay)
         return true
     }
 
-    private func scheduleLoadedTrack(_ track: Track) {
+    private func scheduleLoadedTrack(_ track: Track, autoplay: Bool = true) {
         pendingLoadTrack = track
+        pendingLoadAutoplay = autoplay
         loadSerialTask?.cancel()
 
         loadSerialTask = Task { @MainActor in
             while let track = pendingLoadTrack {
+                let autoplay = pendingLoadAutoplay
                 pendingLoadTrack = nil
-                await performOneLoad(track)
+                await performOneLoad(track, autoplay: autoplay)
                 guard !Task.isCancelled else { return }
                 persistState()
             }
@@ -447,7 +453,7 @@ final class PlaybackController {
     func playUpNext(at index: Int) {
         guard playbackQueue.hasActiveSession else { return }
         guard let track = playbackQueue.jumpToUpNext(at: index) else { return }
-        scheduleLoadedTrack(track)
+        scheduleLoadedTrack(track, autoplay: true)
     }
 
     func autoplayPreviewTracks(limit: Int = 7) -> [Track] {
@@ -481,7 +487,7 @@ final class PlaybackController {
 
     private func loadAndPlayCurrentTrack() {
         guard let track = currentTrack else { return }
-        scheduleLoadedTrack(track)
+        scheduleLoadedTrack(track, autoplay: true)
     }
 
     /// Cancels in-flight loads, stops audio, and returns a generation token for the new load.
@@ -562,11 +568,11 @@ final class PlaybackController {
         return ids
     }
 
-    private func performOneLoad(_ track: Track) async {
+    private func performOneLoad(_ track: Track, autoplay: Bool) async {
         let generation = beginLoadSession(keepPrefetchFor: prefetchTrackIDsToKeep(for: track))
         isPlaying = false
         isLoading = true
-        logger.info("Load start: '\(track.title)' gen=\(generation)")
+        logger.info("Load start: '\(track.title)' gen=\(generation) autoplay=\(autoplay)")
 
         do {
             let source = try await resolveLoadSource(for: track)
@@ -581,10 +587,15 @@ final class PlaybackController {
             }
             duration = audioEngine.duration()
             progress = 0
-            audioEngine.play()
-            isPlaying = true
+            if autoplay {
+                audioEngine.play()
+                isPlaying = true
+            } else {
+                audioEngine.pause()
+                isPlaying = false
+            }
             isLoading = false
-            logger.info("Load done: '\(track.title)' duration=\(String(format: "%.1f", self.duration))s")
+            logger.info("Load done: '\(track.title)' duration=\(String(format: "%.1f", self.duration))s autoplay=\(autoplay)")
             recentStore.record(track: track)
             mediaRemote.publishNowPlayingInfo()
             schedulePrefetch()
@@ -595,7 +606,7 @@ final class PlaybackController {
             logger.error("Failed to load track: \(error.localizedDescription)")
             isLoading = false
             logger.info("Load failed, advancing to next track")
-            next()
+            next(autoplay: autoplay)
         }
     }
 

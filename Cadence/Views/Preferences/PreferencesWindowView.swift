@@ -14,7 +14,7 @@ struct PreferencesWindowView: View {
     @State private var activeTab: PreferencesTab = .servers
     @State private var selectedServerID: UUID?
     @State private var outputDevice = "Системное устройство"
-    @State private var gaplessEnabled = true
+    @AppStorage("cadence.gaplessEnabled") private var gaplessEnabled = true
     @State private var crossfadeEnabled = false
     @State private var crossfadeLength = 3
     @State private var cacheLimitGB = 10

@@ -112,6 +112,33 @@ final class AudioEngineServiceTests: XCTestCase {
         await fulfillment(of: [exp], timeout: 2.0)
     }
 
+    // MARK: - BUG3: completion stops progress runaway
+
+    func testNaturalCompletionDoesNotLeaveProgressPastDuration() async throws {
+        let dur = sut.duration()
+        XCTAssertGreaterThan(dur, 0)
+        var maxProgress: TimeInterval = 0
+        let finished = expectation(description: "onTrackFinished")
+        sut.onProgress = { current, _ in
+            maxProgress = max(maxProgress, current)
+        }
+        sut.onTrackFinished = { finished.fulfill() }
+        sut.play()
+        await fulfillment(of: [finished], timeout: 2.5)
+        // Progress timer must be stopped; wait longer than watchdog window
+        try await Task.sleep(for: .milliseconds(900))
+        XCTAssertLessThan(
+            maxProgress,
+            dur + 1.0,
+            "progress must not run away past duration after track end (BUG3)"
+        )
+        XCTAssertLessThan(
+            sut.currentTime(),
+            dur + 1.0,
+            "currentTime after finish must stay near duration"
+        )
+    }
+
     // TODO: Fix 4 — progressive download loop-break test
     // Requires ProgressiveAudioAsset to be injectable via a protocol
     // (e.g. AudioAssetProtocol with bytesDownloaded/isComplete/waitUntilBuffered).

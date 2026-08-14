@@ -33,6 +33,86 @@ enum ProgressivePlayback {
     static let continueWaitByteIncrement: Int64 = 2 * 1024 * 1024
 }
 
+/// Writes the progressive HTTP body in arrival order on a serial queue.
+/// Hopping each `didReceive` through unstructured `Task { await actor.append }`
+/// can reorder chunks and punch holes in the MP3 bitstream.
+private final class ProgressiveFileWriter: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "dev.personal.cadence.progressive-write")
+    private var handle: FileHandle?
+    private var offset: Int64 = 0
+    private var epoch: Int = 0
+    private var failed = false
+
+    var onWrote: (@Sendable (Int64, Int) -> Void)?
+    var onFailed: (@Sendable (Error) -> Void)?
+
+    init(handle: FileHandle) {
+        self.handle = handle
+    }
+
+    func write(_ data: Data) {
+        queue.async { self.performWrite(data) }
+    }
+
+    /// Enqueue a truncate. Must be queued before any subsequent `write` of the
+    /// new body so FIFO order is: truncate → new bytes.
+    func truncateToZero() {
+        queue.async { self.performTruncate() }
+    }
+
+    func currentOffset() -> Int64 {
+        queue.sync { offset }
+    }
+
+    func finish() async throws -> Int64 {
+        try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    try self.handle?.synchronize()
+                    try self.handle?.close()
+                    self.handle = nil
+                    continuation.resume(returning: self.offset)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    func abandon() {
+        queue.async {
+            try? self.handle?.close()
+            self.handle = nil
+        }
+    }
+
+    private func performWrite(_ data: Data) {
+        guard !failed, let handle else { return }
+        do {
+            try handle.write(contentsOf: data)
+            offset += Int64(data.count)
+            onWrote?(offset, epoch)
+        } catch {
+            failed = true
+            onFailed?(error)
+        }
+    }
+
+    private func performTruncate() {
+        guard !failed, let handle else { return }
+        do {
+            try handle.truncate(atOffset: 0)
+            try handle.seek(toOffset: 0)
+            offset = 0
+            epoch += 1
+            onWrote?(0, epoch)
+        } catch {
+            failed = true
+            onFailed?(error)
+        }
+    }
+}
+
 actor ProgressiveDownloadSession {
     let trackID: UUID
     let remoteURL: URL
@@ -51,7 +131,8 @@ actor ProgressiveDownloadSession {
     private var completionWaiters: [CheckedContinuation<URL, Error>] = []
 
     private var worker: ProgressiveDownloadWorker?
-    private var fileHandle: FileHandle?
+    private let writer: ProgressiveFileWriter
+    private var byteEpoch: Int = 0
     private var downloadedFileExtension = "mp3"
 
     init(trackID: UUID, remoteURL: URL, partialURL: URL) throws {
@@ -63,26 +144,32 @@ actor ProgressiveDownloadSession {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try? FileManager.default.removeItem(at: partialURL)
         FileManager.default.createFile(atPath: partialURL.path, contents: nil)
-        self.fileHandle = try FileHandle(forWritingTo: partialURL)
+        let handle = try FileHandle(forWritingTo: partialURL)
+        self.writer = ProgressiveFileWriter(handle: handle)
     }
 
     func start() {
         guard !isComplete, worker == nil else { return }
+        let writer = self.writer
+        writer.onWrote = { [weak self] offset, epoch in
+            Task { await self?.noteBytes(offset, epoch: epoch) }
+        }
+        writer.onFailed = { [weak self] error in
+            Task { await self?.fail(with: error) }
+        }
+        let fromByte = writer.currentOffset()
+        bytesDownloaded = fromByte
         let worker = ProgressiveDownloadWorker(
             remoteURL: remoteURL,
             onResponse: { [weak self] expectedBytes, fileExtension in
                 guard let self else { return }
                 Task { await self.handleResponse(expectedBytes: expectedBytes, fileExtension: fileExtension) }
             },
-            onData: { [weak self] data in
-                guard let self else { return }
-                Task {
-                    do {
-                        try await self.appendData(data)
-                    } catch {
-                        await self.fail(with: error)
-                    }
-                }
+            onRewriteFromStart: {
+                writer.truncateToZero()
+            },
+            onData: { data in
+                writer.write(data)
             },
             onComplete: { [weak self] error in
                 guard let self else { return }
@@ -90,7 +177,7 @@ actor ProgressiveDownloadSession {
             }
         )
         self.worker = worker
-        worker.start(fromByte: bytesDownloaded)
+        worker.start(fromByte: fromByte)
     }
 
     func waitUntilBytes(_ minBytes: Int64) async throws {
@@ -145,8 +232,7 @@ actor ProgressiveDownloadSession {
         isCancelled = true
         worker?.cancel()
         worker = nil
-        try? fileHandle?.close()
-        fileHandle = nil
+        writer.abandon()
         try? FileManager.default.removeItem(at: partialURL)
         fail(with: ProgressiveDownloadError.cancelled)
     }
@@ -160,10 +246,14 @@ actor ProgressiveDownloadSession {
         resumeByteWaiters()
     }
 
-    private func appendData(_ data: Data) throws {
-        guard let fileHandle else { throw ProgressiveDownloadError.cancelled }
-        try fileHandle.write(contentsOf: data)
-        bytesDownloaded += Int64(data.count)
+    private func noteBytes(_ absoluteOffset: Int64, epoch: Int) {
+        if epoch < byteEpoch { return }
+        if epoch > byteEpoch {
+            byteEpoch = epoch
+            bytesDownloaded = absoluteOffset
+        } else {
+            bytesDownloaded = max(bytesDownloaded, absoluteOffset)
+        }
         broadcastProgress()
         resumeByteWaiters()
     }
@@ -178,14 +268,9 @@ actor ProgressiveDownloadSession {
             return
         }
 
-        guard let fileHandle else {
-            fail(with: ProgressiveDownloadError.invalidResponse)
-            return
-        }
-
         do {
-            try fileHandle.close()
-            self.fileHandle = nil
+            let finalOffset = try await writer.finish()
+            bytesDownloaded = finalOffset
 
             let ext = downloadedFileExtension
             let destinationURL = AudioCache.audioDirectory
@@ -200,6 +285,7 @@ actor ProgressiveDownloadSession {
             finalURL = destinationURL
             worker = nil
             broadcastProgress()
+
 
             await AudioCache.shared.sessionDidComplete(trackID: trackID)
 
@@ -218,8 +304,7 @@ actor ProgressiveDownloadSession {
         failure = error
         worker?.cancel()
         worker = nil
-        try? fileHandle?.close()
-        fileHandle = nil
+        writer.abandon()
 
         for waiter in byteWaiters {
             waiter.continuation.resume(throwing: error)
@@ -336,6 +421,7 @@ final class ProgressiveAudioAsset: Sendable {
 private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate, @unchecked Sendable {
     private let remoteURL: URL
     private let onResponse: @Sendable (Int64?, String) -> Void
+    private let onRewriteFromStart: @Sendable () -> Void
     private let onData: @Sendable (Data) -> Void
     private let onComplete: @Sendable (Error?) -> Void
 
@@ -350,11 +436,13 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
     init(
         remoteURL: URL,
         onResponse: @escaping @Sendable (Int64?, String) -> Void,
+        onRewriteFromStart: @escaping @Sendable () -> Void,
         onData: @escaping @Sendable (Data) -> Void,
         onComplete: @escaping @Sendable (Error?) -> Void
     ) {
         self.remoteURL = remoteURL
         self.onResponse = onResponse
+        self.onRewriteFromStart = onRewriteFromStart
         self.onData = onData
         self.onComplete = onComplete
         super.init()
@@ -393,14 +481,6 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
     }
 
     private func startInsecureStream(_ request: URLRequest) {
-        // #region agent log
-        progressiveAgentLog(
-            "ProgressiveDownloadWorker.start",
-            "using insecure NW stream",
-            hypothesisId: "A",
-            data: ["host": remoteURL.host ?? "nil", "runId": "post-fix"]
-        )
-        // #endregion
         insecureTask = Task { [weak self] in
             guard let self else { return }
             do {
@@ -422,17 +502,6 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
                 return
             } catch {
                 guard !Task.isCancelled else { return }
-                // #region agent log
-                progressiveAgentLog(
-                    "ProgressiveDownloadWorker.insecure",
-                    "insecure stream failed",
-                    hypothesisId: "A",
-                    data: [
-                        "error": error.localizedDescription,
-                        "runId": "post-fix",
-                    ]
-                )
-                // #endregion
                 self.onComplete(error)
             }
         }
@@ -448,14 +517,23 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
             responseExt = ext
         }
 
+        let rangeHeader = http.value(forHTTPHeaderField: "Content-Range") ?? ""
+
+        // Server ignored Range and sent the whole file. Truncate before any
+        // body bytes are written so we don't append a second copy.
+        if startOffset > 0 && http.statusCode == 200 {
+            onRewriteFromStart()
+        }
+
         let expectedBytes: Int64?
-        if let contentRange = http.value(forHTTPHeaderField: "Content-Range"),
-           let totalPart = contentRange.split(separator: "/").last,
+        if http.statusCode == 206,
+           let totalPart = rangeHeader.split(separator: "/").last,
            totalPart != "*",
            let total = Int64(totalPart) {
             expectedBytes = total
         } else if let contentLength = http.value(forHTTPHeaderField: "Content-Length").flatMap(Int64.init) {
-            expectedBytes = startOffset > 0 ? startOffset + contentLength : contentLength
+            // 200 is a full body even if we asked for a Range.
+            expectedBytes = http.statusCode == 200 ? contentLength : startOffset + contentLength
         } else {
             expectedBytes = nil
         }
@@ -502,51 +580,6 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
             onComplete(ProgressiveDownloadError.invalidResponse)
             return
         }
-        // #region agent log
-        if let error {
-            progressiveAgentLog(
-                "ProgressiveDownloadWorker.urlSession",
-                "URLSession complete with error",
-                hypothesisId: "A",
-                data: [
-                    "error": error.localizedDescription,
-                    "code": "\((error as NSError).code)",
-                    "runId": "post-fix",
-                ]
-            )
-        }
-        // #endregion
         onComplete(error)
-    }
-}
-
-// #region agent log
-private func progressiveAgentLog(
-    _ location: String,
-    _ message: String,
-    hypothesisId: String,
-    data: [String: String] = [:]
-) {
-    let payload: [String: Any] = [
-        "sessionId": "d608e4",
-        "location": location,
-        "message": message,
-        "hypothesisId": hypothesisId,
-        "timestamp": Int(Date().timeIntervalSince1970 * 1000),
-        "data": data,
-    ]
-    guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
-    var req = URLRequest(url: URL(string: "http://127.0.0.1:7480/ingest/f416849f-e2ef-4af7-9095-8778cb4b671c")!)
-    req.httpMethod = "POST"
-    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    req.setValue("d608e4", forHTTPHeaderField: "X-Debug-Session-Id")
-    req.httpBody = body
-    URLSession.shared.dataTask(with: req).resume()
-}
-// #endregion
-
-private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
     }
 }

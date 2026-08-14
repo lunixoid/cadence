@@ -20,6 +20,7 @@
 		1A7649FF8B3D492B86E39A0A /* AppUIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AB3C54EBFE43948D2AB0EC /* AppUIState.swift */; };
 		1E785E373051774C18789E54 /* AlbumCoverPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD714500146B44E797FEFDFB /* AlbumCoverPlaceholderView.swift */; };
 		243604D7AAFA9C11A6785F0C /* AudioEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000008 /* AudioEngineService.swift */; };
+		244604D7AAFA9C11A6785F0D /* AudioRouteInterruptionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000024 /* AudioRouteInterruptionPolicy.swift */; };
 		2CBFC799CFD840E28018E41A /* AlbumGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF8604F015249A6814F176B /* AlbumGridView.swift */; };
 		30E5CD9575884EE28F2B374C /* CadenceTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46709D7DBA1B43E9BD7DCB32 /* CadenceTheme.swift */; };
 		38A98AE352DED83B5B8EE25B /* JellyfinLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000012 /* JellyfinLibraryLoader.swift */; };
@@ -65,6 +66,7 @@
 		A10000010000000000000006 /* LocalLibraryScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000006 /* LocalLibraryScanner.swift */; };
 		A10000010000000000000007 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000007 /* FolderPicker.swift */; };
 		A10000010000000000000008 /* AudioEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000008 /* AudioEngineService.swift */; };
+		A10000010000000000000024 /* AudioRouteInterruptionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000024 /* AudioRouteInterruptionPolicy.swift */; };
 		A10000010000000000000009 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000010000000000000009 /* PlaybackController.swift */; };
 		A1000001000000000000000A /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000A /* FavoritesStore.swift */; };
 		A1000001000000000000000B /* RecentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000000B /* RecentStore.swift */; };
@@ -137,6 +139,7 @@
 		T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000004 /* JellyfinFavoritesTests.swift */; };
 		T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000020 /* AudioEngineTestHelpers.swift */; };
 		T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000021 /* AudioEngineServiceTests.swift */; };
+		T10000010000000000000027 /* AudioRouteInterruptionPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000026 /* AudioRouteInterruptionPolicyTests.swift */; };
 		T10000010000000000000024 /* OfflineStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T10000010000000000000025 /* OfflineStoreTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -185,6 +188,7 @@
 		B10000010000000000000006 /* LocalLibraryScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryScanner.swift; sourceTree = "<group>"; };
 		B10000010000000000000007 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
 		B10000010000000000000008 /* AudioEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineService.swift; sourceTree = "<group>"; };
+		B10000010000000000000024 /* AudioRouteInterruptionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRouteInterruptionPolicy.swift; sourceTree = "<group>"; };
 		B10000010000000000000009 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		B1000001000000000000000A /* FavoritesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStore.swift; sourceTree = "<group>"; };
 		B1000001000000000000000B /* RecentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentStore.swift; sourceTree = "<group>"; };
@@ -241,6 +245,7 @@
 		T10000010000000000000004 /* JellyfinFavoritesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinFavoritesTests.swift; sourceTree = "<group>"; };
 		T10000010000000000000020 /* AudioEngineTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTestHelpers.swift; sourceTree = "<group>"; };
 		T10000010000000000000021 /* AudioEngineServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineServiceTests.swift; sourceTree = "<group>"; };
+		T10000010000000000000026 /* AudioRouteInterruptionPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRouteInterruptionPolicyTests.swift; sourceTree = "<group>"; };
 		T10000010000000000000025 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -416,6 +421,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000010000000000000008 /* AudioEngineService.swift */,
+				B10000010000000000000024 /* AudioRouteInterruptionPolicy.swift */,
 				B10000010000000000000009 /* PlaybackController.swift */,
 				B10000010000000000000022 /* SpectrumAnalyzer.swift */,
 				B1000001000000000000001E /* PlaybackQueue.swift */,
@@ -601,6 +607,7 @@
 				T10000010000000000000004 /* JellyfinFavoritesTests.swift */,
 				T10000010000000000000020 /* AudioEngineTestHelpers.swift */,
 				T10000010000000000000021 /* AudioEngineServiceTests.swift */,
+				T10000010000000000000026 /* AudioRouteInterruptionPolicyTests.swift */,
 				T10000010000000000000025 /* OfflineStoreTests.swift */,
 			);
 			path = CadenceTests;
@@ -746,6 +753,7 @@
 				DADE0103D7897035E318157F /* ArtworkCache.swift in Sources */,
 				50BAE71D69B750C06920A414 /* AudioCache.swift in Sources */,
 				243604D7AAFA9C11A6785F0C /* AudioEngineService.swift in Sources */,
+				244604D7AAFA9C11A6785F0D /* AudioRouteInterruptionPolicy.swift in Sources */,
 				0DAA2EDD98A31DC0D512F531 /* CadenceTheme.swift in Sources */,
 				B52EA4C45B7B8B70E2178630 /* ContentRoute.swift in Sources */,
 				A929E13693F008275C8A5858 /* EqualizerBarsView.swift in Sources */,
@@ -822,6 +830,7 @@
 				A10000010000000000000017 /* SavedFoldersStore.swift in Sources */,
 				A10000010000000000000018 /* StableIdentity.swift in Sources */,
 				A10000010000000000000008 /* AudioEngineService.swift in Sources */,
+				A10000010000000000000024 /* AudioRouteInterruptionPolicy.swift in Sources */,
 				A10000010000000000000009 /* PlaybackController.swift in Sources */,
 				A10000010000000000000022 /* SpectrumAnalyzer.swift in Sources */,
 				A1000001000000000000001E /* PlaybackQueue.swift in Sources */,
@@ -868,6 +877,7 @@
 				T10000010000000000000001 /* JellyfinFavoritesTests.swift in Sources */,
 				T10000010000000000000022 /* AudioEngineTestHelpers.swift in Sources */,
 				T10000010000000000000023 /* AudioEngineServiceTests.swift in Sources */,
+				T10000010000000000000027 /* AudioRouteInterruptionPolicyTests.swift in Sources */,
 				T10000010000000000000024 /* OfflineStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -903,7 +913,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.27.0;
+				MARKETING_VERSION = 1.29.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.roman;
 				PRODUCT_NAME = Cadence;
 				SDKROOT = iphoneos;
@@ -1032,7 +1042,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.27.0;
+				MARKETING_VERSION = 1.29.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1061,7 +1071,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.27.0;
+				MARKETING_VERSION = 1.29.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1089,7 +1099,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.27.0;
+				MARKETING_VERSION = 1.29.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.roman;
 				PRODUCT_NAME = Cadence;
 				SDKROOT = iphoneos;
@@ -1115,7 +1125,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.27.0;
+				MARKETING_VERSION = 1.29.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -1137,7 +1147,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.27.0;
+				MARKETING_VERSION = 1.29.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.personal.cadence.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;

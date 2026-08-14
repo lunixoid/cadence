@@ -1,35 +1,8 @@
 import AVFoundation
 import Foundation
-import os
 import os.log
 
 private let engineLogger = Logger(subsystem: "dev.personal.cadence", category: "AudioEngine")
-
-// #region agent log
-@MainActor
-private func engineAgentLog(
-    _ location: String,
-    _ message: String,
-    hypothesisId: String,
-    data: [String: String] = [:]
-) {
-    let payload: [String: Any] = [
-        "sessionId": "d608e4",
-        "location": location,
-        "message": message,
-        "hypothesisId": hypothesisId,
-        "timestamp": Int(Date().timeIntervalSince1970 * 1000),
-        "data": data,
-    ]
-    guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
-    var req = URLRequest(url: URL(string: "http://127.0.0.1:7480/ingest/f416849f-e2ef-4af7-9095-8778cb4b671c")!)
-    req.httpMethod = "POST"
-    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    req.setValue("d608e4", forHTTPHeaderField: "X-Debug-Session-Id")
-    req.httpBody = body
-    URLSession.shared.dataTask(with: req).resume()
-}
-// #endregion
 
 @MainActor
 final class AudioEngineService {
@@ -74,6 +47,10 @@ final class AudioEngineService {
     private var scheduleGeneration = 0
     private var isProgressiveLoad = false
     private var isPaused = false
+    /// Paused because in-flight buffers ran dry while waiting for progressive bytes.
+    private var pausedForBuffering = false
+    /// Consecutive progress ticks where currentTime exceeded duration (BUG3 watchdog).
+    private var pastDurationTickCount = 0
     /// Full app gain; loudness is controlled by the OS / system volume.
     private let userVolume: Float = 1.0
 
@@ -81,6 +58,8 @@ final class AudioEngineService {
     private let prefetchAheadCount = 10
     private let fadeSteps = 6
     private let fadeDuration: UInt64 = 15_000_000 // 15ms total
+    private let pastDurationGrace: TimeInterval = 0.35
+    private let pastDurationTicksToFinish = 3
     private let eqFrequencies: [Float] = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
 
     let spectrumAnalyzer = SpectrumAnalyzer()
@@ -333,13 +312,18 @@ final class AudioEngineService {
     }
 
     func duration() -> TimeInterval {
-        if let knownDuration, knownDuration > 0 {
-            return knownDuration
+        guard let format = processingFormat, format.sampleRate > 0 else {
+            return knownDuration ?? 0
         }
-        guard let format = processingFormat else { return 0 }
-        let sampleRate = format.sampleRate
-        guard sampleRate > 0 else { return 0 }
-        return Double(totalFrameCount) / sampleRate
+        let frameDuration = totalFrameCount > 0
+            ? Double(totalFrameCount) / format.sampleRate
+            : 0
+        // Prefer the longer of metadata vs discovered frames so UI duration never
+        // under-reports while audio is still playing (avoids false BUG3 / watchdog).
+        if let knownDuration, knownDuration > 0 {
+            return max(knownDuration, frameDuration)
+        }
+        return frameDuration
     }
 
     var isPlaying: Bool {
@@ -402,7 +386,7 @@ final class AudioEngineService {
             applySeek(to: resumeTime, format: format)
             onDidStartPlayingBySystem?()
         } catch {
-            // Engine can't restart with new hardware config — stay silent
+            engineLogger.error("Engine restart after configuration change failed: \(error.localizedDescription)")
         }
     }
 
@@ -430,14 +414,6 @@ final class AudioEngineService {
             ? Int((totalFrameCount + Int64(chunkDurationFrames) - 1) / Int64(chunkDurationFrames))
             : 0
         engineLogger.info("Loaded: \(totalChunks) chunks, \(Int(source.format.sampleRate))Hz, progressive=\(self.isProgressiveLoad)")
-        // #region agent log
-        engineAgentLog("AudioEngine.applyChunkSource", "chunk source applied", hypothesisId: "D", data: [
-            "totalFrames": "\(totalFrameCount)",
-            "totalChunks": "\(totalChunks)",
-            "sampleRate": "\(Int(source.format.sampleRate))",
-            "progressive": "\(isProgressiveLoad)",
-        ])
-        // #endregion
 
         engine.disconnectNodeOutput(playerNode)
         engine.disconnectNodeOutput(eqNode)
@@ -494,13 +470,6 @@ final class AudioEngineService {
         guard remainingFrames > 0 else {
             stopProgressTimer()
             engineLogger.info("Track finished (no frames remaining)")
-            // #region agent log
-            engineAgentLog("AudioEngine.scheduleFromCurrentPosition", "finished: no frames remaining", hypothesisId: "B", data: [
-                "endFrame": "\(playbackEndFrame())",
-                "segmentStart": "\(segmentStartFrame)",
-                "progressive": "\(isProgressiveLoad)",
-            ])
-            // #endregion
             onTrackFinished?()
             return
         }
@@ -535,9 +504,13 @@ final class AudioEngineService {
                     if index >= available {
                         if self.isProgressiveLoad {
                             self.onBuffering?(true)
+                            self.pauseForBufferingIfStarved()
                             let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
                             self.onBuffering?(false)
-                            guard ok else { return }
+                            guard ok else {
+                                self.finishTrackIfNeeded(generation: generation, reason: "awaitMoreBytes failed")
+                                return
+                            }
                             let newAvailable = self.availableChunkCount()
                             if newAvailable <= available { break }
                             available = newAvailable
@@ -548,16 +521,24 @@ final class AudioEngineService {
 
                     self.decodePipeline?.prefetch(from: index, to: min(available, index + self.prefetchAheadCount))
 
-                    guard let pipeline = self.decodePipeline else { return }
+                    guard let pipeline = self.decodePipeline else {
+                        self.finishTrackIfNeeded(generation: generation, reason: "decodePipeline nil")
+                        return
+                    }
                     let sourceChunk: AVAudioPCMBuffer
                     do {
                         sourceChunk = try await pipeline.buffer(for: index)
                     } catch {
+                        engineLogger.error("Decode error at chunk \(index): \(error.localizedDescription)")
                         if self.isProgressiveLoad {
                             self.onBuffering?(true)
+                            self.pauseForBufferingIfStarved()
                             let ok = await self.awaitMoreBytes(fromIndex: index, generation: generation)
                             self.onBuffering?(false)
-                            guard ok else { return }
+                            guard ok else {
+                                self.finishTrackIfNeeded(generation: generation, reason: "decode retry await failed")
+                                return
+                            }
                             continue
                         } else {
                             break
@@ -567,7 +548,8 @@ final class AudioEngineService {
 
                     let buffer: AVAudioPCMBuffer
                     if index == firstIndex, self.segmentOffsetInFirstChunk > 0 {
-                        buffer = self.subBuffer(from: sourceChunk, startingAt: self.segmentOffsetInFirstChunk) ?? sourceChunk
+                        let sliced = self.subBuffer(from: sourceChunk, startingAt: self.segmentOffsetInFirstChunk)
+                        buffer = sliced ?? sourceChunk
                     } else {
                         buffer = sourceChunk
                     }
@@ -575,25 +557,17 @@ final class AudioEngineService {
                     tracker.increment()
                     self.scheduledUpToIndex = index + 1
 
-                    self.playerNode.scheduleBuffer(buffer, at: nil, completionCallbackType: .dataConsumed) { [weak self] _ in
+                    self.playerNode.scheduleBuffer(buffer, at: nil, completionCallbackType: .dataConsumed) { _ in
                         let remaining = tracker.decrementAndSignal()
                         if remaining == 0, tracker.isFinished {
                             Task { @MainActor [weak self] in
                                 guard let self, generation == self.scheduleGeneration else { return }
-                                self.stopProgressTimer()
-                                engineLogger.info("Track finished (gen=\(generation))")
-                                // #region agent log
-                                engineAgentLog("AudioEngine.bufferConsumed", "finished: last buffer consumed", hypothesisId: "B", data: [
-                                    "gen": "\(generation)",
-                                    "currentTime": String(format: "%.2f", self.currentTime()),
-                                    "duration": String(format: "%.2f", self.duration()),
-                                ])
-                                // #endregion
-                                self.onTrackFinished?()
+                                self.fireTrackFinished(generation: generation, reason: "last buffer consumed")
                             }
                         }
                     }
 
+                    self.resumeAfterBufferingIfNeeded()
                     index += 1
                 }
 
@@ -603,8 +577,11 @@ final class AudioEngineService {
                 // Gapless: continue with next track if prepared
                 if let nextSource = self.nextChunkSource, let nextPipeline = self.nextDecodePipeline {
                     engineLogger.info("Gapless: transitioning to next track")
+                    let sampleRate = self.processingFormat?.sampleRate ?? nextSource.format.sampleRate
                     let nextDuration = Double(nextSource.totalFrameCount) / nextSource.format.sampleRate
-                    let oldTrackEndTime = Double(self.totalFrameCount) / nextSource.format.sampleRate
+                    let oldTrackEndTime = sampleRate > 0
+                        ? Double(self.totalFrameCount) / sampleRate
+                        : nextDuration
 
                     self.pendingGaplessAdvance = (
                         callbackDuration: nextDuration,
@@ -612,6 +589,8 @@ final class AudioEngineService {
                         newTotalFrameCount: nextSource.totalFrameCount
                     )
                     self.playerTimeBase -= self.segmentStartFrame
+                    self.knownDuration = nil
+                    self.pastDurationTickCount = 0
 
                     self.chunkSource = nextSource
                     self.decodePipeline = nextPipeline
@@ -629,25 +608,49 @@ final class AudioEngineService {
                 }
 
                 // No gapless source — mark finished
-                tracker.markFinished()
                 engineLogger.info("Scheduler: all chunks scheduled gen=\(generation)")
-                if tracker.count == 0 {
-                    self.stopProgressTimer()
-                    engineLogger.info("Track finished (gen=\(generation))")
-                    // #region agent log
-                    engineAgentLog("AudioEngine.startScheduler", "finished: zero buffers scheduled", hypothesisId: "B", data: [
-                        "gen": "\(generation)",
-                        "scheduledUpTo": "\(self.scheduledUpToIndex)",
-                        "availableChunks": "\(self.availableChunkCount())",
-                        "progressive": "\(self.isProgressiveLoad)",
-                        "totalFrames": "\(self.totalFrameCount)",
-                    ])
-                    // #endregion
-                    self.onTrackFinished?()
-                }
+                self.finishTrackIfNeeded(generation: generation, reason: "all chunks scheduled")
                 break trackLoop
             }
         }
+    }
+
+    /// Marks the track finished. If no buffers remain in flight, fires `onTrackFinished` immediately;
+    /// otherwise the last `dataConsumed` callback will fire it.
+    private func finishTrackIfNeeded(generation: Int, reason: String) {
+        guard generation == scheduleGeneration else { return }
+        bufferTracker.markFinished()
+        pastDurationTickCount = 0
+        if bufferTracker.count == 0 {
+            fireTrackFinished(generation: generation, reason: reason)
+        }
+    }
+
+    private func fireTrackFinished(generation: Int, reason: String) {
+        guard generation == scheduleGeneration else { return }
+        stopProgressTimer()
+        pausedForBuffering = false
+        pastDurationTickCount = 0
+        engineLogger.info("Track finished (\(reason), gen=\(generation))")
+        onTrackFinished?()
+    }
+
+    private func pauseForBufferingIfStarved() {
+        guard !isPaused, !pausedForBuffering else { return }
+        guard bufferTracker.count == 0, playerNode.isPlaying else { return }
+        playerNode.pause()
+        pausedForBuffering = true
+        engineLogger.info("Paused for buffering (underrun prevention)")
+    }
+
+    private func resumeAfterBufferingIfNeeded() {
+        guard pausedForBuffering, !isPaused else { return }
+        pausedForBuffering = false
+        if !playerNode.isPlaying {
+            playerNode.play()
+            Task { await fadeIn() }
+        }
+        engineLogger.info("Resumed after buffering")
     }
 
     /// Waits for more bytes to arrive so that chunk at `index` becomes readable.
@@ -741,6 +744,7 @@ final class AudioEngineService {
             currentFileURL = finalURL
             isProgressiveLoad = false
             totalFrameCount = source.totalFrameCount
+            knownDuration = nil
         } else {
             try await Task.detached {
                 try source.refreshFromDisk(isDownloadComplete: isComplete)
@@ -866,6 +870,8 @@ final class AudioEngineService {
         segmentOffsetInFirstChunk = 0
         playerTimeBase = 0
         pendingGaplessAdvance = nil
+        pausedForBuffering = false
+        pastDurationTickCount = 0
         if resetProgress {
             segmentStartFrame = 0
         }
@@ -873,6 +879,7 @@ final class AudioEngineService {
 
     private func startProgressTimer() {
         stopProgressTimer()
+        pastDurationTickCount = 0
         progressTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.emitProgress()
@@ -888,8 +895,24 @@ final class AudioEngineService {
     private func emitProgress() {
         if let pending = pendingGaplessAdvance, currentTime() >= pending.oldTrackEndTime {
             commitPendingGaplessAdvance()
+            pastDurationTickCount = 0
         }
-        onProgress?(currentTime(), duration())
+
+        let current = currentTime()
+        let total = duration()
+
+        if pendingGaplessAdvance == nil, total > 0, current >= total + pastDurationGrace {
+            pastDurationTickCount += 1
+            if pastDurationTickCount >= pastDurationTicksToFinish {
+                engineLogger.info("Progress watchdog: current=\(String(format: "%.2f", current)) duration=\(String(format: "%.2f", total))")
+                finishTrackIfNeeded(generation: scheduleGeneration, reason: "progress watchdog")
+                return
+            }
+        } else {
+            pastDurationTickCount = 0
+        }
+
+        onProgress?(current, total)
     }
 
     private func commitPendingGaplessAdvance() {
@@ -899,7 +922,9 @@ final class AudioEngineService {
             playerTimeBase = AVAudioFramePosition(pTime.sampleTime)
         }
         totalFrameCount = pending.newTotalFrameCount
+        knownDuration = nil
         pendingGaplessAdvance = nil
+        pastDurationTickCount = 0
         onGaplessAdvance?(pending.callbackDuration)
     }
 }
@@ -976,6 +1001,8 @@ private final class ChunkDecodePipeline: @unchecked Sendable {
 
     private let source: LazyChunkSource
     private let lock = OSAllocatedUnfairLock(initialState: State())
+    /// Serialize decodes so MP3 reads stay contiguous (avoid seek-per-chunk artifacts).
+    private let decodeQueue = DispatchQueue(label: "dev.personal.cadence.chunk-decode")
 
     init(source: LazyChunkSource) {
         self.source = source
@@ -1037,7 +1064,7 @@ private final class ChunkDecodePipeline: @unchecked Sendable {
 
         engineLogger.debug("Chunk \(index) decode started")
 
-        Task.detached(priority: .userInitiated) { [source] in
+        decodeQueue.async { [source] in
             do {
                 let buffer = try source.decodeChunk(at: index)
                 self.completeDecode(index: index, result: .success(buffer))
@@ -1091,6 +1118,8 @@ private final class LazyChunkSource: @unchecked Sendable {
         var chunkCache: [Int: AVAudioPCMBuffer] = [:]
         var downloadedBytes: Int64 = 0
         var expectedTotalBytes: Int64?
+        /// Next chunk index that can be read without seeking (MP3 decoder continuity).
+        var nextSequentialIndex: Int?
     }
 
     private let lock: OSAllocatedUnfairLock<State>
@@ -1101,9 +1130,68 @@ private final class LazyChunkSource: @unchecked Sendable {
         self.isProgressive = isProgressive
         let audioFile = try AVAudioFile(forReading: url)
         self.format = audioFile.processingFormat
-        self.chunkDurationFrames = AVAudioFrameCount(format.sampleRate)
+        self.chunkDurationFrames = Self.packetAlignedChunkFrames(format: format)
         self.totalFrameCount = audioFile.length
         self.lock = OSAllocatedUnfairLock(initialState: State(fileURL: url, audioFile: audioFile))
+    }
+
+
+    /// Apple's MP3 decoder emits a silent granule (1152 samples) when the bitstream
+    /// has a mid-file frame gap. EQ then rings on that zero → audible "quack".
+    /// Other decoders (ffmpeg) conceal; we linearly interpolate the hole instead.
+    private static func concealSilentGranules(
+        buffer: AVAudioPCMBuffer,
+        startFrame: AVAudioFramePosition,
+        fileLength: AVAudioFramePosition
+    ) -> Int {
+        guard let channels = buffer.floatChannelData else { return 0 }
+        let count = Int(buffer.frameLength)
+        let channelCount = Int(buffer.format.channelCount)
+        guard count > 2, channelCount > 0 else { return 0 }
+
+        let ch0 = channels[0]
+        var concealed = 0
+        var i = 0
+        while i < count {
+            if abs(ch0[i]) < 1e-7 {
+                let runStart = i
+                i += 1
+                while i < count, abs(ch0[i]) < 1e-7 { i += 1 }
+                let run = i - runStart
+                let absoluteStart = startFrame + AVAudioFramePosition(runStart)
+                let absoluteEnd = absoluteStart + AVAudioFramePosition(run)
+                let isPadding = absoluteStart < 1200 || absoluteEnd + 1200 > fileLength
+                let isGranule = run >= 576 && run <= 2304
+                guard isGranule, !isPadding else { continue }
+
+                for channel in 0..<channelCount {
+                    let data = channels[channel]
+                    let left = runStart > 0 ? data[runStart - 1] : 0
+                    let right = i < count ? data[i] : left
+                    let denom = Float(run + 1)
+                    for k in 0..<run {
+                        let t = Float(k + 1) / denom
+                        data[runStart + k] = left + (right - left) * t
+                    }
+                }
+                concealed += 1
+            } else {
+                i += 1
+            }
+        }
+        return concealed
+    }
+
+    /// 1s-ish chunks that land on codec packet boundaries (MP3 1152, AAC 1024).
+    /// Unaligned 44100-frame reads split granules and click even on sequential decode.
+    private static func packetAlignedChunkFrames(format: AVAudioFormat) -> AVAudioFrameCount {
+        let sampleRate = max(1, Int(format.sampleRate.rounded()))
+        let packetFrames = Int(format.streamDescription.pointee.mFramesPerPacket)
+        guard packetFrames > 1 else {
+            return AVAudioFrameCount(sampleRate)
+        }
+        let packets = max(1, sampleRate / packetFrames)
+        return AVAudioFrameCount(packets * packetFrames)
     }
 
     func updateDownloadProgress(downloaded: Int64, total: Int64?) {
@@ -1132,6 +1220,7 @@ private final class LazyChunkSource: @unchecked Sendable {
         lock.withLock { state in
             state.fileURL = url
             state.audioFile = nil
+            state.nextSequentialIndex = nil
         }
     }
 
@@ -1140,6 +1229,7 @@ private final class LazyChunkSource: @unchecked Sendable {
             state.audioFile = try AVAudioFile(forReading: state.fileURL)
             guard let audioFile = state.audioFile else { throw Error.allocationFailed }
             totalFrameCount = audioFile.length
+            state.nextSequentialIndex = nil
 
             let safeFrames = computeSafeLimit(
                 fileLength: totalFrameCount,
@@ -1176,6 +1266,7 @@ private final class LazyChunkSource: @unchecked Sendable {
 
             if state.audioFile == nil {
                 state.audioFile = try AVAudioFile(forReading: state.fileURL)
+                state.nextSequentialIndex = nil
             }
             guard let file = state.audioFile else {
                 throw Error.allocationFailed
@@ -1192,7 +1283,14 @@ private final class LazyChunkSource: @unchecked Sendable {
                 throw Error.readBeyondBoundary
             }
 
-            file.framePosition = startFrame
+            let posBefore = file.framePosition
+            let canContinue =
+                state.nextSequentialIndex == index
+                && posBefore == startFrame
+            if !canContinue {
+                file.framePosition = startFrame
+            }
+
             let remaining = AVAudioFrameCount(min(
                 AVAudioFramePosition(chunkDurationFrames),
                 safeLimit - startFrame
@@ -1201,7 +1299,7 @@ private final class LazyChunkSource: @unchecked Sendable {
                 throw Error.readBeyondBoundary
             }
 
-            engineLogger.debug("Chunk \(index) decoding frames \(startFrame)–\(startFrame + Int64(remaining))")
+            engineLogger.debug("Chunk \(index) decoding frames \(startFrame)–\(startFrame + Int64(remaining)) seek=\(!canContinue)")
 
             guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: remaining) else {
                 throw Error.allocationFailed
@@ -1209,14 +1307,20 @@ private final class LazyChunkSource: @unchecked Sendable {
 
             do {
                 try file.read(into: buffer, frameCount: remaining)
-                buffer.frameLength = remaining
+                _ = Self.concealSilentGranules(
+                    buffer: buffer,
+                    startFrame: startFrame,
+                    fileLength: file.length
+                )
             } catch {
+                state.nextSequentialIndex = nil
                 if isProgressive {
                     throw Error.readBeyondBoundary
                 }
                 throw error
             }
 
+            state.nextSequentialIndex = index + 1
             state.chunkCache[index] = buffer
             if state.chunkCache.count > maxCachedChunks {
                 let keysToRemove = state.chunkCache.keys.sorted().prefix(state.chunkCache.count - maxCachedChunks)
@@ -1225,6 +1329,7 @@ private final class LazyChunkSource: @unchecked Sendable {
                     state.chunkCache.removeValue(forKey: key)
                 }
             }
+
             return buffer
         }
     }

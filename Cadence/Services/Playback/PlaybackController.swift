@@ -3,32 +3,6 @@ import os.log
 
 private let logger = Logger(subsystem: "dev.personal.cadence", category: "Playback")
 
-// #region agent log
-@MainActor
-private func agentLog(
-    _ location: String,
-    _ message: String,
-    hypothesisId: String,
-    data: [String: String] = [:]
-) {
-    let payload: [String: Any] = [
-        "sessionId": "d608e4",
-        "location": location,
-        "message": message,
-        "hypothesisId": hypothesisId,
-        "timestamp": Int(Date().timeIntervalSince1970 * 1000),
-        "data": data,
-    ]
-    guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
-    var req = URLRequest(url: URL(string: "http://127.0.0.1:7480/ingest/f416849f-e2ef-4af7-9095-8778cb4b671c")!)
-    req.httpMethod = "POST"
-    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    req.setValue("d608e4", forHTTPHeaderField: "X-Debug-Session-Id")
-    req.httpBody = body
-    URLSession.shared.dataTask(with: req).resume()
-}
-// #endregion
-
 @Observable
 @MainActor
 final class PlaybackController {
@@ -325,27 +299,12 @@ final class PlaybackController {
 
         guard let track = playbackQueue.consumeNext(repeatMode: repeatMode) else {
             logger.info("Action: next → end of queue, stopping")
-            // #region agent log
-            agentLog("PlaybackController.next", "next → end of queue", hypothesisId: "A", data: [
-                "isPlaying": "\(isPlaying)",
-                "isLoading": "\(isLoading)",
-            ])
-            // #endregion
             stopPlayback()
             persistState()
             return
         }
 
         logger.info("Action: next → '\(track.title)'")
-        // #region agent log
-        agentLog("PlaybackController.next", "next → track", hypothesisId: "A", data: [
-            "title": track.title,
-            "isPlaying": "\(isPlaying)",
-            "isLoading": "\(isLoading)",
-            "progress": String(format: "%.2f", progress),
-            "duration": String(format: "%.2f", duration),
-        ])
-        // #endregion
         scheduleLoadedTrack(track)
     }
 
@@ -608,29 +567,9 @@ final class PlaybackController {
         isPlaying = false
         isLoading = true
         logger.info("Load start: '\(track.title)' gen=\(generation)")
-        // #region agent log
-        agentLog("PlaybackController.performOneLoad", "load start", hypothesisId: "A", data: [
-            "title": track.title,
-            "gen": "\(generation)",
-            "isFileURL": "\(track.fileURL.isFileURL)",
-            "scheme": track.fileURL.scheme ?? "nil",
-        ])
-        // #endregion
 
         do {
             let source = try await resolveLoadSource(for: track)
-            // #region agent log
-            let sourceKind: String = {
-                switch source {
-                case .local: return "local"
-                case .progressive: return "progressive"
-                }
-            }()
-            agentLog("PlaybackController.performOneLoad", "source resolved", hypothesisId: "A", data: [
-                "title": track.title,
-                "source": sourceKind,
-            ])
-            // #endregion
             guard isLoadGenerationCurrent(generation) else {
                 isLoading = false
                 return
@@ -646,36 +585,16 @@ final class PlaybackController {
             isPlaying = true
             isLoading = false
             logger.info("Load done: '\(track.title)' duration=\(String(format: "%.1f", self.duration))s")
-            // #region agent log
-            agentLog("PlaybackController.performOneLoad", "load done + play()", hypothesisId: "A", data: [
-                "title": track.title,
-                "duration": String(format: "%.2f", duration),
-                "enginePlaying": "\(audioEngine.isPlaying)",
-                "runId": "post-fix",
-            ])
-            // #endregion
             recentStore.record(track: track)
             mediaRemote.publishNowPlayingInfo()
             schedulePrefetch()
         } catch is CancellationError {
             isLoading = false
-            // #region agent log
-            agentLog("PlaybackController.performOneLoad", "load cancelled", hypothesisId: "A", data: [
-                "title": track.title,
-            ])
-            // #endregion
         } catch {
             guard isLoadGenerationCurrent(generation) else { return }
             logger.error("Failed to load track: \(error.localizedDescription)")
             isLoading = false
             logger.info("Load failed, advancing to next track")
-            // #region agent log
-            agentLog("PlaybackController.performOneLoad", "load FAILED → next()", hypothesisId: "A", data: [
-                "title": track.title,
-                "error": error.localizedDescription,
-                "runId": "post-fix",
-            ])
-            // #endregion
             next()
         }
     }
@@ -687,22 +606,39 @@ final class PlaybackController {
             return
         }
 
+        let gaplessEnabled = Self.isGaplessEnabled
+
         if next.fileURL.isFileURL {
-            prepareGapless(url: next.fileURL)
+            if gaplessEnabled {
+                prepareGapless(url: next.fileURL)
+            } else {
+                audioEngine.cancelPreparedNext()
+            }
             return
         }
 
         if let offlineURL = offlineStore.localURL(for: next.id) {
-            prepareGapless(url: offlineURL)
+            if gaplessEnabled {
+                prepareGapless(url: offlineURL)
+            } else {
+                audioEngine.cancelPreparedNext()
+            }
             return
         }
 
         if let cached = prefetchedCache, cached.trackID == next.id {
-            prepareGapless(url: cached.fileURL)
+            if gaplessEnabled {
+                prepareGapless(url: cached.fileURL)
+            } else {
+                audioEngine.cancelPreparedNext()
+            }
             return
         }
 
         if prefetchTrackID == next.id, prefetchTask != nil {
+            if !gaplessEnabled {
+                audioEngine.cancelPreparedNext()
+            }
             return
         }
 
@@ -721,7 +657,11 @@ final class PlaybackController {
                 if self.prefetchTrackID == trackID {
                     self.prefetchTrackID = nil
                 }
-                self.prepareGapless(url: localURL)
+                if Self.isGaplessEnabled {
+                    self.prepareGapless(url: localURL)
+                } else {
+                    self.audioEngine.cancelPreparedNext()
+                }
             } catch {
                 if self.prefetchTrackID == trackID {
                     self.prefetchTrackID = nil
@@ -730,7 +670,19 @@ final class PlaybackController {
         }
     }
 
+    /// Matches `@AppStorage("cadence.gaplessEnabled")` default (`true` when key is absent).
+    private static var isGaplessEnabled: Bool {
+        if UserDefaults.standard.object(forKey: "cadence.gaplessEnabled") == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "cadence.gaplessEnabled")
+    }
+
     private func prepareGapless(url: URL) {
+        guard Self.isGaplessEnabled else {
+            audioEngine.cancelPreparedNext()
+            return
+        }
         Task {
             do {
                 let accepted = try await audioEngine.prepareNextTrack(url: url)
@@ -794,12 +746,6 @@ final class PlaybackController {
         guard repeatMode != .one else { return }
         guard let track = playbackQueue.consumeNext(repeatMode: repeatMode) else { return }
         logger.info("Gapless advance → '\(track.title)'")
-        // #region agent log
-        agentLog("PlaybackController.handleGaplessAdvance", "gapless advance", hypothesisId: "C", data: [
-            "title": track.title,
-            "nextDuration": String(format: "%.2f", nextDuration),
-        ])
-        // #endregion
         progress = 0
         duration = nextDuration
         recentStore.record(track: track)
@@ -811,14 +757,6 @@ final class PlaybackController {
     private func handleTrackFinished() {
         let endedTitle = currentTrack?.title ?? "?"
         logger.info("Track end: '\(endedTitle)' repeatMode=\(String(describing: self.repeatMode))")
-        // #region agent log
-        agentLog("PlaybackController.handleTrackFinished", "track finished callback", hypothesisId: "B", data: [
-            "title": endedTitle,
-            "progress": String(format: "%.2f", progress),
-            "duration": String(format: "%.2f", duration),
-            "repeatMode": String(describing: repeatMode),
-        ])
-        // #endregion
         switch repeatMode {
         case .one:
             loadAndPlayCurrentTrack()

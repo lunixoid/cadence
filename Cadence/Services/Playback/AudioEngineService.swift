@@ -480,7 +480,7 @@ final class AudioEngineService {
     }
 
     private func applySeek(to time: TimeInterval, format: AVAudioFormat) {
-        rescheduleBuffers(at: time, format: format, shouldPlay: true)
+        rescheduleBuffers(at: time, format: format, shouldPlay: !isPaused)
     }
 
     /// Re-schedule buffers from the current playback position without always resuming play (BUG16).

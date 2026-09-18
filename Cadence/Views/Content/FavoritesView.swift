@@ -23,7 +23,9 @@ struct FavoritesView: View {
                                 TrackRowView(
                                     track: track,
                                     isActive: playbackController.playingTrackID == track.id,
-                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track)
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
+                                    playContextTracks: tracks,
+                                    playSource: .adHoc
                                 )
                             }
                             Color.clear.frame(height: 24)
@@ -57,7 +59,9 @@ struct RecentView: View {
                                 TrackRowView(
                                     track: track,
                                     isActive: playbackController.playingTrackID == track.id,
-                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track)
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
+                                    playContextTracks: tracks,
+                                    playSource: .adHoc
                                 )
                             }
                             Color.clear.frame(height: 24)
@@ -98,7 +102,9 @@ struct DownloadedView: View {
                                 TrackRowView(
                                     track: track,
                                     isActive: playbackController.playingTrackID == track.id,
-                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track)
+                                    disambiguationLabel: libraryStore.disambiguationLabel(for: track),
+                                    playContextTracks: tracks,
+                                    playSource: .adHoc
                                 )
                             }
                             Color.clear.frame(height: 24)

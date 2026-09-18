@@ -72,7 +72,7 @@ struct PlaybackQueue: Equatable {
     private func forwardRemainingFromContext() -> [Track] {
         guard let ctx = autoplay, let current else { return [] }
         let playedIDs = Set(history.map(\.id) + [current.id])
-        guard let currentIndex = ctx.originalTracks.firstIndex(of: current) else {
+        guard let currentIndex = ctx.originalTracks.firstIndex(where: { $0.id == current.id }) else {
             return ctx.originalTracks.filter { !playedIDs.contains($0.id) }
         }
         return ctx.originalTracks

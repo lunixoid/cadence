@@ -86,6 +86,15 @@ struct IOSRootView: View {
                 IOSSettingsView()
             }
         }
+        .alert("Нужно войти в Jellyfin", isPresented: Binding(
+            get: { uiState.jellyfinAuthAlert != nil },
+            set: { if !$0 { uiState.jellyfinAuthAlert = nil } }
+        )) {
+            Button("Настройки") { ui.isPrefsOpen = true }
+            Button("Позже", role: .cancel) {}
+        } message: {
+            Text(uiState.jellyfinAuthAlert ?? "")
+        }
         .tint(CadenceTheme.accent(for: .light))
         .onChange(of: scenePhase) { _, phase in
             if phase == .background || phase == .inactive {

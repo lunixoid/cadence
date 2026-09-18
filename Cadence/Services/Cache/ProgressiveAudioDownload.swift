@@ -14,6 +14,7 @@ struct ProgressiveDownloadProgress: Sendable {
 enum ProgressiveDownloadError: LocalizedError {
     case cancelled
     case invalidResponse
+    case unauthorized
     case exhaustedRetries
     case readBeyondDownloadedBoundary
 
@@ -21,6 +22,7 @@ enum ProgressiveDownloadError: LocalizedError {
         switch self {
         case .cancelled: "Download cancelled"
         case .invalidResponse: "Invalid server response"
+        case .unauthorized: "Server rejected the access token (HTTP 401)"
         case .exhaustedRetries: "Download failed after retries"
         case .readBeyondDownloadedBoundary: "Playback reached undownloaded audio"
         }
@@ -220,6 +222,10 @@ actor ProgressiveDownloadSession {
         )
     }
 
+    var hasFailed: Bool {
+        failure != nil || isCancelled
+    }
+
     func bytesDownloadedCount() -> Int64 {
         bytesDownloaded
     }
@@ -263,12 +269,25 @@ actor ProgressiveDownloadSession {
             if (error as NSError).code == NSURLErrorCancelled {
                 return
             }
+            if case ProgressiveDownloadError.unauthorized = error {
+                // Retrying with the same token is pointless.
+                fail(with: error)
+                return
+            }
             logger.error("Download failed: \(error.localizedDescription)")
             scheduleRetry()
             return
         }
 
         do {
+            let writtenOffset = writer.currentOffset()
+            if let expectedBytes, writtenOffset < expectedBytes {
+                // Connection closed cleanly but early: never cache a truncated file.
+                logger.error("Download ended short: \(writtenOffset)/\(expectedBytes) bytes, resuming")
+                scheduleRetry()
+                return
+            }
+
             let finalOffset = try await writer.finish()
             bytesDownloaded = finalOffset
 
@@ -301,10 +320,13 @@ actor ProgressiveDownloadSession {
 
     private func fail(with error: Error) {
         guard !isComplete else { return }
+        logger.error("Download session failed: \(error.localizedDescription)")
         failure = error
         worker?.cancel()
         worker = nil
         writer.abandon()
+        try? FileManager.default.removeItem(at: partialURL)
+        Task { await AudioCache.shared.sessionDidFail(self) }
 
         for waiter in byteWaiters {
             waiter.continuation.resume(throwing: error)
@@ -509,6 +531,10 @@ private final class ProgressiveDownloadWorker: NSObject, URLSessionDataDelegate,
 
     private func handleHTTPResponse(_ http: HTTPURLResponse) throws {
         guard (200...299).contains(http.statusCode) || http.statusCode == 206 else {
+            if http.statusCode == 401 || http.statusCode == 403 {
+                throw ProgressiveDownloadError.unauthorized
+            }
+            logger.error("Stream HTTP \(http.statusCode)")
             throw ProgressiveDownloadError.invalidResponse
         }
 

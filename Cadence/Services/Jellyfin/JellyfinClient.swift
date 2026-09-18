@@ -112,6 +112,29 @@ enum JellyfinTLSSettings {
     nonisolated(unsafe) static var allowsUntrustedCertificates = false
 }
 
+/// Stream URLs are persisted in the library cache with the token of the moment baked in.
+/// Playback rewrites them with the active client's token and the current query parameter name.
+enum JellyfinStreamAuth {
+    /// Jellyfin 12 rejects the legacy `api_key` parameter (HTTP 401); `ApiKey` is accepted.
+    static let queryName = "ApiKey"
+    private static let legacyQueryName = "api_key"
+
+    nonisolated(unsafe) static var currentToken: String?
+
+    static func authorizedURL(_ url: URL) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              var items = components.queryItems,
+              let index = items.firstIndex(where: { $0.name == queryName || $0.name == legacyQueryName })
+        else { return url }
+        let token = currentToken.flatMap { $0.isEmpty ? nil : $0 } ?? items[index].value
+        let updated = URLQueryItem(name: queryName, value: token)
+        guard items[index] != updated else { return url }
+        items[index] = updated
+        components.queryItems = items
+        return components.url ?? url
+    }
+}
+
 /// HTTPS via Network.framework with disabled peer verification.
 /// URLSession custom trust overrides still fail on iOS with errSSLFatalAlert (-9802) for private CAs,
 /// even after SecTrust evaluates successfully — so untrusted servers use NWConnection instead.
@@ -428,6 +451,7 @@ final class JellyfinClient: Sendable {
         self.deviceID = Self.deviceID()
         self.allowsUntrustedCertificate = server.allowsUntrustedCertificate
         JellyfinTLSSettings.allowsUntrustedCertificates = server.allowsUntrustedCertificate
+        JellyfinStreamAuth.currentToken = server.token
     }
 
     // MARK: - Authentication
@@ -448,7 +472,7 @@ final class JellyfinClient: Sendable {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(authHeader(token: nil, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: nil, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let body: [String: String] = ["Username": username, "Pw": password]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -471,7 +495,40 @@ final class JellyfinClient: Sendable {
         )
 
         KeychainHelper.save(token: auth.accessToken, account: "jellyfin-\(server.id)")
+        KeychainHelper.save(token: password, account: passwordAccount(serverID: server.id))
         return server
+    }
+
+    /// Jellyfin tokens never expire on their own but can be revoked server-side
+    /// (device removed, password changed). Logs in again with the stored password.
+    static func reauthenticate(_ server: JellyfinServer) async throws -> JellyfinServer {
+        guard !server.username.isEmpty, server.username != "API Key",
+              let password = KeychainHelper.load(account: passwordAccount(serverID: server.id)) else {
+            throw JellyfinError.authFailed("Нет сохранённого пароля")
+        }
+        let fresh = try await authenticate(
+            serverURLString: server.urlString,
+            username: server.username,
+            password: password,
+            allowsUntrustedCertificate: server.allowsUntrustedCertificate
+        )
+        // Keep the original server identity (library cache is keyed by it).
+        deleteCredentials(serverID: fresh.id)
+        var updated = server
+        updated.token = fresh.token
+        updated.userID = fresh.userID
+        KeychainHelper.save(token: fresh.token, account: "jellyfin-\(server.id)")
+        KeychainHelper.save(token: password, account: passwordAccount(serverID: server.id))
+        return updated
+    }
+
+    static func deleteCredentials(serverID: UUID) {
+        KeychainHelper.delete(account: "jellyfin-\(serverID)")
+        KeychainHelper.delete(account: passwordAccount(serverID: serverID))
+    }
+
+    private static func passwordAccount(serverID: UUID) -> String {
+        "jellyfin-password-\(serverID)"
     }
 
     static func authenticateWithAPIKey(
@@ -487,7 +544,7 @@ final class JellyfinClient: Sendable {
         let deviceID = Self.deviceID()
         let endpoint = serverURL.appendingPathComponent("Users/Me")
         var request = URLRequest(url: endpoint)
-        request.setValue(authHeader(token: apiKey, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: apiKey, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await JellyfinURLSessionFactory.data(
             for: request,
@@ -610,7 +667,7 @@ final class JellyfinClient: Sendable {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let (_, response) = try await data(for: request)
         try Self.validateHTTPResponse(response)
@@ -626,7 +683,7 @@ final class JellyfinClient: Sendable {
 
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
-        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let (_, response) = try await data(for: request)
         try Self.validateHTTPResponse(response)
@@ -663,7 +720,7 @@ final class JellyfinClient: Sendable {
         )
         components?.queryItems = [
             URLQueryItem(name: "userId", value: userID),
-            URLQueryItem(name: "api_key", value: token),
+            URLQueryItem(name: JellyfinStreamAuth.queryName, value: token),
             URLQueryItem(name: "deviceId", value: deviceID),
             URLQueryItem(name: "MaxStreamingBitrate", value: "140000000"),
             URLQueryItem(name: "AudioCodec", value: "flac,aac,mp3,alac"),
@@ -679,7 +736,7 @@ final class JellyfinClient: Sendable {
             resolvingAgainstBaseURL: false
         )
         components?.queryItems = [
-            URLQueryItem(name: "api_key", value: token),
+            URLQueryItem(name: JellyfinStreamAuth.queryName, value: token),
         ]
         return components?.url
     }
@@ -692,7 +749,7 @@ final class JellyfinClient: Sendable {
         )
         components?.queryItems = [
             URLQueryItem(name: "static", value: "true"),
-            URLQueryItem(name: "api_key", value: token),
+            URLQueryItem(name: JellyfinStreamAuth.queryName, value: token),
             URLQueryItem(name: "userId", value: userID),
             URLQueryItem(name: "deviceId", value: deviceID),
         ]
@@ -707,7 +764,7 @@ final class JellyfinClient: Sendable {
         components?.queryItems = [
             URLQueryItem(name: "maxHeight", value: "\(maxWidth)"),
             URLQueryItem(name: "quality", value: "90"),
-            URLQueryItem(name: "api_key", value: token),
+            URLQueryItem(name: JellyfinStreamAuth.queryName, value: token),
         ]
         return components?.url
     }
@@ -719,13 +776,13 @@ final class JellyfinClient: Sendable {
             url: serverURL.appendingPathComponent("Sessions/Playing"),
             resolvingAgainstBaseURL: false
         )!
-        components.queryItems = [URLQueryItem(name: "api_key", value: token)]
+        components.queryItems = [URLQueryItem(name: JellyfinStreamAuth.queryName, value: token)]
         guard let url = components.url else { return }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = ["ItemId": itemID, "CanSeek": true]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -738,13 +795,13 @@ final class JellyfinClient: Sendable {
             url: serverURL.appendingPathComponent("Sessions/Playing/Progress"),
             resolvingAgainstBaseURL: false
         )!
-        components.queryItems = [URLQueryItem(name: "api_key", value: token)]
+        components.queryItems = [URLQueryItem(name: JellyfinStreamAuth.queryName, value: token)]
         guard let url = components.url else { return }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let ticks = Int64(position * 10_000_000)
         let body: [String: Any] = ["ItemId": itemID, "PositionTicks": ticks, "IsPaused": isPaused]
@@ -758,13 +815,13 @@ final class JellyfinClient: Sendable {
             url: serverURL.appendingPathComponent("Sessions/Playing/Stopped"),
             resolvingAgainstBaseURL: false
         )!
-        components.queryItems = [URLQueryItem(name: "api_key", value: token)]
+        components.queryItems = [URLQueryItem(name: JellyfinStreamAuth.queryName, value: token)]
         guard let url = components.url else { return }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let ticks = Int64(position * 10_000_000)
         let body: [String: Any] = ["ItemId": itemID, "PositionTicks": ticks]
@@ -787,7 +844,7 @@ final class JellyfinClient: Sendable {
             url: serverURL.appendingPathComponent("Users/\(userID)/Items"),
             resolvingAgainstBaseURL: false
         )!
-        components.queryItems = [URLQueryItem(name: "api_key", value: token)]
+        components.queryItems = [URLQueryItem(name: JellyfinStreamAuth.queryName, value: token)]
         return components
     }
 
@@ -798,7 +855,7 @@ final class JellyfinClient: Sendable {
     private func fetchItemsPage(from components: URLComponents) async throws -> (items: [JellyfinItem], totalCount: Int) {
         guard let url = components.url else { throw JellyfinError.invalidURL }
         var request = URLRequest(url: url)
-        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "X-Emby-Authorization")
+        request.setValue(authHeader(token: token, deviceID: deviceID), forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await data(for: request)
         try Self.validateHTTPResponse(response)

@@ -16,7 +16,9 @@ final class JellyfinLibraryLoader {
         self.serverID = serverID
     }
 
-    func loadFullLibrary() async {
+    /// Returns `false` when the server rejected the access token.
+    @discardableResult
+    func loadFullLibrary() async -> Bool {
         logger.info("Starting Jellyfin library load")
         do {
             let audioItems = try await client.getAllAudioItems()
@@ -56,9 +58,13 @@ final class JellyfinLibraryLoader {
             libraryStore.loadFromJellyfin(scanResult)
             JellyfinLibraryCache.save(scanResult, serverID: serverID, artworkItemIDs: artworkItemIDs)
             logger.info("Jellyfin library loaded: \(albums.count) albums, \(allTracks.count) tracks")
+        } catch JellyfinError.authFailed(let message) {
+            logger.error("Failed to load Jellyfin library: unauthorized (\(message))")
+            return false
         } catch {
             logger.error("Failed to load Jellyfin library: \(error.localizedDescription)")
         }
+        return true
     }
 
     private func sortTrackItems(_ items: [JellyfinItem]) -> [JellyfinItem] {

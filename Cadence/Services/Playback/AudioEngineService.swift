@@ -45,6 +45,8 @@ final class AudioEngineService {
     private var pendingGaplessAdvance: (callbackDuration: TimeInterval, oldTrackEndTime: TimeInterval, newTotalFrameCount: AVAudioFramePosition)?
     private var scheduledUpToIndex = 0
     private var scheduleGeneration = 0
+    /// Bumped by every load/stop so a slower, superseded load can't overwrite a newer one.
+    private var loadGeneration = 0
     private var isProgressiveLoad = false
     private var isPaused = false
     /// Paused because in-flight buffers ran dry while waiting for progressive bytes.
@@ -216,6 +218,8 @@ final class AudioEngineService {
 
     func load(url: URL) async throws {
         stopInternal(resetProgress: true)
+        loadGeneration += 1
+        let generation = loadGeneration
         currentFileURL = url
         isProgressiveLoad = false
         progressiveAsset = nil
@@ -224,25 +228,59 @@ final class AudioEngineService {
             try LazyChunkSource(url: url, isProgressive: false)
         }.value
 
+        try ensureLoadCurrent(generation, url: url)
         try applyChunkSource(source)
     }
 
     func loadProgressive(asset: ProgressiveAudioAsset, expectedDuration: TimeInterval?) async throws {
         stopInternal(resetProgress: true)
+        loadGeneration += 1
+        let generation = loadGeneration
         isProgressiveLoad = true
         progressiveAsset = asset
         knownDuration = expectedDuration
         currentFileURL = asset.partialURL
 
         try await asset.waitUntilBuffered()
+        try ensureLoadCurrent(generation, url: asset.partialURL)
+
+        // The download may have finished while buffering: `.partial` is then already
+        // moved into the cache, so open the final file as a regular local load.
+        if await asset.isComplete() {
+            let finalURL = try await asset.waitUntilComplete()
+            try ensureLoadCurrent(generation, url: finalURL)
+            engineLogger.info("Progressive download already complete, loading final file")
+            try await load(url: finalURL)
+            return
+        }
+
         let downloaded = await asset.bytesDownloaded()
         let total = await asset.expectedBytes()
-        let source = try await Task.detached(priority: .userInitiated) {
-            try LazyChunkSource(url: asset.partialURL, isProgressive: true)
-        }.value
+        let source: LazyChunkSource
+        do {
+            source = try await Task.detached(priority: .userInitiated) {
+                try LazyChunkSource(url: asset.partialURL, isProgressive: true)
+            }.value
+        } catch {
+            // Completed between the check above and opening `.partial`.
+            guard await asset.isComplete() else { throw error }
+            let finalURL = try await asset.waitUntilComplete()
+            try ensureLoadCurrent(generation, url: finalURL)
+            engineLogger.info("Partial file moved during open, loading final file")
+            try await load(url: finalURL)
+            return
+        }
+        try ensureLoadCurrent(generation, url: asset.partialURL)
         source.updateDownloadProgress(downloaded: downloaded, total: total)
 
         try applyChunkSource(source)
+    }
+
+    private func ensureLoadCurrent(_ generation: Int, url: URL) throws {
+        guard generation == loadGeneration else {
+            engineLogger.info("Discarding superseded load: \(url.lastPathComponent)")
+            throw CancellationError()
+        }
     }
 
     func loadRemote(url: URL, trackID: UUID) async throws {
@@ -254,9 +292,13 @@ final class AudioEngineService {
     /// is compatible and the source was accepted; false means the caller should
     /// fall back to a normal load when the current track finishes.
     func prepareNextTrack(url: URL) async throws -> Bool {
+        let generation = loadGeneration
         let source = try await Task.detached(priority: .userInitiated) {
             try LazyChunkSource(url: url, isProgressive: false)
         }.value
+
+        // Current track changed while preparing: this source belongs to a stale queue position.
+        guard generation == loadGeneration else { return false }
 
         guard let currentFormat = processingFormat,
               source.format.sampleRate == currentFormat.sampleRate,
@@ -331,6 +373,7 @@ final class AudioEngineService {
     }
 
     func stop() {
+        loadGeneration += 1
         if engine.isRunning {
             engine.stop()
         }

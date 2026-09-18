@@ -36,7 +36,7 @@ actor ArtworkCache {
         }
 
         do {
-            var request = URLRequest(url: url)
+            var request = URLRequest(url: JellyfinStreamAuth.authorizedURL(url))
             request.cachePolicy = .reloadIgnoringLocalCacheData
             let (data, _) = try await JellyfinURLSessionFactory.data(
                 for: request,

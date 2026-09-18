@@ -68,7 +68,13 @@ actor AudioCache {
 
     private func downloadSession(for remoteURL: URL, trackID: UUID) async throws -> ProgressiveDownloadSession {
         if let existing = activeSessions[trackID] {
-            return existing
+            if await existing.hasFailed {
+                // A failed session would make every later attempt fail instantly.
+                logger.info("Discarding failed download session for \(trackID.uuidString)")
+                activeSessions[trackID] = nil
+            } else {
+                return existing
+            }
         }
 
         let ext = "partial"
@@ -91,13 +97,19 @@ actor AudioCache {
         enforceCacheLimit()
     }
 
+    func sessionDidFail(_ session: ProgressiveDownloadSession) {
+        if activeSessions[session.trackID] === session {
+            activeSessions[session.trackID] = nil
+        }
+    }
+
     private func enforceCacheLimit() {
         guard maxCacheBytes > 0 else { return }
 
         let directory = Self.audioDirectory
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: [.contentAccessDateKey, .fileSizeKey],
+            includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey],
             options: [.skipsHiddenFiles]
         ) else { return }
 
@@ -108,9 +120,10 @@ actor AudioCache {
             let name = fileURL.deletingPathExtension().lastPathComponent
             if name.hasSuffix(".partial") { continue }
 
-            let values = try? fileURL.resourceValues(forKeys: [.contentAccessDateKey, .fileSizeKey])
+            // `touch` bumps the modification date on every use, so it is the LRU key.
+            let values = try? fileURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
             let size = Int64(values?.fileSize ?? 0)
-            let accessDate = values?.contentAccessDate ?? .distantPast
+            let accessDate = values?.contentModificationDate ?? .distantPast
             entries.append((fileURL, accessDate, size))
             totalSize += size
         }

@@ -22,10 +22,20 @@ final class PlaybackController {
     private var prefetchTrackID: UUID?
     private var prefetchedCache: (trackID: UUID, fileURL: URL)?
     private var activeLoadGeneration = 0
+    /// Track already retried after an auth recovery — prevents a retry loop.
+    private var authRetriedTrackID: UUID?
 
     private enum TrackLoadSource {
         case local(URL)
+        /// A file from `AudioCache` — deleted and re-downloaded if it turns out unreadable.
+        case cached(URL)
         case progressive(ProgressiveAudioAsset)
+    }
+
+    /// Whether the user expects audio: while a track loads `isPlaying` is false,
+    /// so a skip during loading must not demote the next track to paused.
+    private var wantsPlayback: Bool {
+        isPlaying || (isLoading && pendingLoadAutoplay)
     }
 
     var isPlaying = false
@@ -48,6 +58,9 @@ final class PlaybackController {
     private let userPresetStore = UserEQPresetStore()
 
     var spectrumAnalyzer: SpectrumAnalyzer { audioEngine.spectrumAnalyzer }
+
+    /// Called when the server rejects the stream token; returns `true` after a successful re-login.
+    var jellyfinAuthRecovery: (@MainActor () async -> Bool)?
 
     var currentTrack: Track? {
         playbackQueue.current
@@ -256,7 +269,7 @@ final class PlaybackController {
     func playTrack(_ track: Track) {
         logger.info("Action: playTrack '\(track.title)'")
         if let albumTracks = libraryStore.tracks(forAlbumID: track.albumID).nilIfEmpty,
-           let index = albumTracks.firstIndex(of: track) {
+           let index = albumTracks.firstIndex(where: { $0.id == track.id }) {
             play(tracks: albumTracks, startAt: index, source: .album(track.albumID))
             return
         }
@@ -265,7 +278,8 @@ final class PlaybackController {
 
     func playTrack(_ track: Track, in tracks: [Track], source: AutoplaySource) {
         logger.info("Action: playTrack '\(track.title)' in context (\(tracks.count) tracks)")
-        guard let index = tracks.firstIndex(of: track) else {
+        // Match by id: stored copies (recent, favorites) may carry an outdated fileURL.
+        guard let index = tracks.firstIndex(where: { $0.id == track.id }) else {
             playTrack(track)
             return
         }
@@ -297,7 +311,7 @@ final class PlaybackController {
 
     func next(autoplay: Bool? = nil) {
         guard playbackQueue.hasActiveSession else { return }
-        let shouldAutoplay = autoplay ?? isPlaying
+        let shouldAutoplay = autoplay ?? wantsPlayback
 
         guard let track = playbackQueue.consumeNext(repeatMode: repeatMode) else {
             logger.info("Action: next → end of queue, stopping")
@@ -314,7 +328,7 @@ final class PlaybackController {
         guard playbackQueue.hasActiveSession else { return }
 
         let prevProgress = progress
-        let shouldAutoplay = isPlaying
+        let shouldAutoplay = wantsPlayback
         logger.info("Action: previous (progress=\(String(format: "%.1f", prevProgress))s)")
         if progress > 3 {
             seek(to: 0)
@@ -334,7 +348,7 @@ final class PlaybackController {
     @discardableResult
     func skipToPreviousTrack() -> Bool {
         guard playbackQueue.hasActiveSession else { return false }
-        let shouldAutoplay = isPlaying
+        let shouldAutoplay = wantsPlayback
 
         guard let track = playbackQueue.consumePrevious() else {
             logger.info("Action: skipToPreviousTrack → no history")
@@ -347,6 +361,7 @@ final class PlaybackController {
     }
 
     private func scheduleLoadedTrack(_ track: Track, autoplay: Bool = true) {
+        authRetriedTrackID = nil
         pendingLoadTrack = track
         pendingLoadAutoplay = autoplay
         loadSerialTask?.cancel()
@@ -526,7 +541,7 @@ final class PlaybackController {
             prefetchedCache = nil
             if await AudioCache.shared.hasCachedFile(trackID: track.id) {
                 logger.info("Load source: prefetch-hit '\(track.title)'")
-                return .local(cached.fileURL)
+                return .cached(cached.fileURL)
             }
         } else {
             prefetchedCache = nil
@@ -536,13 +551,13 @@ final class PlaybackController {
            let cachedURL = AudioCache.cachedFileURL(trackID: track.id) {
             AudioCache.touch(cachedURL)
             logger.info("Load source: cache-hit '\(track.title)'")
-            return .local(cachedURL)
+            return .cached(cachedURL)
         }
 
-        let asset = try await AudioCache.shared.progressiveAsset(for: track.fileURL, trackID: track.id)
+        let asset = try await AudioCache.shared.progressiveAsset(for: JellyfinStreamAuth.authorizedURL(track.fileURL), trackID: track.id)
         if await asset.isComplete(), let cachedURL = AudioCache.cachedFileURL(trackID: track.id) {
             logger.info("Load source: cache-hit (completed) '\(track.title)'")
-            return .local(cachedURL)
+            return .cached(cachedURL)
         }
         logger.info("Load source: progressive '\(track.title)'")
         return .progressive(asset)
@@ -552,6 +567,20 @@ final class PlaybackController {
         switch source {
         case .local(let url):
             try await audioEngine.load(url: url)
+        case .cached(let url):
+            do {
+                try await audioEngine.load(url: url)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                // Broken/truncated cache entry: drop it and stream the track again once.
+                logger.error("Cached file unreadable for '\(track.title)': \(error.localizedDescription) — re-downloading")
+                await AudioCache.shared.removeCachedFile(trackID: track.id)
+                if prefetchedCache?.trackID == track.id { prefetchedCache = nil }
+                try Task.checkCancellation()
+                let asset = try await AudioCache.shared.progressiveAsset(for: JellyfinStreamAuth.authorizedURL(track.fileURL), trackID: track.id)
+                try await audioEngine.loadProgressive(asset: asset, expectedDuration: track.duration)
+            }
         case .progressive(let asset):
             try await audioEngine.loadProgressive(asset: asset, expectedDuration: track.duration)
         }
@@ -576,15 +605,10 @@ final class PlaybackController {
 
         do {
             let source = try await resolveLoadSource(for: track)
-            guard isLoadGenerationCurrent(generation) else {
-                isLoading = false
-                return
-            }
+            // A superseded load must not touch UI state owned by the newer one.
+            guard isLoadGenerationCurrent(generation) else { return }
             try await loadTrackIntoEngine(source, track: track)
-            guard isLoadGenerationCurrent(generation) else {
-                isLoading = false
-                return
-            }
+            guard isLoadGenerationCurrent(generation) else { return }
             duration = audioEngine.duration()
             progress = 0
             if autoplay {
@@ -600,10 +624,29 @@ final class PlaybackController {
             mediaRemote.publishNowPlayingInfo()
             schedulePrefetch()
         } catch is CancellationError {
+            if generation == activeLoadGeneration {
+                isLoading = false
+            }
+        } catch ProgressiveDownloadError.unauthorized {
+            guard isLoadGenerationCurrent(generation) else { return }
+            logger.error("Stream unauthorized for '\(track.title)'")
+            if authRetriedTrackID != track.id,
+               let recovery = jellyfinAuthRecovery,
+               await recovery(),
+               isLoadGenerationCurrent(generation) {
+                authRetriedTrackID = track.id
+                logger.info("Retrying after re-authentication")
+                await performOneLoad(track, autoplay: autoplay)
+                return
+            }
+            guard isLoadGenerationCurrent(generation) else { return }
+            // Every server track would fail the same way — stop instead of skipping through the queue.
+            logger.info("Unauthorized, stopping instead of skipping")
             isLoading = false
+            stopPlayback()
         } catch {
             guard isLoadGenerationCurrent(generation) else { return }
-            logger.error("Failed to load track: \(error.localizedDescription)")
+            logger.error("Failed to load track '\(track.title)': \(error.localizedDescription)")
             isLoading = false
             logger.info("Load failed, advancing to next track")
             next(autoplay: autoplay)
@@ -656,7 +699,7 @@ final class PlaybackController {
         prefetchTask?.cancel()
         prefetchTrackID = next.id
 
-        let url = next.fileURL
+        let url = JellyfinStreamAuth.authorizedURL(next.fileURL)
         let trackID = next.id
 
         prefetchTask = Task { [weak self] in

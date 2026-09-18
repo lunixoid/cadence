@@ -58,6 +58,9 @@ struct CadenceiOSApp: App {
                             jellyfinFavoritesSync.toggle(track: track, client: client)
                         }
                     )
+                    playbackController.jellyfinAuthRecovery = { [uiState, jellyfinFavoritesSync] in
+                        await uiState.recoverJellyfinAuth(favoritesSync: jellyfinFavoritesSync)
+                    }
                     offlineStore.pruneMissingFiles()
                     await uiState.restoreServers(favoritesSync: jellyfinFavoritesSync)
                     let restored = playbackController.restoreSavedState()

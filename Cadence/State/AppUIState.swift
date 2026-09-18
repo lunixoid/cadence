@@ -1,4 +1,7 @@
 import SwiftUI
+import os.log
+
+private let authLogger = Logger(subsystem: "dev.personal.cadence", category: "JellyfinAuth")
 
 enum AppThemePreference: String, CaseIterable, Identifiable {
     case system
@@ -39,6 +42,11 @@ final class AppUIState {
 
     var jellyfinServers: [JellyfinServer] = []
     var activeJellyfinClient: JellyfinClient?
+    /// Shown when the server rejected the token and automatic re-login failed.
+    var jellyfinAuthAlert: String?
+
+    private var authRecoveryTask: Task<Bool, Never>?
+    private var lastAuthRecoveryFailure: Date?
 
     private let serversKey = "cadence.jellyfinServers"
     private let themeKey = "cadence.appThemePreference"
@@ -192,6 +200,7 @@ final class AppUIState {
 
     func removeJellyfinServer(_ id: UUID) {
         jellyfinServers.removeAll { $0.id == id }
+        JellyfinClient.deleteCredentials(serverID: id)
         if activeJellyfinClient != nil && !jellyfinServers.contains(where: { $0.isActive }) {
             activeJellyfinClient = nil
         }
@@ -250,21 +259,81 @@ final class AppUIState {
             }
         }
 
-        let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore, serverID: server.id)
-
         if deferNetworkRefresh {
             Task {
-                await loader.loadFullLibrary()
-                if let favoritesSync {
-                    await favoritesSync.syncFromServer(client: client)
-                }
+                await refreshLibrary(client: client, serverID: server.id, favoritesSync: favoritesSync)
             }
             return
         }
 
-        await loader.loadFullLibrary()
+        await refreshLibrary(client: client, serverID: server.id, favoritesSync: favoritesSync)
+    }
+
+    private func refreshLibrary(
+        client: JellyfinClient,
+        serverID: UUID,
+        favoritesSync: JellyfinFavoritesSync?,
+        allowAuthRecovery: Bool = true
+    ) async {
+        let loader = JellyfinLibraryLoader(client: client, libraryStore: libraryStore, serverID: serverID)
+        let authorized = await loader.loadFullLibrary()
+        if !authorized {
+            // recoverJellyfinAuth refreshes the library itself on success.
+            if allowAuthRecovery {
+                _ = await recoverJellyfinAuth(favoritesSync: favoritesSync)
+            }
+            return
+        }
         if let favoritesSync {
             await favoritesSync.syncFromServer(client: client)
+        }
+    }
+
+    /// Re-login with the stored password after the server rejected the token (HTTP 401).
+    /// Concurrent callers share one attempt. Returns `true` when a new token is active.
+    func recoverJellyfinAuth(favoritesSync: JellyfinFavoritesSync? = nil) async -> Bool {
+        if let authRecoveryTask {
+            return await authRecoveryTask.value
+        }
+        // Don't hammer the server after a failed attempt.
+        if let lastAuthRecoveryFailure, Date().timeIntervalSince(lastAuthRecoveryFailure) < 60 {
+            return false
+        }
+        let task = Task { @MainActor () -> Bool in
+            await performAuthRecovery(favoritesSync: favoritesSync)
+        }
+        authRecoveryTask = task
+        let result = await task.value
+        authRecoveryTask = nil
+        lastAuthRecoveryFailure = result ? nil : Date()
+        return result
+    }
+
+    private func performAuthRecovery(favoritesSync: JellyfinFavoritesSync?) async -> Bool {
+        guard let index = jellyfinServers.firstIndex(where: { $0.isActive }) else { return false }
+        let server = jellyfinServers[index]
+        authLogger.info("Jellyfin token rejected, re-authenticating")
+        do {
+            let updated = try await JellyfinClient.reauthenticate(server)
+            jellyfinServers[index] = updated
+            saveServers()
+            let client = try JellyfinClient(server: updated)
+            activeJellyfinClient = client
+            jellyfinAuthAlert = nil
+            authLogger.info("Jellyfin re-authentication succeeded")
+            Task {
+                await refreshLibrary(
+                    client: client,
+                    serverID: updated.id,
+                    favoritesSync: favoritesSync,
+                    allowAuthRecovery: false
+                )
+            }
+            return true
+        } catch {
+            authLogger.error("Jellyfin re-authentication failed: \(error.localizedDescription)")
+            jellyfinAuthAlert = "Сервер \(server.name) отклонил вход. Подключитесь к нему заново, чтобы снова слушать музыку с сервера."
+            return false
         }
     }
 

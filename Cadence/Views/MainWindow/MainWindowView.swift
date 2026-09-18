@@ -30,6 +30,13 @@ struct MainWindowView: View {
         }
     }
 
+    private var jellyfinAuthAlertShown: Binding<Bool> {
+        Binding(
+            get: { uiState.jellyfinAuthAlert != nil },
+            set: { if !$0 { uiState.jellyfinAuthAlert = nil } }
+        )
+    }
+
     var body: some View {
         ZStack {
             mainLayout
@@ -38,6 +45,12 @@ struct MainWindowView: View {
         }
         .preferredColorScheme(uiState.appThemePreference == .system ? nil : resolvedColorScheme)
         .background(CadenceTheme.windowBackground(for: resolvedColorScheme))
+        .alert("Нужно войти в Jellyfin", isPresented: jellyfinAuthAlertShown) {
+            Button("Подключиться") { uiState.isConnectOpen = true }
+            Button("Позже", role: .cancel) {}
+        } message: {
+            Text(uiState.jellyfinAuthAlert ?? "")
+        }
         .background(WindowConfigurator())
         .background {
             PlaybackKeyboardMonitor(controller: playbackController, uiState: uiState)

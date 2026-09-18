@@ -5,12 +5,24 @@
 - Specification / README: [`README.md`](README.md)
 - Design: [`ux/`](ux/)
 
+## Building
+
+All build roles are driven through the root [`Makefile`](Makefile) (`make help` to list them):
+
+- `make macos` / `make macos-dev` — Release / Debug build for macOS
+- `make macos-deploy` — Release build, installs to `/Applications`, launches
+- `make ios` / `make ios-dev` — Release build for a generic iOS device / Debug build for the iOS Simulator
+- `make ios-deploy` — Debug build, installs on the paired physical device, launches (wraps [`scripts/deploy-ios-device.sh`](scripts/deploy-ios-device.sh); `CONFIGURATION=Release make ios-deploy` to deploy a release build instead)
+- `make check` — compiler diagnostics check (see Pre-commit below)
+- `make install-hooks` — install the pre-commit git hook
+- `make clean` — remove local derived data (`.build/`)
+
 ## Pre-commit (Swift / Xcode)
 
 Compiler-level checks (same diagnostics as Xcode Issue Navigator), not SwiftLint. Uses the [pre-commit](https://pre-commit.com) framework:
 
-1. Once: `brew install pre-commit` (if needed), then `./scripts/install-git-hooks.sh`
-2. On commit of `*.swift` / `project.pbxproj`, runs [`scripts/swift-xcode-check.sh`](scripts/swift-xcode-check.sh) — builds **Cadence** (macOS) and **CadenceiOS** (Simulator) with warnings as errors
+1. Once: `brew install pre-commit` (if needed), then `make install-hooks`
+2. On commit of `*.swift` / `project.pbxproj`, runs [`scripts/swift-xcode-check.sh`](scripts/swift-xcode-check.sh) (also available as `make check`) — builds **Cadence** (macOS) and **CadenceiOS** (Simulator) with warnings as errors
 3. Manual: `pre-commit run --all-files`
 4. Emergency skip: `SKIP_SWIFT_CHECK=1 git commit …`
 

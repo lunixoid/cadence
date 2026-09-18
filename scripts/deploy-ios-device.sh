@@ -13,8 +13,9 @@ cd "$ROOT"
 
 BUNDLE_ID="${BUNDLE_ID:-dev.personal.cadence.roman}"
 SCHEME="${SCHEME:-CadenceiOS}"
+CONFIGURATION="${CONFIGURATION:-Debug}"
 DERIVED_DATA="${DERIVED_DATA:-${ROOT}/.build/DerivedData-iphoneos}"
-APP="${DERIVED_DATA}/Build/Products/Debug-iphoneos/Cadence.app"
+APP="${DERIVED_DATA}/Build/Products/${CONFIGURATION}-iphoneos/Cadence.app"
 
 resolve_device() {
   if [[ -n "${DEVICE:-}" ]]; then
@@ -84,13 +85,15 @@ PY
 DEVICE_ID="$(resolve_device)"
 mkdir -p "$DERIVED_DATA"
 
-echo "deploy-ios-device: building ${SCHEME}…"
+echo "deploy-ios-device: building ${SCHEME} (${CONFIGURATION})…"
 xcodebuild \
   -project Cadence.xcodeproj \
   -scheme "$SCHEME" \
-  -configuration Debug \
+  -configuration "$CONFIGURATION" \
   -destination 'generic/platform=iOS' \
   -derivedDataPath "$DERIVED_DATA" \
+  -allowProvisioningUpdates \
+  -allowProvisioningDeviceRegistration \
   build
 
 if [[ ! -d "$APP" ]]; then
